@@ -2,11 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import ZkvmVerify.Algebra
-import ZkvmVerify.Algebra.Field
-import ZkvmVerify.Algebra.Poly
+import R0sy.Algebra
+import R0sy.Algebra.Field
+import R0sy.Algebra.Poly
 
-namespace ZkvmVerify.Algebra.Field.BabyBear
+namespace R0sy.Algebra.Field.BabyBear
 
 open Poly
 
@@ -115,4 +115,4 @@ example:
   let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
   x / x == 1
 
-end ZkvmVerify.Algebra.Field.BabyBear
+end R0sy.Algebra.Field.BabyBear

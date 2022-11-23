@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace ZkvmVerify.Sha2
+namespace R0sy.Sha2
 
 def UInt32.ror (x: UInt32) (n: Nat): UInt32 :=
   let l := x >>> UInt32.ofNat n
@@ -147,4 +147,4 @@ def sha_ex_3_out: Array UInt32 := #[0xcf5b16a7, 0x78af8380, 0x036ce59e, 0x7b0492
 
 end Sha256
 
-end ZkvmVerify.Sha2
+end R0sy.Sha2

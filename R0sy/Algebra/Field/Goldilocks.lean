@@ -2,11 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import ZkvmVerify.Algebra
-import ZkvmVerify.Algebra.Field
-import ZkvmVerify.Algebra.Poly
+import R0sy.Algebra
+import R0sy.Algebra.Field
+import R0sy.Algebra.Poly
 
-namespace ZkvmVerify.Algebra.Field.Goldilocks
+namespace R0sy.Algebra.Field.Goldilocks
 
 open Poly
 
@@ -76,4 +76,4 @@ instance : Field ExtElem where inv x := { rep := x.rep.inv }
 instance : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
 
-end ZkvmVerify.Algebra.Field.Goldilocks
+end R0sy.Algebra.Field.Goldilocks

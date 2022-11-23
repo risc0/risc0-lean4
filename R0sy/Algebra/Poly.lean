@@ -2,9 +2,9 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import ZkvmVerify.Algebra
+import R0sy.Algebra
 
-namespace ZkvmVerify.Algebra.Poly
+namespace R0sy.Algebra.Poly
 
 open Algebra
 
@@ -292,7 +292,7 @@ instance [Field R] : DivRemRing (Poly R) where
 instance [Field R] : GcdRing (Poly R) where
   gcd := Poly.gcd
 
-end ZkvmVerify.Algebra.Poly
+end R0sy.Algebra.Poly
 
 
 /-

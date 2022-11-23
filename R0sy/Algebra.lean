@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace ZkvmVerify.Algebra
+namespace R0sy.Algebra
 
 /- Prime numbers -/
 
@@ -77,4 +77,4 @@ structure Gcd (R: Type) where
 class GcdRing (R: Type) where
   gcd: R -> R -> Gcd R
 
-end ZkvmVerify.Algebra
+end R0sy.Algebra

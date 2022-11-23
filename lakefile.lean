@@ -5,7 +5,11 @@ package «zkvm-verify» {
   -- add package configuration options here
 }
 
-lean_lib ZkvmVerify {
+lean_lib R0sy {
+  -- add library configuration options here
+}
+
+lean_lib Zkvm {
   -- add library configuration options here
 }
 

@@ -2,9 +2,9 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import ZkvmVerify.Algebra
+import R0sy.Algebra
 
-namespace ZkvmVerify.Algebra.Field
+namespace R0sy.Algebra.Field
 
 
 namespace Prime
@@ -194,5 +194,5 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 
 end Ext
 
-end ZkvmVerify.Algebra.Field
+end R0sy.Algebra.Field
 
