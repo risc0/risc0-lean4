@@ -28,15 +28,6 @@ def UInt32.of_be32 (b3 b2 b1 b0: UInt8): UInt32 :=
   c3 ||| c2 ||| c1 ||| c0
   
 
-def Nat.to_be32 (x: Nat): ByteArray := {
-  data := #[
-    UInt8.ofNat ((x >>> (8*3)) &&& 0xff),
-    UInt8.ofNat ((x >>> (8*2)) &&& 0xff),
-    UInt8.ofNat ((x >>> (8*1)) &&& 0xff),
-    UInt8.ofNat (x &&& 0xff)
-  ]
-}
-
 def Nat.to_be64 (x: Nat): ByteArray := {
   data := #[
     UInt8.ofNat ((x >>> (8*7)) &&& 0xff),
@@ -134,32 +125,28 @@ def sha256 (msg: ByteArray): Array UInt32 :=
   List.foldr Sha256.compress Sha256.init_hash chunks
 
 def sha256_pair (x y: Array UInt32): Array UInt32 :=
-  let h := Sha256.init_hash
-  Sha256.compress (Array.map UInt32.swap_endian (x ++ y)) h
+  let chunk := Array.map UInt32.swap_endian (x ++ y)
+  Sha256.compress chunk Sha256.init_hash
 
 
 namespace Examples256
 
 def sha_ex_1_in: ByteArray := "abc".toUTF8
 def sha_ex_1_out: Array UInt32 := #[0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223, 0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad]
-
 #eval sha256 sha_ex_1_in == sha_ex_1_out
 
 def sha_ex_2_in: ByteArray := "".toUTF8
 def sha_ex_2_out: Array UInt32 := #[0xe3b0c442, 0x98fc1c14, 0x9afbf4c8, 0x996fb924, 0x27ae41e4, 0x649b934c, 0xa495991b, 0x7852b855]
-
 #eval sha256 sha_ex_2_in == sha_ex_2_out
 
 def sha_ex_3_in: ByteArray := "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu".toUTF8
 def sha_ex_3_out: Array UInt32 := #[0xcf5b16a7, 0x78af8380, 0x036ce59e, 0x7b049237, 0x0b249b11, 0xe8f07a51, 0xafac4503, 0x7afee9d1]
-
 #eval sha256 sha_ex_3_in == sha_ex_3_out
 
 
 def sha_ex_4_in_1: Array UInt32 := #[0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
 def sha_ex_4_in_2: Array UInt32 := #[0xed375cad, 0xc653bb90, 0x78cee904, 0xacee6f7f, 0xf2bf7476, 0xc92dc929, 0x11bae27c, 0x41ebc015]
 def sha_ex_4_out: Array UInt32 := #[0x3aa2c47c, 0x47cd9e5c, 0x5259fd1c, 0x3428c30b, 0x9608201f, 0x5e163061, 0xdeea8d2d, 0x7c65f2c3]
-
 #eval sha256_pair sha_ex_4_in_1 sha_ex_4_in_2 == sha_ex_4_out
 
 end Examples256
@@ -168,7 +155,7 @@ end Examples256
 structure Rng256 where
   pool0: Array UInt32
   pool1: Array UInt32
-  pool_used: Nat
+  pool_used: USize
 
 def Rng256.new: Rng256 := {
   pool0 := sha256 "Hello".toUTF8,
@@ -178,26 +165,27 @@ def Rng256.new: Rng256 := {
 
 def Rng256.step [Monad M] [MonadStateOf Rng256 M]: M Unit
   := do let self <- get
+        let p := sha256_pair self.pool0 self.pool1
         set { self with
-          pool0 := sha256_pair self.pool0 self.pool1,
-          pool1 := sha256_pair self.pool0 self.pool1,
+          pool0 := p,
+          pool1 := sha256_pair p self.pool1,
           pool_used := 0
         }
 
+def Rng256.check_pool [Monad M] [MonadStateOf Rng256 M]: M Unit
+  := do let self <- get
+        if self.pool_used >= 8
+        then Rng256.step
+        else return ()
+
 def Rng256.mix [Monad M] [MonadStateOf Rng256 M] (val: Array UInt32): M Unit
   := do let self <- get
-        set {
-          self with
-          pool0 := Array.zipWith self.pool0 val UInt32.xor
-        }
+        let p := Array.zipWith self.pool0 val UInt32.xor
+        set { self with pool0 := p }
         Rng256.step
 
-def Rng256.step_if [Monad M] [MonadStateOf Rng256 M]: M Unit
-  := do let self <- get
-        if self.pool_used >= 8 then Rng256.step else return ()
-
 def Rng256.next_u32 [Monad M] [MonadStateOf Rng256 M]: M UInt32
-  := do Rng256.step_if
+  := do Rng256.check_pool
         let self <- get
         let out := self.pool0[self.pool_used]!
         set { self with pool_used := self.pool_used + 1 }
@@ -209,5 +197,29 @@ def Rng256.next_u64 [Monad M] [MonadStateOf Rng256 M]: M UInt64
         let hi := UInt64.ofNat (UInt32.toNat hi32)
         let lo := UInt64.ofNat (UInt32.toNat lo32)
         return (hi <<< 32) ||| lo
+
+
+namespace ExamplesRng256
+
+def rng256_ex_1_in: StateM Rng256 (UInt32 × UInt32)
+  := do let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let _ <- Rng256.next_u32
+        let t1 <- Rng256.next_u32
+        Rng256.mix (sha256 "foo".toUTF8)
+        let t2 <- Rng256.next_u32
+        return (t1, t2)
+def rng256_ex_1_out_1: UInt32 := 1826198275
+def rng256_ex_1_out_2: UInt32 := 1753965479
+#eval (rng256_ex_1_in Rng256.new).1 == (1826198275, 1753965479)
+
+end ExamplesRng256
 
 end R0sy.Sha2
