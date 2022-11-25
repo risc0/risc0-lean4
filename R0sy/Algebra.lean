@@ -2,15 +2,19 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Hash
+
 namespace R0sy.Algebra
 
+open Hash
 
 /- Prime numbers -/
 
 structure Prime where
   rep: Nat
   words: Nat
-  pos: p > 0
+  random_cutoff: Nat
+  pos: rep > 0
   deriving Repr
 
 def Prime.beq (x y: Prime): Bool := x.rep == y.rep
@@ -33,6 +37,7 @@ instance [BEq R] : BEq (Irreducible F R) where beq := Irreducible.beq
 
 class Ring (R: Type)
   extends
+    Inhabited R,
     BEq R,
     Add R,
     Neg R,
@@ -51,6 +56,7 @@ class Field (F: Type)
   where
     inv: F -> F
     words: Nat
+    random: [Monad M] -> [MonadRng M] -> M F
     fromUInt64: UInt64 -> F
     toUInt32Words: F -> Array UInt32
     fromUInt32Words: Subarray UInt32 -> F

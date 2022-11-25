@@ -235,9 +235,11 @@ instance : Hash Sha256.Digest where
   hash := Sha256.hash
   hash_pair := Sha256.hash_pair
 
-instance [Monad M] [MonadStateOf Sha256.Rng M]: MonadRng Sha256.Digest M where
+instance [Monad M] [MonadStateOf Sha256.Rng M]: MonadRng M where
   nextUInt32 := Sha256.Rng.nextUInt32
   nextUInt64 := Sha256.Rng.nextUInt64
+
+instance [Monad M] [MonadStateOf Sha256.Rng M]: MonadMixRng Sha256.Digest M where
   mix := Sha256.Rng.mix
 
 

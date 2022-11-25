@@ -12,15 +12,20 @@ open Poly
 
 /- Base field -/
 
+def PRIME: Nat := 2^64 - 2^32 + 1
+
 def P: Prime := {
-  rep := 2^64 - 2^32 + 1,
+  rep := PRIME,
   words := 2,
-  pos := sorry
+  random_cutoff := PRIME,
+  pos := by simp
 }
 
 structure Elem where
   rep: Prime.Elem P
   deriving Repr
+
+instance : Inhabited Elem where default := { rep := Inhabited.default }
 
 instance : OfNat Elem n where ofNat := { rep := Prime.Elem.ofNat _ n }
 
@@ -43,6 +48,9 @@ instance : Div Elem where div x y := { rep := x.rep / y.rep }
 instance : Field Elem where
   inv x := { rep := x.rep.inv }
   words := Field.words (Prime.Elem P)
+  random
+    := do let rep <- Prime.Elem.random P
+          return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
   toUInt32Words x := Field.toUInt32Words x.rep
   fromUInt32Words x := { rep := Field.fromUInt32Words x }
@@ -57,6 +65,8 @@ def Q: Irreducible Elem (Poly.Poly Elem) := {
 structure ExtElem where
   rep: Ext.Elem Q
   deriving Repr
+
+instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 
 instance : BEq ExtElem where beq x y := x.rep == y.rep
 
@@ -77,6 +87,9 @@ instance : Div ExtElem where div x y := { rep := x.rep / y.rep }
 instance : Field ExtElem where
   inv x := { rep := x.rep.inv }
   words := Field.words (Ext.Elem Q)
+  random
+    := do let rep <- Ext.Elem.random Q
+          return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
   toUInt32Words x := Field.toUInt32Words x.rep
   fromUInt32Words x := { rep := Field.fromUInt32Words x }

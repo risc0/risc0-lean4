@@ -5,11 +5,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy.Algebra
 import R0sy.Ext.Nat
 import R0sy.Ext.Subarray
+import R0sy.Hash
 
 namespace R0sy.Algebra.Field
 
-open R0sy.Ext.Nat
-open R0sy.Ext.Subarray
+open Ext.Nat
+open Ext.Subarray
+open Hash
 
 namespace Prime
 
@@ -36,6 +38,11 @@ def Elem.ofNat (p: Prime) (n: Nat): Elem p := {
 instance : OfNat (Elem p) n where ofNat := Elem.ofNat p n
 
 def Elem.ofUInt32 (n: UInt32): Elem p := Elem.ofNat _ (UInt32.toNat n)
+
+
+/- Inhabited -/
+
+instance : Inhabited (Elem p) where default := 0
 
 
 /- Serialize/deserialize -/
@@ -96,6 +103,20 @@ def Elem.div (x y: Elem p): Elem p := x * y.inv
 instance : Div (Elem p) where div := Elem.div
 
 
+/- Random -/
+
+partial def Elem.random [Monad M] [MonadRng M] (p: Prime): M (Elem p)
+  := do let x <-
+          (if p.words == 1
+            then do let x <- MonadRng.nextUInt32
+                    return (UInt32.toNat x)
+            else do let x <- MonadRng.nextUInt64
+                    return (UInt64.toNat x))
+        if x >= p.random_cutoff
+          then Elem.random p
+          else return Elem.ofNat p x
+
+
 /- Ring and Field -/
 
 instance : Ring (Elem p) where
@@ -104,6 +125,7 @@ instance : Ring (Elem p) where
 instance : Field (Elem p) where
   inv := Elem.inv
   words := p.words
+  random := Elem.random p
   fromUInt64 := Elem.fromUInt64 p
   toUInt32Words := Elem.toUInt32Words
   fromUInt32Words := Elem.fromUInt32Words p
@@ -137,6 +159,11 @@ instance [Ring F] [PolyRing F R] {q: Irreducible F R} : OfNat (Elem q) n where o
 def Elem.ofUInt32 [Ring F] [PolyRing F R] (q: Irreducible F R) (n: UInt32): Elem q := Elem.ofNat _ (UInt32.toNat n)
 
 
+/- Inhabited -/
+
+instance [Ring F] [PolyRing F R] {q: Irreducible F R} : Inhabited (Elem q) where default := 0
+
+
 /- Serialize/deserialize -/
 
 def Elem.fromUInt64 [Field F] [PolyRing F R] (q: Irreducible F R) (x: UInt64): Elem q :=
@@ -150,17 +177,14 @@ partial def Elem.toUInt32Words [Field F] [PolyRing F R] {q: Irreducible F R} (x:
         Elem.toUInt32Words x (i + 1) (out ++ Field.toUInt32Words c)
       else out
 
-partial def Elem.fromUInt32WordsAux (F: Type) [Field F] [Ring R] [PolyRing F R] (x: Subarray UInt32) (i: Nat := 0) (out: R := Ring.zero): R
+partial def Elem.fromUInt32Words (F: Type) [Field F] [Ring R] [PolyRing F R] (q: Irreducible F R) (x: Subarray UInt32) (i: Nat := 0) (out: R := Ring.zero): Elem q
   := if Field.words F <= x.size
       then
         let (cx, x) := Subarray.take x (Field.words F)
         let c: F := Field.fromUInt32Words cx
-        let q: R := PolyRing.mono i c
-        Elem.fromUInt32WordsAux F x (i + 1) (out + q)
-      else out
-
-def Elem.fromUInt32Words [Field F] [Ring R] [PolyRing F R] (q: Irreducible F R) (x: Subarray UInt32): Elem q
-  := { rep := Elem.fromUInt32WordsAux F x }
+        let m: R := PolyRing.mono i c
+        Elem.fromUInt32Words F q x (i + 1) (out + m)
+      else { rep := out }
 
 
 /- Add -/
@@ -224,6 +248,17 @@ def Elem.div [Ring F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irr
 instance [Ring F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Div (Elem q) where div := Elem.div
 
 
+/- Random -/
+
+def Elem.random [Monad M] [MonadRng M] [Field F] [Ring R] [PolyRing F R] (q: Irreducible F R) (i: Nat := 0) (out: R := Ring.zero): M (Elem q)
+  := if i < PolyRing.deg F q.rep
+      then do let x: F <- Field.random
+              let m := PolyRing.mono i x
+              Elem.random q (i + 1) (out + m)
+      else return { rep := out }
+termination_by _ => PolyRing.deg F q.rep - i
+
+
 /- Ring and Field -/
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Ring (Elem q) where
@@ -232,9 +267,10 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Field (Elem q) where
   inv := Elem.inv
   words := Field.words F * PolyRing.deg F q.rep
+  random := Elem.random q
   fromUInt64 := Elem.fromUInt64 q
   toUInt32Words := Elem.toUInt32Words
-  fromUInt32Words := Elem.fromUInt32Words q
+  fromUInt32Words := Elem.fromUInt32Words F q
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Algebra F (Elem q) where
   ofBase := Elem.ofBase _
