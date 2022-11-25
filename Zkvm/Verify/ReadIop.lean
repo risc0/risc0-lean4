@@ -3,7 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Algebra
-import R0sy.Ext.Subarray
+import R0sy.Lean.Subarray
 import R0sy.Hash.Sha2
 import Zkvm.Circuit
 import Zkvm.Verify.Classes
@@ -11,7 +11,7 @@ import Zkvm.Verify.Classes
 namespace Zkvm.Verify.ReadIop
 
 open R0sy.Algebra
-open R0sy.Ext.Subarray
+open R0sy.Lean.Subarray
 open R0sy.Hash.Sha2
 
 open Classes

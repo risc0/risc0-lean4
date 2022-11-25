@@ -2,16 +2,16 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Ext.ByteArray
-import R0sy.Ext.Nat
-import R0sy.Ext.UInt32
+import R0sy.Lean.ByteArray
+import R0sy.Lean.Nat
+import R0sy.Lean.UInt32
 import R0sy.Hash
 
 namespace R0sy.Hash.Sha2
 
-open R0sy.Ext.ByteArray
-open R0sy.Ext.Nat
-open R0sy.Ext.UInt32
+open R0sy.Lean.ByteArray
+open R0sy.Lean.Nat
+open R0sy.Lean.UInt32
 
 namespace Sha256
 

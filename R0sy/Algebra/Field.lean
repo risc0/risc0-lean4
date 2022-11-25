@@ -3,14 +3,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Algebra
-import R0sy.Ext.Nat
-import R0sy.Ext.Subarray
+import R0sy.Lean.Nat
+import R0sy.Lean.Subarray
 import R0sy.Hash
 
 namespace R0sy.Algebra.Field
 
-open Ext.Nat
-open Ext.Subarray
+open Lean.Nat
+open Lean.Subarray
 open Hash
 
 namespace Prime

@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace R0sy.Ext.Nat
+namespace R0sy.Lean.Nat
 
 /- Endian helpers -/
 
@@ -32,4 +32,4 @@ def Nat.fromUInt32Words (x: Subarray UInt32) (i: Nat := 0) (out: Nat := 0): Nat
       else out
 termination_by _ => x.size - i
 
-end R0sy.Ext.Nat
+end R0sy.Lean.Nat

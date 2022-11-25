@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace R0sy.Ext.UInt32
+namespace R0sy.Lean.UInt32
 
 /- Endian helpers -/
 
@@ -29,4 +29,4 @@ def UInt32.of_be32 (b3 b2 b1 b0: UInt8): UInt32 :=
   let c3 := UInt32.ofNat (b3.val.val) <<< (8*3)
   c3 ||| c2 ||| c1 ||| c0
 
-end R0sy.Ext.UInt32
+end R0sy.Lean.UInt32

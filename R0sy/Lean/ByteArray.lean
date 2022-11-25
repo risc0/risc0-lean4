@@ -2,11 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Ext.UInt32
+import R0sy.Lean.UInt32
 
-namespace R0sy.Ext.ByteArray
+namespace R0sy.Lean.ByteArray
 
-open R0sy.Ext.UInt32
+open R0sy.Lean.UInt32
 
 /- Endian helpers -/
 
@@ -15,4 +15,4 @@ partial def ByteArray.to_be32 (x: ByteArray) (i: Nat := 0) (out: Array UInt32 :=
   then ByteArray.to_be32 x (i + 4) (out.push (UInt32.of_be32 x[i]! x[i+1]! x[i+2]! x[i+3]!))
   else out
 
-end R0sy.Ext.ByteArray
+end R0sy.Lean.ByteArray
