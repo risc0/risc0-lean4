@@ -4,6 +4,21 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 namespace R0sy.Ext.Nat
 
+/- Endian helpers -/
+
+def Nat.to_be64 (x: Nat): ByteArray := {
+  data := #[
+    UInt8.ofNat ((x >>> (8*7)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*6)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*5)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*4)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*3)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*2)) &&& 0xff),
+    UInt8.ofNat ((x >>> (8*1)) &&& 0xff),
+    UInt8.ofNat (x &&& 0xff)
+  ]
+}
+
 /- Serialize/deserialize helpers -/
 
 def Nat.toUInt32Words (words: Nat) (val: Nat) (out: Array UInt32 := #[]): Array UInt32

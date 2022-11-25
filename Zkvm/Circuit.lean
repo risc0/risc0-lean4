@@ -8,7 +8,8 @@ structure TapSet where
   -- TODO
 
 class CircuitInfo (C: Type) where
-  -- TODO
+  outputSize: Nat
+  mixSize: Nat
 
 class TapsProvider (C: Type) where
   taps: C -> TapSet
