@@ -6,13 +6,15 @@ import R0sy.Algebra
 import R0sy.Hash
 import R0sy.Hash.Sha2
 import Zkvm.Circuit
+import Zkvm.Taps
 
 namespace Zkvm.Verify.Classes
 
 open R0sy.Algebra
 open R0sy.Hash
 open R0sy.Hash.Sha2
-open Zkvm.Circuit
+open Circuit
+open Taps
 
 class MonadReadIop (M: Type -> Type) extends MonadRng M where
   readU32s: Nat -> M (Subarray UInt32)
@@ -25,5 +27,7 @@ class MonadVerifyAdapter (M: Type -> Type) where
   getPo2: M UInt32
   execute: M Unit
   accumulate: M Unit
+
+class VerifyHal (H: Type) where
 
 end Zkvm.Verify.Classes

@@ -4,6 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy.Hash.Sha2
 import Zkvm.Circuit
+import Zkvm.Taps
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
 import Zkvm.Verify.ReadIop
@@ -15,10 +16,27 @@ open Adapter
 open Circuit
 open Classes
 open ReadIop
+open Taps
+
+inductive VerificationError where
+  | ReceiptFormatError
+  | MethodCycleError (required: UInt64)
+  | MethodVerificationError
+  | MerkleQueryOutOfRange (idx: UInt64) (rows: UInt64)
+  | InvalidProof
 
 structure VerifyContext (C: Type) where
   adapter: VerifyAdapter C
   read_iop: ReadIop
+
+class MonadVerify (C: Type) (M: Type -> Type)
+  extends
+    CircuitInfo C,
+    TapsProvider C,
+    MonadStateOf (VerifyContext C) M
+  where
+
+instance [MonadStateOf (VerifyContext C) M] [CircuitInfo C] [TapsProvider C] : MonadVerify C M where
 
 instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M where
   get
@@ -46,21 +64,17 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdap
           set { self with adapter }
           return result
 
-inductive VerificationError where
-  | ReceiptFormatError
-  | MethodCycleError (required: UInt64)
-  | MethodVerificationError
-  | MerkleQueryOutOfRange (idx: UInt64) (rows: UInt64)
-  | InvalidProof
+def CheckCode := (M: Type -> Type) -> [Monad M] -> [MonadExceptOf VerificationError M] -> UInt32 -> Sha256.Digest -> M Unit
 
-class VerifyHal (H: Type) where
-
-def CheckCode: Type := UInt32 -> Sha256.Digest -> Except VerificationError Unit
-
-def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadStateOf (VerifyContext C) M] [CircuitInfo C] [TapsProvider C] [VerifyHal H]
+def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVerify C M] [VerifyHal H]
   (hal: H) (check_code: CheckCode)
   : M Unit
-  := do let taps <- MonadVerifyAdapter.getTaps
+  := do MonadVerifyAdapter.execute
+        let taps <- MonadVerifyAdapter.getTaps
+        let po2 <- MonadVerifyAdapter.getPo2
+        /- assert!(po2 as usize <= MAX_CYCLES_PO2); -/
+        let size := 1 <<< po2
+        /- let domain = INV_RATE * size; -/
         return ()
 
 def verify [VerifyHal H] [CircuitInfo C] [TapsProvider C]

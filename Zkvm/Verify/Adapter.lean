@@ -5,12 +5,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy.Algebra
 import R0sy.Algebra.Field.BabyBear
 import Zkvm.Circuit
+import Zkvm.Taps
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Adapter
 
 open Circuit
 open Classes
+open Taps
 open R0sy.Algebra
 open R0sy.Algebra.Field
 
