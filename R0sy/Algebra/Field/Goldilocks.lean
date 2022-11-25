@@ -14,12 +14,15 @@ open Poly
 
 def P: Prime := {
   rep := 2^64 - 2^32 + 1,
+  words := 2,
   pos := sorry
 }
 
 structure Elem where
   rep: Prime.Elem P
   deriving Repr
+
+instance : OfNat Elem n where ofNat := { rep := Prime.Elem.ofNat _ n }
 
 instance : BEq Elem where beq x y := x.rep == y.rep
 
@@ -33,12 +36,16 @@ instance : Mul Elem where mul x y := { rep := x.rep * y.rep }
 
 instance : HPow Elem Nat Elem where hPow x n := { rep := x.rep ^ n }
 
-instance : Ring Elem where
-  ofNat n := { rep := Ring.ofNat n }
+instance : Ring Elem where ofNat n := { rep := Ring.ofNat n }
 
 instance : Div Elem where div x y := { rep := x.rep / y.rep }
 
-instance : Field Elem where inv x := { rep := x.rep.inv }
+instance : Field Elem where
+  inv x := { rep := x.rep.inv }
+  words := Field.words (Prime.Elem P)
+  fromUInt64 x := { rep := Field.fromUInt64 x }
+  toUInt32Words x := Field.toUInt32Words x.rep
+  fromUInt32Words x := { rep := Field.fromUInt32Words x }
 
 
 /- Extension field -/
@@ -63,17 +70,42 @@ instance : Mul ExtElem where mul x y := { rep := x.rep * y.rep }
 
 instance : HPow ExtElem Nat ExtElem where hPow x n := { rep := x.rep ^ n }
 
-instance : Ring ExtElem where
-  ofNat n := { rep := Ring.ofNat n }
+instance : Ring ExtElem where ofNat n := { rep := Ring.ofNat n }
 
 instance : Div ExtElem where div x y := { rep := x.rep / y.rep }
 
-instance : Field ExtElem where inv x := { rep := x.rep.inv }
+instance : Field ExtElem where
+  inv x := { rep := x.rep.inv }
+  words := Field.words (Ext.Elem Q)
+  fromUInt64 x := { rep := Field.fromUInt64 x }
+  toUInt32Words x := Field.toUInt32Words x.rep
+  fromUInt32Words x := { rep := Field.fromUInt32Words x }
 
 
 /- The extension is an algebra over the base -/
 
 instance : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
+
+
+/- Examples -/
+
+#eval
+  let base: Nat -> Elem := Ring.ofNat
+  let to: Elem -> Array UInt32 := Field.toUInt32Words
+  let fr: Subarray UInt32 -> Elem := Field.fromUInt32Words
+  base 0xffffffaaaa == fr (to (base 0xffffffaaaa)).toSubarray
+
+#eval
+  let base: Nat -> Elem := Ring.ofNat
+  let to: Elem -> Array UInt32 := Field.toUInt32Words
+  let fr: Subarray UInt32 -> Elem := Field.fromUInt32Words
+  base 0xffffffaaaa == fr (to (base 0xffffffaaaa)).toSubarray
+
+#eval
+  let x: ExtElem := { rep := { rep := { rep := #[0xffffffaaaa, 0xccccccbbbb] } } }
+  let to: ExtElem -> Array UInt32 := Field.toUInt32Words
+  let fr: Subarray UInt32 -> ExtElem := Field.fromUInt32Words
+  x == fr (to x).toSubarray
 
 end R0sy.Algebra.Field.Goldilocks

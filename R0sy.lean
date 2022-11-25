@@ -7,4 +7,6 @@ import R0sy.Algebra.Field
 import R0sy.Algebra.Field.BabyBear
 import R0sy.Algebra.Field.Goldilocks
 import R0sy.Algebra.Poly
+import R0sy.Ext.Nat
+import R0sy.Ext.Subarray
 import R0sy.Sha2

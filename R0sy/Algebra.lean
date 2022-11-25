@@ -4,10 +4,12 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 namespace R0sy.Algebra
 
+
 /- Prime numbers -/
 
 structure Prime where
   rep: Nat
+  words: Nat
   pos: p > 0
   deriving Repr
 
@@ -48,6 +50,10 @@ class Field (F: Type)
     Div F
   where
     inv: F -> F
+    words: Nat
+    fromUInt64: UInt64 -> F
+    toUInt32Words: F -> Array UInt32
+    fromUInt32Words: Subarray UInt32 -> F
 
 class Algebra (F: Type) (R: Type)
   where

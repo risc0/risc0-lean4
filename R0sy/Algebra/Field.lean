@@ -3,9 +3,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Algebra
+import R0sy.Ext.Nat
+import R0sy.Ext.Subarray
 
 namespace R0sy.Algebra.Field
 
+open R0sy.Ext.Nat
+open R0sy.Ext.Subarray
 
 namespace Prime
 
@@ -32,6 +36,15 @@ def Elem.ofNat (p: Prime) (n: Nat): Elem p := {
 instance : OfNat (Elem p) n where ofNat := Elem.ofNat p n
 
 def Elem.ofUInt32 (n: UInt32): Elem p := Elem.ofNat _ (UInt32.toNat n)
+
+
+/- Serialize/deserialize -/
+
+def Elem.fromUInt64 (p: Prime) (x: UInt64): Elem p := Elem.ofNat _ (UInt64.toNat x)
+
+def Elem.toUInt32Words (x: Elem p): Array UInt32 := Nat.toUInt32Words p.words x.rep.val
+
+def Elem.fromUInt32Words (p: Prime) (x: Subarray UInt32): Elem p := Elem.ofNat _ (Nat.fromUInt32Words x)
 
 
 /- Add -/
@@ -90,6 +103,10 @@ instance : Ring (Elem p) where
 
 instance : Field (Elem p) where
   inv := Elem.inv
+  words := p.words
+  fromUInt64 := Elem.fromUInt64 p
+  toUInt32Words := Elem.toUInt32Words
+  fromUInt32Words := Elem.fromUInt32Words p
 
 end Prime
 
@@ -118,6 +135,32 @@ def Elem.ofNat [Ring F] [PolyRing F R] (q: Irreducible F R) (n: Nat): Elem q := 
 instance [Ring F] [PolyRing F R] {q: Irreducible F R} : OfNat (Elem q) n where ofNat := Elem.ofNat _ n
 
 def Elem.ofUInt32 [Ring F] [PolyRing F R] (q: Irreducible F R) (n: UInt32): Elem q := Elem.ofNat _ (UInt32.toNat n)
+
+
+/- Serialize/deserialize -/
+
+def Elem.fromUInt64 [Field F] [PolyRing F R] (q: Irreducible F R) (x: UInt64): Elem q :=
+  let x': F := Field.fromUInt64 x
+  { rep := PolyRing.mono 0 x' }
+
+partial def Elem.toUInt32Words [Field F] [PolyRing F R] {q: Irreducible F R} (x: Elem q) (i: Nat := 0) (out: Array UInt32 := #[]): Array UInt32
+  := if i < PolyRing.deg F q.rep
+      then
+        let c: F := PolyRing.coeff x.rep i
+        Elem.toUInt32Words x (i + 1) (out ++ Field.toUInt32Words c)
+      else out
+
+partial def Elem.fromUInt32WordsAux (F: Type) [Field F] [Ring R] [PolyRing F R] (x: Subarray UInt32) (i: Nat := 0) (out: R := Ring.zero): R
+  := if Field.words F <= x.size
+      then
+        let (cx, x) := Subarray.take x (Field.words F)
+        let c: F := Field.fromUInt32Words cx
+        let q: R := PolyRing.mono i c
+        Elem.fromUInt32WordsAux F x (i + 1) (out + q)
+      else out
+
+def Elem.fromUInt32Words [Field F] [Ring R] [PolyRing F R] (q: Irreducible F R) (x: Subarray UInt32): Elem q
+  := { rep := Elem.fromUInt32WordsAux F x }
 
 
 /- Add -/
@@ -188,6 +231,10 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Field (Elem q) where
   inv := Elem.inv
+  words := Field.words F * PolyRing.deg F q.rep
+  fromUInt64 := Elem.fromUInt64 q
+  toUInt32Words := Elem.toUInt32Words
+  fromUInt32Words := Elem.fromUInt32Words q
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Algebra F (Elem q) where
   ofBase := Elem.ofBase _
