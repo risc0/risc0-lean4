@@ -22,16 +22,16 @@ structure ReadIop where
 
 instance [Monad M] [MonadStateOf ReadIop M] : MonadStateOf Sha256.Rng M where
   get
-    := do let read_iop <- get
-          return read_iop.rng
+    := do let self <- get
+          return self.rng
   set rng
-    := do let read_iop <- get
-          set { read_iop with rng }
+    := do let self <- get
+          set { self with rng }
   modifyGet f
-    := do let read_iop <- get
-          let (x, rng) := f read_iop.rng
-          set { read_iop with rng }
-          return x
+    := do let self <- get
+          let (result, rng) := f self.rng
+          set { self with rng }
+          return result
 
 def ReadIop.new (proof: Subarray UInt32): ReadIop := {
   proof,
