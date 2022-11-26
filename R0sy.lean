@@ -6,6 +6,7 @@ import R0sy.Algebra
 import R0sy.Algebra.Field
 import R0sy.Algebra.Field.BabyBear
 import R0sy.Algebra.Field.Goldilocks
+import R0sy.Algebra.Ntt
 import R0sy.Algebra.Poly
 import R0sy.Lean.ByteArray
 import R0sy.Lean.Nat
