@@ -63,5 +63,6 @@ instance [Monad M] [MonadStateOf (VerifyAdapter C) M] [MonadReadIop M] [CircuitI
           return self.po2
   execute := VerifyAdapter.execute C
   accumulate := VerifyAdapter.accumulate C
+  verifyOutput := sorry
 
 end Zkvm.Verify.Adapter

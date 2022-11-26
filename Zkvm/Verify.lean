@@ -8,7 +8,6 @@ import Zkvm.Taps
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Fri
-import Zkvm.Verify.Hal
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
 
@@ -19,17 +18,9 @@ open Adapter
 open Circuit
 open Classes
 open Fri
-open Hal
 open Merkle
 open ReadIop
 open Taps
-
-inductive VerificationError where
-  | ReceiptFormatError
-  | MethodCycleError (required: UInt64)
-  | MethodVerificationError
-  | MerkleQueryOutOfRange (idx: UInt64) (rows: UInt64)
-  | InvalidProof
 
 def CheckCode
   := (M: Type -> Type)
@@ -40,29 +31,28 @@ def CheckCode
   -> M Unit
 
 
-structure VerifyContext (Elem ExtElem C: Type) where
-  hal: VerifyHal Elem ExtElem
+structure VerifyContext (C: Type) where
   adapter: VerifyAdapter C
   read_iop: ReadIop
 
 
-class MonadVerify (Elem ExtElem C: Type) (M: Type -> Type)
+class MonadVerify (C: Type) (M: Type -> Type)
   extends
     CircuitInfo C,
     TapsProvider C,
-    MonadStateOf (VerifyContext Elem ExtElem C) M,
+    MonadStateOf (VerifyContext C) M,
     MonadExceptOf VerificationError M
   where
 
 instance
-  [MonadStateOf (VerifyContext Elem ExtElem C) M]
+  [MonadStateOf (VerifyContext C) M]
   [MonadExceptOf VerificationError M]
   [CircuitInfo C]
   [TapsProvider C]
-  : MonadVerify Elem ExtElem C M where
+  : MonadVerify C M where
 
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateOf ReadIop M where
+instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M where
   get
     := do let self <- get
           return self.read_iop
@@ -75,7 +65,7 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateO
           set { self with read_iop }
           return result
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateOf (VerifyAdapter C) M where
+instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdapter C) M where
   get
     := do let self <- get
           return self.adapter
@@ -89,26 +79,20 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateO
           return result
 
 
-def do_verify (Elem ExtElem C: Type) [Monad M] [MonadVerify Elem ExtElem C M]
+def do_verify (C: Type) [Monad M] [MonadVerify C M]
   (check_code: CheckCode)
   : M Unit
   := do MonadVerifyAdapter.execute
-        let taps <- MonadVerifyAdapter.getTaps
-        let po2 <- MonadVerifyAdapter.getPo2
-        /- assert!(po2 as usize <= MAX_CYCLES_PO2); -/
-        let size := 1 <<< po2
-        /- let domain = INV_RATE * size; -/
-        return ()
+        MonadVerifyAdapter.verifyOutput
+        sorry
 
 
-def verify [CircuitInfo C] [TapsProvider C]
-  (hal: VerifyHal Elem ExtElem) (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
+def verify [CircuitInfo C] [TapsProvider C] (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
   : Id (Except VerificationError Unit)
-  := do let verify_context: VerifyContext Elem ExtElem C := {
-          hal,
+  := do let verify_context: VerifyContext C := {
           adapter := VerifyAdapter.new circuit,
           read_iop := ReadIop.new seal
         }
-        ExceptT.run (StateT.run' (do_verify Elem ExtElem C check_code) verify_context)
+        ExceptT.run (StateT.run' (do_verify C check_code) verify_context)
 
 end Zkvm.Verify
