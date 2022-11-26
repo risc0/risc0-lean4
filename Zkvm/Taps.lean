@@ -4,10 +4,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 namespace Zkvm.Taps
 
+/- Register groups -/
+
 inductive RegisterGroup where
   | Accum
   | Code
   | Data
+  deriving Inhabited
 
 def RegisterGroup.toNat (x: RegisterGroup): Nat
   := match x with
@@ -22,13 +25,52 @@ def REGISTER_GROUPS: Array RegisterGroup := #[
 ]
 
 
+/- TapData -/
+
 structure TapData where
   offset: UInt16
   back: UInt16
   group: RegisterGroup
   combo: UInt8
   skip: UInt8
+  deriving Inhabited
 
+
+/- TapIter -/
+
+structure TapIter where
+  iter_data: Subarray TapData
+  iter_cursor: USize
+  iter_end: USize
+
+
+/- RegIter -/
+
+structure RegIter where
+  iter_data: Subarray TapData
+  iter_cursor: USize
+  iter_end: USize
+
+
+/- Combo -/
+
+structure ComboData where
+  taps: Subarray UInt16
+  offsets: Subarray UInt16
+
+
+structure ComboIter where
+  iter_data: ComboData
+  iter_id: USize
+  iter_end: USize
+
+
+structure ComboRef where
+  data: ComboData
+  id: USize
+
+
+/- TapSet -/
 
 structure TapSet where
   taps: Array TapData
@@ -38,19 +80,6 @@ structure TapSet where
   combos_count: USize
   reg_count: USize
   tot_combo_backs: USize
-
-
-structure TapIter where
-  -- TODO
-
-structure RegIter where
-  -- TODO
-
-structure ComboIter where
-  -- TODO
-
-structure ComboRef where
-  -- TODO
 
 def TapSet.tapSize (self: TapSet): USize := self.group_begin[REGISTER_GROUPS.size]!
 
@@ -67,6 +96,9 @@ def TapSet.groupRegIter (self: TapSet) (group: RegisterGroup): RegIter := sorry
 def TapSet.combosIter (self: TapSet): ComboIter := sorry
 
 def TapSet.getCombo (self: TapSet) (id: USize): ComboRef := sorry
+
+
+/- TapsProvider -/
 
 class TapsProvider (C: Type) where
   taps: C -> TapSet
