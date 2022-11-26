@@ -1,0 +1,24 @@
+[workspace]
+members = [
+  "hello_world",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+snafu = { version = "0.7", default-features = false }
+
+[workspace.dependencies.risc0-build]
+git = "ssh://git@github.com/risc0/risczero-wip.git"
+rev = "194bf375c47f74be21f52a493a23a947cf669f15"
+
+[workspace.dependencies.risc0-zkvm]
+git = "ssh://git@github.com/risc0/risczero-wip.git"
+rev = "194bf375c47f74be21f52a493a23a947cf669f15"
+default-features = false
+
+[profile.dev]
+opt-level = 3
