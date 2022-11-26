@@ -28,6 +28,4 @@ class MonadVerifyAdapter (M: Type -> Type) where
   execute: M Unit
   accumulate: M Unit
 
-class VerifyHal (H: Type) where
-
 end Zkvm.Verify.Classes

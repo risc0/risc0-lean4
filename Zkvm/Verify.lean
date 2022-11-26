@@ -7,6 +7,9 @@ import Zkvm.Circuit
 import Zkvm.Taps
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
+import Zkvm.Verify.Fri
+import Zkvm.Verify.Hal
+import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify
@@ -15,6 +18,9 @@ open R0sy.Hash.Sha2
 open Adapter
 open Circuit
 open Classes
+open Fri
+open Hal
+open Merkle
 open ReadIop
 open Taps
 
@@ -66,8 +72,8 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdap
 
 def CheckCode := (M: Type -> Type) -> [Monad M] -> [MonadExceptOf VerificationError M] -> UInt32 -> Sha256.Digest -> M Unit
 
-def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVerify C M] [VerifyHal H]
-  (hal: H) (check_code: CheckCode)
+def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVerify C M]
+  (check_code: CheckCode)
   : M Unit
   := do MonadVerifyAdapter.execute
         let taps <- MonadVerifyAdapter.getTaps
@@ -77,13 +83,13 @@ def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVeri
         /- let domain = INV_RATE * size; -/
         return ()
 
-def verify [VerifyHal H] [CircuitInfo C] [TapsProvider C]
-  (hal: H) (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
+def verify [CircuitInfo C] [TapsProvider C]
+  (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
   : Id (Except VerificationError Unit)
   := do let verify_context: VerifyContext C := {
           adapter := VerifyAdapter.new circuit,
           read_iop := ReadIop.new seal
         }
-        ExceptT.run (StateT.run' (do_verify C hal check_code) verify_context)
+        ExceptT.run (StateT.run' (do_verify C check_code) verify_context)
 
 end Zkvm.Verify
