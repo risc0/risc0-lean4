@@ -2,29 +2,19 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra.Field.BabyBear
-import Zkvm.Taps
+import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Hal
 
-open R0sy.Algebra.Field
-open Taps
+open Classes
 
-def computePolynomial (u: Subarray BabyBear.ExtElem) (poly_mix: BabyBear.ExtElem) (out mix: Subarray BabyBear.Elem): BabyBear.ExtElem := sorry
+structure VerifyHal (Elem ExtElem: Type) where
+  -- TODO
 
-def foldEval [Monad M] [MonadStateOf (Array BabyBear.ExtElem) M] (x: BabyBear.ExtElem): BabyBear.ExtElem := sorry
-
-def polyEval (coeffs: Subarray BabyBear.ExtElem) (x: BabyBear.ExtElem): BabyBear.ExtElem := sorry
-
-def friEvalTaps
-  (taps: TapSet)
-  (mix: BabyBear.ExtElem)
-  (combo_u: Subarray BabyBear.ExtElem)
-  (check_row: Subarray BabyBear.Elem)
-  (back_one: BabyBear.Elem)
-  (x: BabyBear.Elem)
-  (z: BabyBear.ExtElem)
-  (rows: Array (Subarray BabyBear.Elem))
-  : BabyBear.ExtElem := sorry
+instance [Monad M] [MonadStateOf (VerifyHal Elem ExtElem) M] : MonadVerifyHal Elem ExtElem M where
+  compute_polynomial := sorry
+  fold_eval := sorry
+  poly_eval := sorry
+  fri_eval_taps := sorry
 
 end Zkvm.Verify.Hal

@@ -31,20 +31,38 @@ inductive VerificationError where
   | MerkleQueryOutOfRange (idx: UInt64) (rows: UInt64)
   | InvalidProof
 
-structure VerifyContext (C: Type) where
+def CheckCode
+  := (M: Type -> Type)
+  -> [Monad M]
+  -> [MonadExceptOf VerificationError M]
+  -> UInt32
+  -> Sha256.Digest
+  -> M Unit
+
+
+structure VerifyContext (Elem ExtElem C: Type) where
+  hal: VerifyHal Elem ExtElem
   adapter: VerifyAdapter C
   read_iop: ReadIop
 
-class MonadVerify (C: Type) (M: Type -> Type)
+
+class MonadVerify (Elem ExtElem C: Type) (M: Type -> Type)
   extends
     CircuitInfo C,
     TapsProvider C,
-    MonadStateOf (VerifyContext C) M
+    MonadStateOf (VerifyContext Elem ExtElem C) M,
+    MonadExceptOf VerificationError M
   where
 
-instance [MonadStateOf (VerifyContext C) M] [CircuitInfo C] [TapsProvider C] : MonadVerify C M where
+instance
+  [MonadStateOf (VerifyContext Elem ExtElem C) M]
+  [MonadExceptOf VerificationError M]
+  [CircuitInfo C]
+  [TapsProvider C]
+  : MonadVerify Elem ExtElem C M where
 
-instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M where
+
+instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateOf ReadIop M where
   get
     := do let self <- get
           return self.read_iop
@@ -57,7 +75,7 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M w
           set { self with read_iop }
           return result
 
-instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdapter C) M where
+instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem C) M] : MonadStateOf (VerifyAdapter C) M where
   get
     := do let self <- get
           return self.adapter
@@ -70,9 +88,8 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdap
           set { self with adapter }
           return result
 
-def CheckCode := (M: Type -> Type) -> [Monad M] -> [MonadExceptOf VerificationError M] -> UInt32 -> Sha256.Digest -> M Unit
 
-def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVerify C M]
+def do_verify (Elem ExtElem C: Type) [Monad M] [MonadVerify Elem ExtElem C M]
   (check_code: CheckCode)
   : M Unit
   := do MonadVerifyAdapter.execute
@@ -83,13 +100,15 @@ def do_verify (C: Type) [Monad M] [MonadExceptOf VerificationError M] [MonadVeri
         /- let domain = INV_RATE * size; -/
         return ()
 
+
 def verify [CircuitInfo C] [TapsProvider C]
-  (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
+  (hal: VerifyHal Elem ExtElem) (circuit: C) (seal: Subarray UInt32) (check_code: CheckCode)
   : Id (Except VerificationError Unit)
-  := do let verify_context: VerifyContext C := {
+  := do let verify_context: VerifyContext Elem ExtElem C := {
+          hal,
           adapter := VerifyAdapter.new circuit,
           read_iop := ReadIop.new seal
         }
-        ExceptT.run (StateT.run' (do_verify C check_code) verify_context)
+        ExceptT.run (StateT.run' (do_verify Elem ExtElem C check_code) verify_context)
 
 end Zkvm.Verify

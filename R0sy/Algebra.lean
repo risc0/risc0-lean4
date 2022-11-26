@@ -61,6 +61,11 @@ class Field (F: Type)
     toUInt32Words: F -> Array UInt32
     fromUInt32Words: Subarray UInt32 -> F
 
+class RootsOfUnity (F: Type) where
+  MAX_ROU_SIZE: Nat
+  ROU_FWD: Array F
+  ROU_REV: Array F
+
 class Algebra (F: Type) (R: Type)
   where
     ofBase: F -> R
