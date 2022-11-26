@@ -5,5 +5,7 @@ edition = "2021"
 
 [workspace]
 
-[dependencies]
-risc0-zkvm
+[dependencies.risc0-zkvm]
+git = "ssh://git@github.com/risc0/risczero-wip.git"
+rev = "a48c1750c6cdede81ee8eae77afe1ff646cb83b0"
+default-features = false

@@ -3,8 +3,10 @@
 #![no_std]
 #![no_main]
 
+use risc0_zkvm::guest::env;
+
 risc0_zkvm::entry!(main);
 
 pub fn main() {
-    risc0_zkvm::guest::env::commit(b"hello world");
+    env::commit(b"hello world");
 }

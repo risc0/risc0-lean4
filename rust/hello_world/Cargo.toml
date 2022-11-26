@@ -4,13 +4,10 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+hello-world-guard = { path = "guard" }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true }
 snafu = { workspace = true }
-
-# Host dependencies
-[target.'cfg(not(target_os = "zkvm"))'.dependencies]
-hello-world-guard = { path = "guard" }
 
 [dev-dependencies]
 env_logger = "0.9"

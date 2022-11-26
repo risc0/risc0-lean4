@@ -13,11 +13,11 @@ snafu = { version = "0.7", default-features = false }
 
 [workspace.dependencies.risc0-build]
 git = "ssh://git@github.com/risc0/risczero-wip.git"
-rev = "194bf375c47f74be21f52a493a23a947cf669f15"
+rev = "a48c1750c6cdede81ee8eae77afe1ff646cb83b0"
 
 [workspace.dependencies.risc0-zkvm]
 git = "ssh://git@github.com/risc0/risczero-wip.git"
-rev = "194bf375c47f74be21f52a493a23a947cf669f15"
+rev = "a48c1750c6cdede81ee8eae77afe1ff646cb83b0"
 default-features = false
 
 [profile.dev]
