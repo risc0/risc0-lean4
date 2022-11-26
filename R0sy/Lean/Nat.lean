@@ -19,6 +19,7 @@ def Nat.to_be64 (x: Nat): ByteArray := {
   ]
 }
 
+
 /- Serialize/deserialize helpers -/
 
 def Nat.toUInt32Words (words: Nat) (val: Nat) (out: Array UInt32 := #[]): Array UInt32
@@ -31,5 +32,11 @@ def Nat.fromUInt32Words (x: Subarray UInt32) (i: Nat := 0) (out: Nat := 0): Nat
       then Nat.fromUInt32Words x (i + 1) ((out <<< 32) ||| UInt32.toNat x[x.size - i - 1]!)
       else out
 termination_by _ => x.size - i
+
+
+/- Log2 -/
+
+partial def Nat.log2_ceil (value: Nat) (result: Nat := 0): Nat
+  := if (1 <<< result) < value then log2_ceil value (result + 1) else result
 
 end R0sy.Lean.Nat
