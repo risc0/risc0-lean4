@@ -64,6 +64,7 @@ def ReadIop.verifyComplete [Monad M] [MonadStateOf ReadIop M]: M Unit
 instance [Monad M] [MonadStateOf ReadIop M] : MonadReadIop M where
   readU32s := ReadIop.readU32s
   readFields F := ReadIop.readFields F
+  readPodSlice := sorry
   commit := ReadIop.commit
   verifyComplete := ReadIop.verifyComplete
 
