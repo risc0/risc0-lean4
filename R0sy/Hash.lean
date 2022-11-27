@@ -13,6 +13,7 @@ class Hash (D: Type)
   where
     hash: ByteArray -> D
     hash_pair: D -> D -> D
+    hash_pod: [SerialUInt32 X] -> Array X -> D
 
 class MonadRng (M: Type -> Type) where
   nextUInt32: M UInt32

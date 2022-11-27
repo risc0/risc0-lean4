@@ -144,6 +144,16 @@ def hash_pair (x y: Sha256.Digest): Sha256.Digest :=
   let chunk := Array.map UInt32.swap_endian (x.toArray ++ y.toArray)
   compress chunk init_hash
 
+def hash_pod [SerialUInt32 X] (pod: Array X): Sha256.Digest :=
+  let chunks :=
+    let msg := Array.foldl (fun x y => x ++ SerialUInt32.toUInt32Words y) #[] pod
+    -- let msg := Array.foldl (fun x y => x ++ Array.map UInt32.swap_endian (SerialUInt32.toUInt32Words y)) #[] pod
+    let padding_required :=
+      let rem := msg.size % 16
+      if rem == 0 then 0 else 16 - rem      
+    to_chunks (msg ++ Array.mkArray padding_required 0x00)
+  List.foldr compress init_hash chunks
+
 
 structure Rng where
   pool0: Sha256.Digest
@@ -244,6 +254,7 @@ instance : SerialUInt32 Sha256.Digest where
 instance : Hash Sha256.Digest where
   hash := Sha256.hash
   hash_pair := Sha256.hash_pair
+  hash_pod := Sha256.hash_pod
 
 instance [Monad M] [MonadStateOf Sha256.Rng M]: MonadRng M where
   nextUInt32 := Sha256.Rng.nextUInt32
