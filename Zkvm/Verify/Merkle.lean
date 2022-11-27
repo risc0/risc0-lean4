@@ -37,8 +37,6 @@ def MerkleTreeVerifier.root (self: MerkleTreeVerifier): Sha256.Digest
       then self.top[MerkleTreeParams.idx_to_top self.params 1]!
       else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
 
-def HashRawPodSlice (val : Array Elem) : R0sy.Hash.Sha2.Sha256.Digest := sorry -- TODO does this already exist?
-
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (idx_: Nat): M (Array Elem)
   := do let mut idx := idx_
@@ -46,7 +44,7 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
           then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size) 
           else
         let out <- MonadReadIop.readFields Elem self.params.col_size
-        let mut cur := HashRawPodSlice out
+        let mut cur := Hash.hash_pod out
         idx := idx + self.params.row_size
         while idx >= 2 * self.params.row_size do
           let low_bit := idx % 2
