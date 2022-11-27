@@ -2,9 +2,11 @@
 
 ZKVM verifier written in [Lean 4](https://leanprover.github.io/). **Under-development.**
 
+
 ## Getting Lean4
 
 See the [Quickstart guide](https://leanprover.github.io/lean4/doc/quickstart.html).
+
 
 ## Building
 
@@ -19,6 +21,15 @@ Now you can perform the build:
 ```console
 risc0-lean4$ lake build
 ```
+
+## Building the docs
+
+```console
+$ lake -Kdoc=on build R0sy:docs Zkvm:docs
+```
+
+The docs will be viewable at `build/doc/index.html`.
+
 
 ## Running
 
