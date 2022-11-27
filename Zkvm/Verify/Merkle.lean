@@ -51,7 +51,7 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
         while idx >= 2 * self.params.row_size do
           let low_bit := idx % 2
           let otherArray <- MonadReadIop.readPodSlice 1
-          let other := otherArray.get! 0
+          let other := otherArray[0]!
           idx := idx / 2
           if low_bit == 1 
           then 
@@ -60,8 +60,8 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
             cur := Hash.hash_pair cur other
         let present_hash := 
           if idx >= self.params.top_size 
-            then self.top.get! (self.params.idx_to_top idx) 
-            else self.top.get! (self.params.idx_to_rest idx)
+            then self.top[self.params.idx_to_top idx]!
+            else self.top[self.params.idx_to_rest idx]!
         if present_hash == cur 
         then
           return out
