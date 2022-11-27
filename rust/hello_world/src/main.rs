@@ -44,6 +44,6 @@ pub fn main() {
         Command::Disk { out_base } => {
             disk::save_to_disk(out_base, image, id, receipt).expect("Could not write to disk")
         }
-        Command::Lean {} => lean::print_lean_file(id, &receipt),
+        Command::Lean {} => lean::print_lean_file(id, &receipt, false),
     }
 }

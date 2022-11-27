@@ -23,11 +23,11 @@ fn print_bytes(data: &[u8]) {
     println!("");
 }
 
-pub fn print_lean_file(id: &[u8], receipt: &Receipt) {
+pub fn print_lean_file(id: &[u8], receipt: &Receipt, print_seal: bool) {
     let journal = receipt.get_journal_bytes();
     let seal = receipt.get_seal_bytes();
 
-    let namespace = "Zkvm.Examples.HelloWorld";
+    let namespace = "Zkvm.Test.HelloWorld";
 
     println!("/-");
     println!("Copyright (c) 2022 RISC Zero. All rights reserved.");
@@ -40,7 +40,7 @@ pub fn print_lean_file(id: &[u8], receipt: &Receipt) {
 
     println!("");
 
-    println!("def METHOD_ID: Array UInt32 := #[");
+    println!("def ID: Array UInt32 := #[");
     print_bytes(id);
     println!("]");
 
@@ -52,38 +52,40 @@ pub fn print_lean_file(id: &[u8], receipt: &Receipt) {
 
     println!("");
 
-    let seal_parts = {
-        let mut seal_parts = 0;
-        let chunk_size = 1024;
+    if print_seal {
+        let seal_parts = {
+            let mut seal_parts = 0;
+            let chunk_size = 1024;
 
-        println!("namespace SEAL_PARTS");
-        println!("");
-        for chunk in (0..seal.len()).step_by(chunk_size) {
-            let remaining = seal.len() - chunk;
-            let size = usize::min(chunk_size, remaining);
+            println!("namespace SEAL_PARTS");
+            println!("");
+            for chunk in (0..seal.len()).step_by(chunk_size) {
+                let remaining = seal.len() - chunk;
+                let size = usize::min(chunk_size, remaining);
 
-            println!("def PART_{}: Array UInt32 := #[", seal_parts);
-            print_bytes(&seal[chunk..chunk + size]);
-            println!("]");
+                println!("def PART_{}: Array UInt32 := #[", seal_parts);
+                print_bytes(&seal[chunk..chunk + size]);
+                println!("]");
+                println!("");
+
+                seal_parts += 1;
+            }
+            println!("end SEAL_PARTS");
             println!("");
 
-            seal_parts += 1;
+            seal_parts
+        };
+
+        println!("def SEAL: Array (Array UInt32) := #[");
+        for i in 0..seal_parts {
+            let more_to_come = i + 1 < seal_parts;
+            let sep = if more_to_come { "," } else { "" };
+            println!("  SEAL_PARTS.PART_{}{}", i, sep)
         }
-        println!("end SEAL_PARTS");
+        println!("]");
+
         println!("");
-
-        seal_parts
-    };
-
-    println!("def SEAL: Array (Array UInt32) := #[");
-    for i in 0..seal_parts {
-        let more_to_come = i + 1 < seal_parts;
-        let sep = if more_to_come { "," } else { "" };
-        println!("  SEAL_PARTS.PART_{}{}", i, sep)
     }
-    println!("]");
-
-    println!("");
 
     println!("end {}", namespace);
 }
