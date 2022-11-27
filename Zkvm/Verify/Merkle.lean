@@ -2,11 +2,13 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Hash
 import R0sy.Hash.Sha2
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Merkle
 
+open R0sy.Hash
 open R0sy.Hash.Sha2
 open Classes
 
@@ -37,8 +39,6 @@ def MerkleTreeVerifier.root (self: MerkleTreeVerifier): Sha256.Digest
 
 def HashRawPodSlice (val : Array Elem) : R0sy.Hash.Sha2.Sha256.Digest := sorry -- TODO does this already exist?
 
-def HashPair (a b : Sha256.Digest) : Sha256.Digest := sorry -- TODO does this already exist?
-
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (idx_: Nat): M (Array Elem)
   := do let mut idx := idx_
@@ -55,9 +55,9 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
           idx := idx / 2
           if low_bit == 1 
           then 
-            cur := HashPair other cur
+            cur := Hash.hash_pair other cur
           else 
-            cur := HashPair cur other
+            cur := Hash.hash_pair cur other
         let present_hash := 
           if idx >= self.params.top_size 
             then self.top.get! (self.params.idx_to_top idx) 
