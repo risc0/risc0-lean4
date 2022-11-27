@@ -49,8 +49,8 @@ instance : Div Elem where div x y := { rep := x.rep / y.rep }
 
 instance : SerialUInt32 Elem where
   words := SerialUInt32.words (Prime.Elem P)
-  toUInt32Words x := SerialUInt32.toUInt32Words x.rep
-  fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
+  toUInt32Words x := SerialUInt32.toUInt32Words (Ring.ofNat (2^32) * x.rep)
+  fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x / Ring.ofNat (2^32) }
 
 instance : Field Elem where
   inv x := { rep := x.rep.inv }
@@ -84,6 +84,10 @@ def Q: Irreducible Elem (Poly.Poly Elem) := {
 structure ExtElem where
   rep: Ext.Elem Q
   deriving Repr
+
+def ExtElem.new (a0 a1 a2 a3: Elem): ExtElem := {
+  rep := { rep := { rep := #[a0, a1, a2, a3] } }
+}
 
 instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 

@@ -143,6 +143,10 @@ structure ExtElem where
   rep: Ext.Elem Q
   deriving Repr
 
+def ExtElem.new (a0 a1: Elem): ExtElem := {
+  rep := { rep := { rep := #[a0, a1] } }
+}
+
 instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 
 instance : BEq ExtElem where beq x y := x.rep == y.rep

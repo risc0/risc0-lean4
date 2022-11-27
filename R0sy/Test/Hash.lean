@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Algebra
 import R0sy.Algebra.Field.BabyBear
 import R0sy.Hash
 import R0sy.Hash.Sha2
@@ -10,6 +11,7 @@ import R0sy.Serial
 
 namespace R0sy.Test.Hash
 
+open R0sy.Algebra
 open R0sy.Algebra.Field
 open R0sy.Hash
 open R0sy.Hash.Sha2
@@ -23,32 +25,27 @@ def ex_8: Array UInt32 := #[ 0x3dae5357, 0x5097f63d, 0x0a461048, 0x813cc9ab, 0x8
 def ex_9: Array UInt32 := #[ 0x903fe671, 0xa0971f6d, 0xea6e8a11, 0x80dcd1ce, 0x87b56d0b, 0x42ee3861, 0x212e8642, 0x8a983a5b ]
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[]
-  let items: Array BabyBear.Elem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.Elem := Array.map Ring.ofNat #[]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_0
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0]]
-  let items: Array BabyBear.Elem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.Elem := Array.map Ring.ofNat #[0]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_1
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0], #[1], #[2], #[3], #[4], #[5], #[6]]
-  let items: Array BabyBear.Elem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.Elem := Array.map Ring.ofNat #[0, 1, 2, 3, 4, 5, 6]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_7
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0], #[1], #[2], #[3], #[4], #[5], #[6], #[7]]
-  let items: Array BabyBear.Elem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.Elem := Array.map Ring.ofNat #[0, 1, 2, 3, 4, 5, 6, 7]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_8
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0], #[1], #[2], #[3], #[4], #[5], #[6], #[7], #[8]]
-  let items: Array BabyBear.Elem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.Elem := Array.map Ring.ofNat #[0, 1, 2, 3, 4, 5, 6, 7, 8]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_9
 
@@ -66,26 +63,51 @@ def ex_ext_9: Array UInt32 := #[ 0x5af62d03, 0x03208f45, 0x73656ac7, 0x07d7447f,
   d.toArray == ex_ext_0
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0, 1, 2, 3]]
-  let items: Array BabyBear.ExtElem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.ExtElem := #[
+    BabyBear.ExtElem.new (Ring.ofNat 0) (Ring.ofNat 1) (Ring.ofNat 2) (Ring.ofNat 3)
+  ]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_ext_1
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0, 1, 2, 3], #[4, 5, 6, 7], #[5, 6, 7, 8], #[6, 7, 8, 9]]
-  let items: Array BabyBear.ExtElem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.ExtElem := #[
+      BabyBear.ExtElem.new (Ring.ofNat 0)  (Ring.ofNat 1)  (Ring.ofNat 2)  (Ring.ofNat 3),
+      BabyBear.ExtElem.new (Ring.ofNat 4)  (Ring.ofNat 5)  (Ring.ofNat 6)  (Ring.ofNat 7),
+      BabyBear.ExtElem.new (Ring.ofNat 8)  (Ring.ofNat 9)  (Ring.ofNat 10) (Ring.ofNat 11),
+      BabyBear.ExtElem.new (Ring.ofNat 12) (Ring.ofNat 13) (Ring.ofNat 14) (Ring.ofNat 15),
+      BabyBear.ExtElem.new (Ring.ofNat 16) (Ring.ofNat 17) (Ring.ofNat 18) (Ring.ofNat 19),
+      BabyBear.ExtElem.new (Ring.ofNat 20) (Ring.ofNat 21) (Ring.ofNat 22) (Ring.ofNat 23),
+      BabyBear.ExtElem.new (Ring.ofNat 24) (Ring.ofNat 25) (Ring.ofNat 26) (Ring.ofNat 27)
+    ]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_ext_7
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0, 1, 2, 3], #[4, 5, 6, 7], #[5, 6, 7, 8], #[6, 7, 8, 9], #[7, 8, 9, 10]]
-  let items: Array BabyBear.ExtElem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.ExtElem := #[
+      BabyBear.ExtElem.new (Ring.ofNat 0)  (Ring.ofNat 1)  (Ring.ofNat 2)  (Ring.ofNat 3),
+      BabyBear.ExtElem.new (Ring.ofNat 4)  (Ring.ofNat 5)  (Ring.ofNat 6)  (Ring.ofNat 7),
+      BabyBear.ExtElem.new (Ring.ofNat 8)  (Ring.ofNat 9)  (Ring.ofNat 10) (Ring.ofNat 11),
+      BabyBear.ExtElem.new (Ring.ofNat 12) (Ring.ofNat 13) (Ring.ofNat 14) (Ring.ofNat 15),
+      BabyBear.ExtElem.new (Ring.ofNat 16) (Ring.ofNat 17) (Ring.ofNat 18) (Ring.ofNat 19),
+      BabyBear.ExtElem.new (Ring.ofNat 20) (Ring.ofNat 21) (Ring.ofNat 22) (Ring.ofNat 23),
+      BabyBear.ExtElem.new (Ring.ofNat 24) (Ring.ofNat 25) (Ring.ofNat 26) (Ring.ofNat 27),
+      BabyBear.ExtElem.new (Ring.ofNat 28) (Ring.ofNat 29) (Ring.ofNat 30) (Ring.ofNat 31)
+    ]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_ext_8
 
 #eval
-  let input: Array (Subarray UInt32) := Array.map Array.toSubarray #[#[0, 1, 2, 3], #[4, 5, 6, 7], #[5, 6, 7, 8], #[6, 7, 8, 9], #[7, 8, 9, 10], #[8, 9, 10, 11]]
-  let items: Array BabyBear.ExtElem := Array.map SerialUInt32.fromUInt32Words input
+  let items: Array BabyBear.ExtElem := #[
+      BabyBear.ExtElem.new (Ring.ofNat 0)  (Ring.ofNat 1)  (Ring.ofNat 2)  (Ring.ofNat 3),
+      BabyBear.ExtElem.new (Ring.ofNat 4)  (Ring.ofNat 5)  (Ring.ofNat 6)  (Ring.ofNat 7),
+      BabyBear.ExtElem.new (Ring.ofNat 8)  (Ring.ofNat 9)  (Ring.ofNat 10) (Ring.ofNat 11),
+      BabyBear.ExtElem.new (Ring.ofNat 12) (Ring.ofNat 13) (Ring.ofNat 14) (Ring.ofNat 15),
+      BabyBear.ExtElem.new (Ring.ofNat 16) (Ring.ofNat 17) (Ring.ofNat 18) (Ring.ofNat 19),
+      BabyBear.ExtElem.new (Ring.ofNat 20) (Ring.ofNat 21) (Ring.ofNat 22) (Ring.ofNat 23),
+      BabyBear.ExtElem.new (Ring.ofNat 24) (Ring.ofNat 25) (Ring.ofNat 26) (Ring.ofNat 27),
+      BabyBear.ExtElem.new (Ring.ofNat 28) (Ring.ofNat 29) (Ring.ofNat 30) (Ring.ofNat 31),
+      BabyBear.ExtElem.new (Ring.ofNat 32) (Ring.ofNat 33) (Ring.ofNat 34) (Ring.ofNat 35)
+    ]
   let d: Sha256.Digest := Hash.hash_pod items
   d.toArray == ex_ext_9
 
