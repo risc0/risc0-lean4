@@ -30,6 +30,7 @@ inductive VerificationError where
 class MonadReadIop (M: Type -> Type) extends MonadRng M where
   readU32s: Nat -> M (Subarray UInt32)
   readFields (F: Type): [Field F] -> Nat -> M (Array F)
+  readPodSlice (n : Nat): M (Array Sha256.Digest) 
   commit: Sha256.Digest -> M Unit
   verifyComplete: M Unit
 
