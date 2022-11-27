@@ -6,6 +6,7 @@ import R0sy.Algebra
 import R0sy.Algebra.Field.BabyBear
 import R0sy.Hash
 import R0sy.Hash.Sha2
+import R0sy.Serial
 import Zkvm.Taps
 
 namespace Zkvm.Verify.Classes
@@ -14,6 +15,7 @@ open R0sy.Algebra
 open R0sy.Algebra.Field
 open R0sy.Hash
 open R0sy.Hash.Sha2
+open R0sy.Serial
 open Taps
 
 
@@ -29,8 +31,8 @@ inductive VerificationError where
 
 class MonadReadIop (M: Type -> Type) extends MonadRng M where
   readU32s: Nat -> M (Subarray UInt32)
+  readPodSlice (X: Type): [SerialUInt32 X] -> Nat -> M (Array X)
   readFields (F: Type): [Field F] -> Nat -> M (Array F)
-  readPodSlice (n : Nat): M (Array Sha256.Digest) 
   commit: Sha256.Digest -> M Unit
   verifyComplete: M Unit
 

@@ -46,13 +46,13 @@ def ReadIop.readU32s [Monad M] [MonadStateOf ReadIop M] (n: Nat): M (Subarray UI
         set { read_iop with proof }
         return result
 
-def ReadIop.readFields [Monad M] [MonadStateOf ReadIop M] (F: Type) [Field F] (n: Nat) (out: Array F := Array.mkEmpty n): M (Array F)
+def ReadIop.readPodSlice [Monad M] [MonadStateOf ReadIop M] (F: Type) [SerialUInt32 F] (n: Nat) (out: Array F := Array.mkEmpty n): M (Array F)
   := match n with
       | 0 => return out
       | n + 1
         => do let u32s <- ReadIop.readU32s (SerialUInt32.words F)
               let f: F := SerialUInt32.fromUInt32Words u32s
-              ReadIop.readFields F n (out.push f)
+              ReadIop.readPodSlice F n (out.push f)
 
 def ReadIop.commit [Monad M] [MonadStateOf ReadIop M] (digest: Sha256.Digest): M Unit
   := Sha256.Rng.mix digest
@@ -65,8 +65,8 @@ def ReadIop.verifyComplete [Monad M] [MonadStateOf ReadIop M]: M Unit
 
 instance [Monad M] [MonadStateOf ReadIop M] : MonadReadIop M where
   readU32s := ReadIop.readU32s
-  readFields F := ReadIop.readFields F
-  readPodSlice := sorry
+  readPodSlice X := ReadIop.readPodSlice X
+  readFields F := ReadIop.readPodSlice F
   commit := ReadIop.commit
   verifyComplete := ReadIop.verifyComplete
 

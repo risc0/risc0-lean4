@@ -50,7 +50,7 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
         idx := idx + self.params.row_size
         while idx >= 2 * self.params.row_size do
           let low_bit := idx % 2
-          let otherArray <- MonadReadIop.readPodSlice 1
+          let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
           let other := otherArray[0]!
           idx := idx / 2
           if low_bit == 1 
