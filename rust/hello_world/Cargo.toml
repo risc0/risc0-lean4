@@ -4,6 +4,7 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+clap = { version = "4.0.27", features = ["derive"] }
 hello-world-guard = { path = "guard" }
 risc0-zkvm = { workspace = true }
 serde = { workspace = true }
