@@ -6,12 +6,14 @@ import R0sy.Lean.ByteArray
 import R0sy.Lean.Nat
 import R0sy.Lean.UInt32
 import R0sy.Hash
+import R0sy.Serial
 
 namespace R0sy.Hash.Sha2
 
 open R0sy.Lean.ByteArray
 open R0sy.Lean.Nat
 open R0sy.Lean.UInt32
+open R0sy.Serial
 
 namespace Sha256
 
@@ -57,6 +59,9 @@ def Digest.xor (d1 d2: Digest): Digest
   }
 
 def Digest.ofArray (d: Array UInt32): Digest
+  := Digest.new d[0]! d[1]! d[2]! d[3]! d[4]! d[5]! d[6]! d[7]!
+
+def Digest.ofSubarray (d: Subarray UInt32): Digest
   := Digest.new d[0]! d[1]! d[2]! d[3]! d[4]! d[5]! d[6]! d[7]!
 
 def Digest.toArray (d: Digest): Array UInt32
@@ -230,6 +235,11 @@ def rng256_ex_1_out_2: UInt32 := 1753965479
 end Examples
 
 end Sha256
+
+instance : SerialUInt32 Sha256.Digest where
+  words := 8
+  toUInt32Words := Sha256.Digest.toArray
+  fromUInt32Words := Sha256.Digest.ofSubarray
 
 instance : Hash Sha256.Digest where
   hash := Sha256.hash

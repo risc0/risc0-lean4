@@ -3,10 +3,12 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Hash
+import R0sy.Serial
 
 namespace R0sy.Algebra
 
 open Hash
+open Serial
 
 /- Prime numbers -/
 
@@ -52,14 +54,12 @@ class Ring (R: Type)
 class Field (F: Type)
   extends
     Ring F,
-    Div F
+    Div F,
+    SerialUInt32 F
   where
     inv: F -> F
-    words: Nat
     random: [Monad M] -> [MonadRng M] -> M F
     fromUInt64: UInt64 -> F
-    toUInt32Words: F -> Array UInt32
-    fromUInt32Words: Subarray UInt32 -> F
 
 class RootsOfUnity (F: Type) where
   MAX_ROU_SIZE: Nat

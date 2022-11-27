@@ -5,6 +5,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy.Algebra
 import R0sy.Lean.Subarray
 import R0sy.Hash.Sha2
+import R0sy.Serial
 import Zkvm.Circuit
 import Zkvm.Verify.Classes
 
@@ -13,6 +14,7 @@ namespace Zkvm.Verify.ReadIop
 open R0sy.Algebra
 open R0sy.Lean.Subarray
 open R0sy.Hash.Sha2
+open R0sy.Serial
 
 open Classes
 
@@ -48,8 +50,8 @@ def ReadIop.readFields [Monad M] [MonadStateOf ReadIop M] (F: Type) [Field F] (n
   := match n with
       | 0 => return out
       | n + 1
-        => do let u32s <- ReadIop.readU32s (Field.words F)
-              let f: F := Field.fromUInt32Words u32s
+        => do let u32s <- ReadIop.readU32s (SerialUInt32.words F)
+              let f: F := SerialUInt32.fromUInt32Words u32s
               ReadIop.readFields F n (out.push f)
 
 def ReadIop.commit [Monad M] [MonadStateOf ReadIop M] (digest: Sha256.Digest): M Unit

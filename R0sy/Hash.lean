@@ -2,11 +2,17 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Serial
+
 namespace R0sy.Hash
 
-class Hash (D: Type) where
-  hash: ByteArray -> D
-  hash_pair: D -> D -> D
+open Serial
+
+class Hash (D: Type)
+    extends SerialUInt32 D
+  where
+    hash: ByteArray -> D
+    hash_pair: D -> D -> D
 
 class MonadRng (M: Type -> Type) where
   nextUInt32: M UInt32

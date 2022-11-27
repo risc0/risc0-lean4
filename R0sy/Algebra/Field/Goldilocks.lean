@@ -5,10 +5,12 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy.Algebra
 import R0sy.Algebra.Field
 import R0sy.Algebra.Poly
+import R0sy.Serial
 
 namespace R0sy.Algebra.Field.Goldilocks
 
 open Poly
+open Serial
 
 /- Base field -/
 
@@ -45,15 +47,17 @@ instance : Ring Elem where ofNat n := { rep := Ring.ofNat n }
 
 instance : Div Elem where div x y := { rep := x.rep / y.rep }
 
+instance : SerialUInt32 Elem where
+  words := SerialUInt32.words (Prime.Elem P)
+  toUInt32Words x := SerialUInt32.toUInt32Words x.rep
+  fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
+
 instance : Field Elem where
   inv x := { rep := x.rep.inv }
-  words := Field.words (Prime.Elem P)
   random
     := do let rep <- Prime.Elem.random P
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
-  toUInt32Words x := Field.toUInt32Words x.rep
-  fromUInt32Words x := { rep := Field.fromUInt32Words x }
 
 instance : RootsOfUnity Elem where
   MAX_ROU_SIZE := 32
@@ -157,15 +161,17 @@ instance : Ring ExtElem where ofNat n := { rep := Ring.ofNat n }
 
 instance : Div ExtElem where div x y := { rep := x.rep / y.rep }
 
+instance : SerialUInt32 ExtElem where
+  words := SerialUInt32.words (Ext.Elem Q)
+  toUInt32Words x := SerialUInt32.toUInt32Words x.rep
+  fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
+
 instance : Field ExtElem where
   inv x := { rep := x.rep.inv }
-  words := Field.words (Ext.Elem Q)
   random
     := do let rep <- Ext.Elem.random Q
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
-  toUInt32Words x := Field.toUInt32Words x.rep
-  fromUInt32Words x := { rep := Field.fromUInt32Words x }
 
 
 /- The extension is an algebra over the base -/
@@ -178,20 +184,20 @@ instance : Algebra Elem ExtElem where
 
 #eval
   let base: Nat -> Elem := Ring.ofNat
-  let to: Elem -> Array UInt32 := Field.toUInt32Words
-  let fr: Subarray UInt32 -> Elem := Field.fromUInt32Words
+  let to: Elem -> Array UInt32 := SerialUInt32.toUInt32Words
+  let fr: Subarray UInt32 -> Elem := SerialUInt32.fromUInt32Words
   base 0xffffffaaaa == fr (to (base 0xffffffaaaa)).toSubarray
 
 #eval
   let base: Nat -> Elem := Ring.ofNat
-  let to: Elem -> Array UInt32 := Field.toUInt32Words
-  let fr: Subarray UInt32 -> Elem := Field.fromUInt32Words
+  let to: Elem -> Array UInt32 := SerialUInt32.toUInt32Words
+  let fr: Subarray UInt32 -> Elem := SerialUInt32.fromUInt32Words
   base 0xffffffaaaa == fr (to (base 0xffffffaaaa)).toSubarray
 
 #eval
   let x: ExtElem := { rep := { rep := { rep := #[0xffffffaaaa, 0xccccccbbbb] } } }
-  let to: ExtElem -> Array UInt32 := Field.toUInt32Words
-  let fr: Subarray UInt32 -> ExtElem := Field.fromUInt32Words
+  let to: ExtElem -> Array UInt32 := SerialUInt32.toUInt32Words
+  let fr: Subarray UInt32 -> ExtElem := SerialUInt32.fromUInt32Words
   x == fr (to x).toSubarray
 
 #eval
