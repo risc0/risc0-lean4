@@ -23,28 +23,45 @@ open ReadIop
 open Taps
 
 
-structure VerifyContext (C: Type) where
-  adapter: VerifyAdapter C
+structure VerifyContext where
+  circuit: Circuit
+  adapter: VerifyAdapter
   read_iop: ReadIop
 
 
-class MonadVerify (C: Type) (M: Type -> Type)
+class MonadVerify (M: Type -> Type)
   extends
-    CircuitInfo C,
-    TapsProvider C,
-    MonadStateOf (VerifyContext C) M,
+    MonadStateOf VerifyContext M,
     MonadExceptOf VerificationError M
   where
 
 instance
-  [MonadStateOf (VerifyContext C) M]
+  [MonadStateOf VerifyContext M]
   [MonadExceptOf VerificationError M]
-  [CircuitInfo C]
-  [TapsProvider C]
-  : MonadVerify C M where
+  : MonadVerify M where
 
 
-instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M where
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadCircuit M where
+  getCircuit
+    := do let self <- get
+          return self.circuit
+
+/-
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf Circuit M where
+  get
+    := do let self <- get
+          return self.circuit
+  set circuit
+    := do let self <- get
+          set { self with circuit }
+  modifyGet f
+    := do let self <- get
+          let (result, circuit) := f self.circuit
+          set { self with circuit }
+          return result
+-/
+
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf ReadIop M where
   get
     := do let self <- get
           return self.read_iop
@@ -57,7 +74,7 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf ReadIop M w
           set { self with read_iop }
           return result
 
-instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdapter C) M where
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf VerifyAdapter M where
   get
     := do let self <- get
           return self.adapter
@@ -71,14 +88,15 @@ instance [Monad M] [MonadStateOf (VerifyContext C) M] : MonadStateOf (VerifyAdap
           return result
 
 
-def VerifyContext.run [CircuitInfo C] [TapsProvider C] (circuit: C) (seal: Subarray UInt32)
-  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify C M] -> M Unit)
+def VerifyContext.run (circuit: Circuit) (seal: Subarray UInt32)
+  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M] -> M Unit)
   : Id (Except VerificationError Unit)
-  := do let verify_context: VerifyContext C := {
-          adapter := VerifyAdapter.new circuit,
+  := do let verify_context: VerifyContext := {
+          circuit,
+          adapter := VerifyAdapter.new,
           read_iop := ReadIop.new seal,
         }
-        let M := StateT (VerifyContext C) (ExceptT VerificationError Id)
+        let M := StateT VerifyContext (ExceptT VerificationError Id)
         ExceptT.run (StateT.run' (@f M _ _) verify_context)
 
 end Zkvm.Verify.Monad
