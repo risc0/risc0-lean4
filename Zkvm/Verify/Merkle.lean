@@ -18,9 +18,23 @@ structure MerkleTreeParams where
   top_layer: Nat
   top_size: Nat
 
+def Nat.log (b n : Nat) : Nat := sorry
+
+def MerkleTreeParams.new (row_size col_size queries: Nat) : MerkleTreeParams := 
+let layers := (Nat.log 2 row_size) ;
+let top_layer := Nat.min (layers - 1) ((Nat.log 2 queries) + 1) ;
+MerkleTreeParams.mk row_size col_size queries layers top_layer (2 ^ top_layer)
+
 def MerkleTreeParams.idx_to_top (self: MerkleTreeParams) (idx: Nat): Nat := idx - self.top_size
 
 def MerkleTreeParams.idx_to_rest (_self: MerkleTreeParams) (idx: Nat): Nat := idx - 1
+
+
+
+def HashRawPodSlice (val : Array Elem) : R0sy.Hash.Sha2.Sha256.Digest := sorry -- TODO does this already exist?
+
+def HashPair (a b : Sha256.Digest) : Sha256.Digest := sorry -- TODO does this already exist?
+
 
 
 structure MerkleTreeVerifier where
@@ -28,16 +42,31 @@ structure MerkleTreeVerifier where
   top: Subarray Sha256.Digest
   rest: Subarray Sha256.Digest
 
-def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): MerkleTreeVerifier := sorry
-
 def MerkleTreeVerifier.root (self: MerkleTreeVerifier): Sha256.Digest
   := if self.rest.size == 0
       then self.top[MerkleTreeParams.idx_to_top self.params 1]!
       else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
 
-def HashRawPodSlice (val : Array Elem) : R0sy.Hash.Sha2.Sha256.Digest := sorry -- TODO does this already exist?
+def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): 
+  M MerkleTreeVerifier := do
+  let params := MerkleTreeParams.new row_size col_size queries
+  let topArray <- MonadReadIop.readPodSlice params.top_size
+  let top := topArray.toSubarray
+  let mut rest : Array Sha256.Digest := (List.replicate params.top_size _).toArray
+  for i in [params.top_size/2 : params.top_size] do
+    let top_idx := params.idx_to_top (2 * i)
+    rest := rest.set! i (HashPair (top.get! top_idx) (top.get! (top_idx + 1)))
 
-def HashPair (a b : Sha256.Digest) : Sha256.Digest := sorry -- TODO does this already exist?
+  sorry
+  -- TODO figure out how to reverse this iterator
+  -- for i in [1 : params.top_size/2] do
+  --   let top_idx := params.idx_to_top (2 * i)
+  --   rest := rest.set! i (HashPair (top.get! top_idx) (top.get! (top_idx + 1)))
+  
+  let verifier := MerkleTreeVerifier.mk params top rest.toSubarray
+  MonadReadIop.commit verifier.root
+  return verifier
+
 
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (idx_: Nat): M (Array Elem) := do 
