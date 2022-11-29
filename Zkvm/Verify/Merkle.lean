@@ -4,12 +4,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy.Hash
 import R0sy.Hash.Sha2
+import R0sy.Lean.Nat
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Merkle
 
 open R0sy.Hash
 open R0sy.Hash.Sha2
+open R0sy.Lean.Nat
 open Classes
 
 structure MerkleTreeParams where
@@ -19,10 +21,43 @@ structure MerkleTreeParams where
   layers: Nat
   top_layer: Nat
   top_size: Nat
+  deriving Inhabited
+
+def MerkleTreeParams.new (row_size col_size queries: Nat): MerkleTreeParams :=
+  let layers: Nat := Nat.log2_floor row_size
+  let top_layer: Nat := Nat.log2_floor queries
+  let top_size: Nat := 1 <<< top_layer
+  if 1 <<< layers != row_size
+  then panic "row_size not a power of 2"
+  else
+    {
+      row_size,
+      col_size,
+      queries,
+      layers,
+      top_layer,
+      top_size
+    }
 
 def MerkleTreeParams.idx_to_top (self: MerkleTreeParams) (idx: Nat): Nat := idx - self.top_size
 
 def MerkleTreeParams.idx_to_rest (_self: MerkleTreeParams) (idx: Nat): Nat := idx - 1
+
+namespace Examples
+
+def ex_1: MerkleTreeParams := MerkleTreeParams.new 1024 1234 50
+
+#eval ex_1.layers == 10
+#eval ex_1.top_layer == 5
+#eval ex_1.top_size == 32
+
+def ex_2: MerkleTreeParams := MerkleTreeParams.new 2048 31337 128
+
+#eval ex_2.layers == 11
+#eval ex_2.top_layer == 7
+#eval ex_2.top_size == 128
+
+end Examples
 
 
 structure MerkleTreeVerifier where

@@ -39,4 +39,7 @@ termination_by _ => x.size - i
 partial def Nat.log2_ceil (value: Nat) (result: Nat := 0): Nat
   := if (1 <<< result) < value then log2_ceil value (result + 1) else result
 
+partial def Nat.log2_floor (value: Nat) (result: Nat := 0): Nat
+  := if (1 <<< (result + 1)) > value then result else log2_floor value (result + 1)
+
 end R0sy.Lean.Nat
