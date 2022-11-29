@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Algebra
 import R0sy.Hash.Sha2
 import Zkvm.Circuit
 import Zkvm.Taps
@@ -13,6 +14,7 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify.Monad
 
+open R0sy.Algebra
 open R0sy.Hash.Sha2
 open Adapter
 open Circuit
@@ -23,25 +25,25 @@ open ReadIop
 open Taps
 
 
-structure VerifyContext where
-  circuit: Circuit
-  adapter: VerifyAdapter
+structure VerifyContext (Elem ExtElem: Type) where
+  circuit: Circuit Elem ExtElem
+  adapter: VerifyAdapter Elem
   read_iop: ReadIop
 
 
-class MonadVerify (M: Type -> Type)
+class MonadVerify (Elem ExtElem: Type) (M: Type -> Type)
   extends
-    MonadStateOf VerifyContext M,
+    MonadStateOf (VerifyContext Elem ExtElem) M,
     MonadExceptOf VerificationError M
   where
 
 instance
-  [MonadStateOf VerifyContext M]
+  [MonadStateOf (VerifyContext Elem ExtElem) M]
   [MonadExceptOf VerificationError M]
-  : MonadVerify M where
+  : MonadVerify Elem ExtElem M where
 
 
-instance [Monad M] [MonadStateOf VerifyContext M] : MonadCircuit M where
+instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadCircuit Elem ExtElem M where
   getCircuit
     := do let self <- get
           return self.circuit
@@ -61,7 +63,7 @@ instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf Circuit M where
           return result
 -/
 
-instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf ReadIop M where
+instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf ReadIop M where
   get
     := do let self <- get
           return self.read_iop
@@ -74,7 +76,7 @@ instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf ReadIop M where
           set { self with read_iop }
           return result
 
-instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf VerifyAdapter M where
+instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf (VerifyAdapter Elem) M where
   get
     := do let self <- get
           return self.adapter
@@ -88,15 +90,15 @@ instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf VerifyAdapter M
           return result
 
 
-def VerifyContext.run (circuit: Circuit) (seal: Subarray UInt32)
-  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M] -> M Unit)
+def VerifyContext.run [Field Elem] (circuit: Circuit Elem ExtElem) (seal: Subarray UInt32)
+  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify Elem ExtElem M] -> [Field Elem] -> M Unit)
   : Id (Except VerificationError Unit)
-  := do let verify_context: VerifyContext := {
+  := do let verify_context: VerifyContext Elem ExtElem := {
           circuit,
           adapter := VerifyAdapter.new,
           read_iop := ReadIop.new seal,
         }
-        let M := StateT VerifyContext (ExceptT VerificationError Id)
-        ExceptT.run (StateT.run' (@f M _ _) verify_context)
+        let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)
+        ExceptT.run (StateT.run' (@f M _ _ _) verify_context)
 
 end Zkvm.Verify.Monad

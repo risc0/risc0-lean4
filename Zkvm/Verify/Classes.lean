@@ -3,7 +3,6 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Algebra
-import R0sy.Algebra.Field.BabyBear
 import R0sy.Hash
 import R0sy.Hash.Sha2
 import R0sy.Serial
@@ -13,7 +12,6 @@ import Zkvm.Taps
 namespace Zkvm.Verify.Classes
 
 open R0sy.Algebra
-open R0sy.Algebra.Field
 open R0sy.Hash
 open R0sy.Hash.Sha2
 open R0sy.Serial
@@ -46,7 +44,7 @@ class MonadVerifyAdapter (M: Type -> Type) where
   verifyOutput: M Unit
 
 
-class MonadCircuit (M: Type -> Type) where
-  getCircuit: M Circuit
+class MonadCircuit (Elem ExtElem: Type) (M: Type -> Type) where
+  getCircuit: M (Circuit Elem ExtElem)
 
 end Zkvm.Verify.Classes

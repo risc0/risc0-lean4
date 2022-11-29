@@ -8,9 +8,14 @@ namespace Zkvm.Circuit
 
 open Taps
 
-structure Circuit where
+structure MixState (ExtElem: Type) where
+  tot: ExtElem
+  mul: ExtElem
+
+structure Circuit (Elem ExtElem: Type) where
   outputSize: Nat
   mixSize: Nat
   taps: TapSet
+  poly_ext: ExtElem -> Array ExtElem -> Array (Array Elem) -> MixState ExtElem
 
 end Zkvm.Circuit
