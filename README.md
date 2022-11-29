@@ -25,7 +25,7 @@ risc0-lean4$ lake build
 ## Building the docs
 
 ```console
-$ lake -Kdoc=on build R0sy:docs Zkvm:docs
+$ lake -Kdoc=on build Zkvm:docs
 ```
 
 The docs will be viewable at `build/doc/index.html`.
