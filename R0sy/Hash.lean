@@ -9,7 +9,9 @@ namespace R0sy.Hash
 open Serial
 
 class Hash (D: Type)
-    extends SerialUInt32 D
+  extends
+    Inhabited D,
+    SerialUInt32 D
   where
     hash: ByteArray -> D
     hash_pair: D -> D -> D
