@@ -62,15 +62,25 @@ end Examples
 
 structure MerkleTreeVerifier where
   params: MerkleTreeParams
-  top: Subarray Sha256.Digest
-  rest: Subarray Sha256.Digest
-
-def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): MerkleTreeVerifier := sorry
+  top: Array Sha256.Digest
+  rest: Array Sha256.Digest
 
 def MerkleTreeVerifier.root (self: MerkleTreeVerifier): Sha256.Digest
   := if self.rest.size == 0
       then self.top[MerkleTreeParams.idx_to_top self.params 1]!
       else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
+
+def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
+  := do let params := MerkleTreeParams.new row_size col_size queries
+        let top <- MonadReadIop.readPodSlice Sha256.Digest params.top_size
+        let rest := sorry
+        let verifier: MerkleTreeVerifier := {
+          params,
+          top,
+          rest
+        }
+        MonadReadIop.commit (MerkleTreeVerifier.root verifier)
+        pure verifier
 
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (idx_: Nat): M (Array Elem)
