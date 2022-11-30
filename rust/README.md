@@ -13,5 +13,5 @@ risc0-lean4/rust$ cargo run --release -- disk --out-base=output/hello_world
 ### Printing output as Lean file
 
 ```console
-risc0-lean4/rust$ cargo run --release -- lean
+risc0-lean4/rust$ cargo run --release -- lean > ../Zkvm/Test/HelloWorld.lean
 ```
