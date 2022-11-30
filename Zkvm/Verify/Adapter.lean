@@ -48,6 +48,9 @@ def VerifyAdapter.accumulate [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [Mo
               set { self with mix }
 termination_by _ => circuit.mixSize - i
 
+def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Field Elem] (journal: Subarray UInt32) (output: Array Elem): M unit
+  := throw (VerificationError.Sorry "Zkvm.Verify.Adapter.verifyOutput")
+
 instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [Field Elem] : MonadVerifyAdapter M where
   getPo2
     := do let self <- get
@@ -58,6 +61,10 @@ instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf Verifica
   accumulate
     := do let circuit: Circuit Elem ExtElem <- MonadCircuit.getCircuit
           VerifyAdapter.accumulate circuit
-  verifyOutput := throw (VerificationError.Sorry "Zkvm.Verify.Adapter.verifyOutput")
+  verifyOutput journal
+    := do let self <- get
+          match self.out with
+          | none => pure ()
+          | some output => VerifyAdapter.verifyOutput journal output
 
 end Zkvm.Verify.Adapter

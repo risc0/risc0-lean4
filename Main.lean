@@ -30,7 +30,7 @@ def main : IO Unit
         IO.println s!"Journal test: {example_journal == expected_journal}"
         IO.println ""
         IO.println ""
-        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv example_seal.toSubarray
+        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv example_journal.toSubarray example_seal.toSubarray
         match result with
         | Except.ok _ => IO.println "Seal is OK"
         | Except.error error => IO.println s!"Seal is not OK: {error}"
