@@ -28,4 +28,9 @@ def main : IO Unit
         IO.println ""
         IO.println s!"ID test:      {example_id == expected_id}"
         IO.println s!"Journal test: {example_journal == expected_journal}"
-        -- TODO: Read a circuit and a seal, then invoke Zkvm.Verify.run_verify
+        IO.println ""
+        IO.println ""
+        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv example_seal.toSubarray
+        match result with
+        | Except.ok _ => IO.println "Seal is OK"
+        | Except.error error => IO.println s!"Seal is not OK: {error}"

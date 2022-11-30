@@ -20,6 +20,7 @@ open Taps
 
 
 inductive VerificationError where
+  | Sorry (msg: String)
   | ReceiptFormatError
   | MethodCycleError (required: Nat)
   | MethodVerificationError
@@ -27,6 +28,19 @@ inductive VerificationError where
   | InvalidProof
   | JournalSealRootMismatch
   | SealJournalLengthMismatch (seal_len: Nat) (journal_len: Nat)
+  deriving Repr
+
+instance : ToString VerificationError where
+  toString error
+    := match error with
+        | VerificationError.Sorry msg => s!"Sorry msg:{msg}"
+        | VerificationError.ReceiptFormatError => s!"ReceiptFormatError"
+        | VerificationError.MethodCycleError required => s!"MethodCycleError required:{required}"
+        | VerificationError.MethodVerificationError => s!"MethodVerificationError"
+        | VerificationError.MerkleQueryOutOfRange idx rows => s!"MerkleQueryOutOfRange idx:{idx} rows:{rows}"
+        | VerificationError.InvalidProof => s!"InvalidProof"
+        | VerificationError.JournalSealRootMismatch => s!"JournalSealRootMismatch"
+        | VerificationError.SealJournalLengthMismatch seal_len journal_len => s!"SealJournalLengthMismatch seal_len:{seal_len} journal_len:{journal_len}"
 
 
 class MonadReadIop (M: Type -> Type) extends MonadRng M where

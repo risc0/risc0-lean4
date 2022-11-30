@@ -16,13 +16,14 @@ open Circuit
 open Classes
 
 
-def check_code [Monad M] [MonadExceptOf VerificationError M] (po2: UInt32) (digest: Sha256.Digest): M Unit := sorry
+def check_code [Monad M] [MonadExceptOf VerificationError M] (po2: UInt32) (digest: Sha256.Digest): M Unit
+  := throw (VerificationError.Sorry "Zkvm.Verify.check_code")
 
 def verify (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] [Field Elem]
   : M Unit
   := do MonadVerifyAdapter.execute
         MonadVerifyAdapter.verifyOutput
-        sorry
+        throw (VerificationError.Sorry "Zkvm.Verify.verify")
 
 def run_verify [Field Elem] (circuit: Circuit Elem ExtElem) (seal: Subarray UInt32)
   := Monad.VerifyContext.run circuit seal (verify Elem ExtElem)

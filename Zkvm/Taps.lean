@@ -80,6 +80,7 @@ structure TapSet where
   combos_count: USize
   reg_count: USize
   tot_combo_backs: USize
+  deriving Inhabited
 
 def TapSet.tapSize (self: TapSet): USize := self.group_begin[REGISTER_GROUPS.size]!
 
