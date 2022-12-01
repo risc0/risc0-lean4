@@ -8,6 +8,7 @@ import R0sy.Lean.Subarray
 import R0sy.Lean.Nat
 import R0sy.Hash.Sha2
 import Zkvm.Circuit
+import Zkvm.Constants
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Merkle
 
@@ -19,6 +20,7 @@ open R0sy.Lean.Nat
 open R0sy.Hash.Sha2
 open R0sy.Hash
 open Classes
+open Constants
 open Merkle
 -- open Field
 
@@ -29,10 +31,6 @@ structure VerifyRoundInfo (ExtElem: Type) where
   mix: ExtElem
 
 
-def QUERIES: Nat := 50
-
-def FRI_FOLD_PO2: Nat := 4
-def FRI_FOLD: Nat := 2 ^ FRI_FOLD_PO2
 def EXT_SIZE: Nat := 4
 
 def ROU_REV: Array ExtElem := sorry
