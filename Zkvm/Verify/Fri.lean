@@ -56,8 +56,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   --
   let quot := pos_ / self.domain
   let group := pos_ % self.domain
-  let data : Array ExtElem <- self.merkle.verify
-  sorry
+  let data : Array ExtElem <- self.merkle.verify group
   let data_ext : Array ExtElem := sorry -- Get the column data, not sure yet what the rust is doing here
   if data_ext[quot]! != goal_
     then throw VerificationError.InvalidProof
