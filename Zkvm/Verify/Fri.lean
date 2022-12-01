@@ -33,8 +33,6 @@ structure VerifyRoundInfo (ExtElem: Type) where
 
 def EXT_SIZE: Nat := 4
 
-def ROU_REV: Array ExtElem := sorry
-
 def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M] [R0sy.Algebra.Field ExtElem] 
   (in_domain: Nat) : M (VerifyRoundInfo ExtElem) := do
   let domain := in_domain / FRI_FOLD
@@ -45,8 +43,9 @@ def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M] [R0sy.Algebra.Fi
 def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry
 
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
+  [RootsOfUnity Elem] -- FIXME should be Elem
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M) -- Weird to do this with typeclasses, what if we had two mutable Nats for example?
-  [R0sy.Algebra.Field ExtElem] -- Is there a better way of handling this than just declaring two field instances
+  [R0sy.Algebra.Field Elem] [R0sy.Algebra.Field ExtElem] [R0sy.Algebra.Algebra Elem ExtElem]
   (self: VerifyRoundInfo ExtElem) : M Unit := do
   -- Get the args out of the monad state
   let pos_ : Nat <- pos.get 
@@ -60,7 +59,8 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
     then throw VerificationError.InvalidProof
   else 
   let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
-  let inv_wk : ExtElem := (ROU_REV[root_po2]! : ExtElem) ^ group -- Weird why type ascription needed?
+  -- FIXME type of inv_wk should be Elem, and self.mix * inv_wk should be HMul
+  let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group -- Weird why type ascription needed?
   -- Track the states of the mutable arguments
   pos.set group 
   let new_goal := fold_eval data_ext (self.mix * inv_wk)
