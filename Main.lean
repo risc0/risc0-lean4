@@ -22,12 +22,13 @@ def check_seal (base_name: String): IO Unit
         IO.println s!"ID size:      {id.size} words"
         IO.println s!"Journal size: {journal.size} words"
         IO.println s!"Seal size:    {seal.size} words"
-        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv journal.toSubarray seal.toSubarray
+        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv journal seal
         match result with
         | Except.ok _ => IO.println "Seal is OK"
         | Except.error error => IO.println s!"ERROR: {error}"
+        IO.println ""
 
 def main : IO Unit
   := do -- Check a seal
-        -- check_seal "rust/output/hello_world" -- TODO: bug in VerifyAdapter.verifyOutput
+        check_seal "rust/output/hello_world"
         check_seal "rust/output/hw"

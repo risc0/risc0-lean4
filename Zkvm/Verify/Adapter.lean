@@ -4,6 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy.Algebra
 import R0sy.Hash.Sha2
+import R0sy.Lean.UInt32
 import R0sy.Serial
 import Zkvm.Circuit
 import Zkvm.Verify.Classes
@@ -12,6 +13,7 @@ namespace Zkvm.Verify.Adapter
 
 open R0sy.Algebra
 open R0sy.Hash.Sha2
+open R0sy.Lean.UInt32
 open R0sy.Serial
 open Circuit
 open Classes
@@ -57,7 +59,7 @@ def VerifyAdapter.verifyOutput.toUInt32 [PrimeField Elem] (lo hi: Elem): UInt32 
   let hi' := PrimeField.toNat hi
   UInt32.ofNat (lo' ||| (hi' <<< 16))
 
-def VerifyAdapter.verifyOutputAux [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Subarray UInt32) (output: Array Elem) (i: Nat := 0): M Unit
+def VerifyAdapter.verifyOutputAux [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Array UInt32) (output: Array Elem) (i: Nat := 0): M Unit
   := if h: i < journal.size
       then 
         let j := journal[i]
@@ -68,7 +70,7 @@ def VerifyAdapter.verifyOutputAux [Monad M] [MonadExceptOf VerificationError M] 
       else pure ()
 termination_by _ => journal.size - i
 
-def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Subarray UInt32) (output: Array Elem): M Unit
+def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Array UInt32) (output: Array Elem): M Unit
   := do let journal' <-
           (do let result_length_index := 16
               let output_len_lo := output[result_length_index]!
@@ -77,7 +79,7 @@ def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Pr
               let journal_len := journal.size * 4
               if journal_len != output_len
                 then throw (VerificationError.SealJournalLengthMismatch output_len journal_len)
-                else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_words journal)))
+                else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_pod journal)))
         VerifyAdapter.verifyOutputAux journal' output
 
 instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter M where

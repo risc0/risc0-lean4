@@ -90,13 +90,13 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf 
           return result
 
 
-def VerifyContext.run [Field Elem] (circuit: Circuit Elem ExtElem) (seal: Subarray UInt32)
+def VerifyContext.run [Field Elem] (circuit: Circuit Elem ExtElem) (seal: Array UInt32)
   (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify Elem ExtElem M] -> [Field Elem] -> M Unit)
   : Id (Except VerificationError Unit)
   := do let verify_context: VerifyContext Elem ExtElem := {
           circuit,
           adapter := VerifyAdapter.new,
-          read_iop := ReadIop.new seal,
+          read_iop := ReadIop.new seal.toSubarray,
         }
         let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)
         ExceptT.run (StateT.run' (@f M _ _ _) verify_context)

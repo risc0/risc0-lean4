@@ -55,7 +55,7 @@ class MonadVerifyAdapter (M: Type -> Type) where
   getPo2: M UInt32
   execute: M Unit
   accumulate: M Unit
-  verifyOutput (journal: Subarray UInt32): M Unit
+  verifyOutput (journal: Array UInt32): M Unit
 
 
 class MonadCircuit (Elem ExtElem: Type) (M: Type -> Type) where
