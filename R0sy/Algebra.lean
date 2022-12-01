@@ -73,6 +73,8 @@ class RootsOfUnity (F: Type) where
   ROU_REV: Array F
 
 class Algebra (F: Type) (R: Type)
+  extends
+    HMul R F R
   where
     ofBase: F -> R
 
