@@ -103,9 +103,9 @@ def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries
         pure verifier
 
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
-  (idx_ : MonadStateOf Nat M) [R0sy.Algebra.Field Elem] 
+  [idx_ : MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) : M (Array Elem) := do 
-  let mut idx <- idx_.get
+  let mut idx <- get
   if idx >= 2 * self.params.row_size 
     then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size) 
     else
@@ -126,7 +126,7 @@ def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf Verifica
     if idx >= self.params.top_size 
       then self.top[self.params.idx_to_top idx]!
       else self.top[self.params.idx_to_rest idx]!
-  idx_.set idx
+  set idx
   if present_hash == cur 
   then
     return out
