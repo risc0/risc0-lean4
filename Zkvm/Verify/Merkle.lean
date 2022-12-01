@@ -104,6 +104,9 @@ def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries
 
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (idx_ : Nat) : M (Array Elem) := do 
+  -- Although the Rust code has "mut" in the line where it specifies the idx argument, 
+  -- this is just a mutable variable, not a pointer. Rust does not mutate the value in the caller, 
+  -- so MonadStateOf is not needed for idx
   let mut idx := idx_
   if idx >= 2 * self.params.row_size 
     then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size) 

@@ -56,7 +56,6 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   --
   let quot := pos_ / self.domain
   let group := pos_ % self.domain
-  pos.set group -- setting the monad state of pos to group here rather than at the end ensures that the mutable index argument passed into verify is the group value, and that this is thereby modified to be the correct final state
   let data : Array ExtElem <- self.merkle.verify
   sorry
   let data_ext : Array ExtElem := sorry -- Get the column data, not sure yet what the rust is doing here
@@ -66,9 +65,9 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
   let inv_wk : ExtElem := (ROU_REV[root_po2]! : ExtElem) ^ group -- Weird why type ascription needed?
   -- Track the states of the mutable arguments
+  pos.set group 
   let new_goal := fold_eval data_ext (self.mix * inv_wk)
   goal.set new_goal
-  -- Don't set group as we do it above
   pure ()
 
 
