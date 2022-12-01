@@ -77,6 +77,7 @@ class Algebra (F: Type) (R: Type)
     HMul R F R
   where
     ofBase: F -> R
+    EXT_SIZE: Nat
 
 class PolyRing (F: Type) (R: Type)
   extends
