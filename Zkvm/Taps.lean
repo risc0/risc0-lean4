@@ -40,16 +40,16 @@ structure TapData where
 
 structure TapIter where
   iter_data: Subarray TapData
-  iter_cursor: USize
-  iter_end: USize
+  iter_cursor: Nat
+  iter_end: Nat
 
 
 /- RegIter -/
 
 structure RegIter where
   iter_data: Subarray TapData
-  iter_cursor: USize
-  iter_end: USize
+  iter_cursor: Nat
+  iter_end: Nat
 
 
 /- Combo -/
@@ -61,13 +61,13 @@ structure ComboData where
 
 structure ComboIter where
   iter_data: ComboData
-  iter_id: USize
-  iter_end: USize
+  iter_id: Nat
+  iter_end: Nat
 
 
 structure ComboRef where
   data: ComboData
-  id: USize
+  id: Nat
 
 
 /- TapSet -/
@@ -76,19 +76,23 @@ structure TapSet where
   taps: Array TapData
   combo_taps: Array UInt16
   combo_begin: Array UInt16
-  group_begin: Array USize
-  combos_count: USize
-  reg_count: USize
-  tot_combo_backs: USize
+  group_begin: Array Nat
+  combos_count: Nat
+  reg_count: Nat
+  tot_combo_backs: Nat
   deriving Inhabited
 
-def TapSet.tapSize (self: TapSet): USize := self.group_begin[REGISTER_GROUPS.size]!
+def TapSet.tapSize (self: TapSet): Nat := self.group_begin[REGISTER_GROUPS.size]!
 
 def TapSet.tapIter (self: TapSet): TapIter := sorry
 
 def TapSet.regIter (self: TapSet): RegIter := sorry
 
-def TapSet.groupSize (self: TapSet) (group: RegisterGroup): USize := sorry
+def TapSet.groupSize (self: TapSet) (group: RegisterGroup): Nat :=
+  let group_id := RegisterGroup.toNat group
+  let idx := self.group_begin[group_id + 1]! - 1
+  let last := self.taps[idx]!.offset.toNat
+  last + 1
 
 def TapSet.groupTapIter (self: TapSet) (group: RegisterGroup): TapIter := sorry
 
@@ -96,7 +100,7 @@ def TapSet.groupRegIter (self: TapSet) (group: RegisterGroup): RegIter := sorry
 
 def TapSet.combosIter (self: TapSet): ComboIter := sorry
 
-def TapSet.getCombo (self: TapSet) (id: USize): ComboRef := sorry
+def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := sorry
 
 
 /- TapsProvider -/
