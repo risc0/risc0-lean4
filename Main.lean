@@ -14,23 +14,20 @@ def read_file (filename : System.FilePath): IO (Array UInt32)
         let bytes <- handle.read (byteSize.toNat.toUSize)
         pure (ByteArray.to_le32 bytes)
 
-def main : IO Unit
-  := do IO.println s!"BabyBear has characteristic {R0sy.Algebra.Field.BabyBear.P.rep}"
-        IO.println s!"Goldilocks has characteristic {R0sy.Algebra.Field.Goldilocks.P.rep}"
-        let expected_id := Zkvm.Test.HelloWorld.ID
-        let expected_journal := Zkvm.Test.HelloWorld.JOURNAL
-        let example_id <- read_file "rust/output/hello_world.id"
-        let example_journal <- read_file "rust/output/hello_world.journal"
-        let example_seal <- read_file "rust/output/hello_world.seal"
-        IO.println s!"ID size:      {example_id.size} words"
-        IO.println s!"Journal size: {example_journal.size} words"
-        IO.println s!"Seal size:    {example_seal.size} words"
-        IO.println ""
-        IO.println s!"ID test:      {example_id == expected_id}"
-        IO.println s!"Journal test: {example_journal == expected_journal}"
-        IO.println ""
-        IO.println ""
-        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv example_journal.toSubarray example_seal.toSubarray
+def check_seal (base_name: String): IO Unit
+  := do IO.println s!"Checking {base_name} ..."
+        let id <- read_file s!"{base_name}.id"
+        let journal <- read_file s!"{base_name}.journal"
+        let seal <- read_file s!"{base_name}.seal"
+        IO.println s!"ID size:      {id.size} words"
+        IO.println s!"Journal size: {journal.size} words"
+        IO.println s!"Seal size:    {seal.size} words"
+        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv journal.toSubarray seal.toSubarray
         match result with
         | Except.ok _ => IO.println "Seal is OK"
-        | Except.error error => IO.println s!"Seal is not OK: {error}"
+        | Except.error error => IO.println s!"ERROR: {error}"
+
+def main : IO Unit
+  := do -- Check a seal
+        -- check_seal "rust/output/hello_world" -- TODO: bug in VerifyAdapter.verifyOutput
+        check_seal "rust/output/hw"

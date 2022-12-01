@@ -67,6 +67,9 @@ def Digest.ofSubarray (d: Subarray UInt32): Digest
 def Digest.toArray (d: Digest): Array UInt32
   := #[ d.h0, d.h1, d.h2, d.h3, d.h4, d.h5, d.h6, d.h7 ]
 
+def Digest.toSubarray (d: Digest): Subarray UInt32
+  := (Digest.toArray d).toSubarray
+
 def init_hash: Digest
   := {
     h0 := 0x6a09e667,
@@ -135,16 +138,18 @@ def compress (chunk: Array UInt32) (h: Digest): Digest :=
     let j := compress_loop chunk h.h0 h.h1 h.h2 h.h3 h.h4 h.h5 h.h6 h.h7
     Digest.add h j
 
-def hash (msg: ByteArray): Sha256.Digest :=
+def hash (msg: ByteArray): Digest :=
   let padded := prepare msg
   let chunks := to_chunks padded
   List.foldr compress init_hash chunks
 
-def hash_pair (x y: Sha256.Digest): Sha256.Digest :=
+def hash_words (x: Subarray UInt32): Digest := hash (ByteArray.of_le32 x)
+
+def hash_pair (x y: Digest): Digest :=
   let chunk := Array.map UInt32.swap_endian (x.toArray ++ y.toArray)
   compress chunk init_hash
 
-def hash_pod [SerialUInt32 X] (pod: Array X): Sha256.Digest :=
+def hash_pod [SerialUInt32 X] (pod: Array X): Digest :=
   let chunks :=
     let msg := Array.foldl (fun x y => x ++ Array.map UInt32.swap_endian (SerialUInt32.toUInt32Words y)) #[] pod
     let padding_required :=
@@ -155,8 +160,8 @@ def hash_pod [SerialUInt32 X] (pod: Array X): Sha256.Digest :=
 
 
 structure Rng where
-  pool0: Sha256.Digest
-  pool1: Sha256.Digest
+  pool0: Digest
+  pool1: Digest
   pool_used: USize
 
 def Rng.new: Rng := {
@@ -181,9 +186,9 @@ def Rng.check_pool [Monad M] [MonadStateOf Rng M]: M Unit
         then Rng.step
         else return ()
 
-def Rng.mix [Monad M] [MonadStateOf Rng M] (val: Sha256.Digest): M Unit
+def Rng.mix [Monad M] [MonadStateOf Rng M] (val: Digest): M Unit
   := do let self <- get
-        let p := Sha256.Digest.xor self.pool0 val
+        let p := Digest.xor self.pool0 val
         set { self with pool0 := p }
         Rng.step
 
@@ -233,6 +238,10 @@ def sha_ex_7_in: Array UInt32 := #[0xffffffff]
 def sha_ex_7_out: Digest := Digest.ofArray #[0xa3dba037, 0xd5617520, 0x9dfd4191, 0xf727e91c, 0x5feb67e6, 0x5a6ab5ed, 0x4daf0893, 0xc89598c8]
 #eval hash_pod sha_ex_7_in == sha_ex_7_out
 
+def sha_ex_8_in: Array UInt32 := #[0xff000001, 0xcc000002]
+def sha_ex_8_out: Digest := Digest.ofArray #[0x063e9f8f, 0x3caaf995, 0xb23627ea, 0xaf57b218, 0x36b2986c, 0x99aa9767, 0xbdd1f5b6, 0x5b391101]
+#eval hash_words sha_ex_8_in.toSubarray == sha_ex_8_out
+
 def rng256_ex_1_in: StateM Rng (UInt32 × UInt32)
   := do let _ <- Rng.nextUInt32
         let _ <- Rng.nextUInt32
@@ -263,6 +272,7 @@ instance : SerialUInt32 Sha256.Digest where
 
 instance : Hash Sha256.Digest where
   hash := Sha256.hash
+  hash_words := Sha256.hash_words
   hash_pair := Sha256.hash_pair
   hash_pod := Sha256.hash_pod
 

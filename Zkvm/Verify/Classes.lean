@@ -26,7 +26,7 @@ inductive VerificationError where
   | MethodVerificationError
   | MerkleQueryOutOfRange (idx: Nat) (rows: Nat)
   | InvalidProof
-  | JournalSealRootMismatch
+  | JournalSealRootMismatch (idx: Nat) (seal: UInt32) (journal: UInt32)
   | SealJournalLengthMismatch (seal_len: Nat) (journal_len: Nat)
   deriving Repr
 
@@ -39,7 +39,7 @@ instance : ToString VerificationError where
         | VerificationError.MethodVerificationError => s!"MethodVerificationError"
         | VerificationError.MerkleQueryOutOfRange idx rows => s!"MerkleQueryOutOfRange idx:{idx} rows:{rows}"
         | VerificationError.InvalidProof => s!"InvalidProof"
-        | VerificationError.JournalSealRootMismatch => s!"JournalSealRootMismatch"
+        | VerificationError.JournalSealRootMismatch idx seal journal => s!"JournalSealRootMismatch idx:{idx} seal:{seal} journal:{journal}"
         | VerificationError.SealJournalLengthMismatch seal_len journal_len => s!"SealJournalLengthMismatch seal_len:{seal_len} journal_len:{journal_len}"
 
 

@@ -61,6 +61,12 @@ class Field (F: Type)
     random: [Monad M] -> [MonadRng M] -> M F
     fromUInt64: UInt64 -> F
 
+class PrimeField (F: Type)
+  extends
+    Field F
+  where
+    toNat: F -> Nat
+
 class RootsOfUnity (F: Type) where
   MAX_ROU_SIZE: Nat
   ROU_FWD: Array F

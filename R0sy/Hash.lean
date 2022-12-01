@@ -14,6 +14,7 @@ class Hash (D: Type)
     SerialUInt32 D
   where
     hash: ByteArray -> D
+    hash_words: Subarray UInt32 -> D
     hash_pair: D -> D -> D
     hash_pod: [SerialUInt32 X] -> Array X -> D
 

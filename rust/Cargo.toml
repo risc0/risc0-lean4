@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "hello_world",
+  "hw",
 ]
 
 [workspace.package]

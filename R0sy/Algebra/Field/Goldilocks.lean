@@ -59,6 +59,9 @@ instance : Field Elem where
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
 
+instance : PrimeField Elem where
+  toNat x := PrimeField.toNat x.rep
+
 instance : RootsOfUnity Elem where
   MAX_ROU_SIZE := 32
   ROU_FWD := #[

@@ -6,7 +6,6 @@ import Zkvm.Circuit
 import Zkvm.Circuit.Riscv
 import Zkvm.Constants
 import Zkvm.Taps
-import Zkvm.Test.HelloWorld
 import Zkvm.Verify
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes

@@ -7,11 +7,13 @@ Generates a receipt for a simple "hello world" guest, then serializes to a Lean 
 ### Saving output to disk in binary format
 
 ```console
-risc0-lean4/rust$ cargo run --release -- disk --out-base=output/hello_world
+risc0-lean4/rust$ cargo run --release --bin hello-world -- disk --out-base=output/hello_world
+risc0-lean4/rust$ cargo run --release --bin hw -- disk --out-base=output/hw
 ```
 
 ### Printing output as Lean file
 
 ```console
-risc0-lean4/rust$ cargo run --release -- lean > ../Zkvm/Test/HelloWorld.lean
+risc0-lean4/rust$ cargo run --release --bin hello-world -- lean > ../Zkvm/Test/HelloWorld.lean
+risc0-lean4/rust$ cargo run --release --bin hw -- lean > ../Zkvm/Test/HW.lean
 ```

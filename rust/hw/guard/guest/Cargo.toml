@@ -1,0 +1,11 @@
+[package]
+name = "hw-guard-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies.risc0-zkvm]
+git = "ssh://git@github.com/risc0/risc0.git"
+rev = "1bb6db18e012261baf20c2011f38a1fd3fe72695"
+default-features = false

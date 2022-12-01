@@ -3,14 +3,18 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Algebra
+import R0sy.Hash.Sha2
+import R0sy.Serial
 import Zkvm.Circuit
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Adapter
 
+open R0sy.Algebra
+open R0sy.Hash.Sha2
+open R0sy.Serial
 open Circuit
 open Classes
-open R0sy.Algebra
 
 structure VerifyAdapter (Elem: Type) where
   po2: UInt32
@@ -48,10 +52,35 @@ def VerifyAdapter.accumulate [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [Mo
               set { self with mix }
 termination_by _ => circuit.mixSize - i
 
-def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Field Elem] (journal: Subarray UInt32) (output: Array Elem): M unit
-  := throw (VerificationError.Sorry "Zkvm.Verify.Adapter.verifyOutput")
+def VerifyAdapter.verifyOutput.toUInt32 [PrimeField Elem] (lo hi: Elem): UInt32 :=
+  let lo' := PrimeField.toNat lo
+  let hi' := PrimeField.toNat hi
+  UInt32.ofNat (lo' ||| (hi' <<< 16))
 
-instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [Field Elem] : MonadVerifyAdapter M where
+def VerifyAdapter.verifyOutputAux [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Subarray UInt32) (output: Array Elem) (i: Nat := 0): M Unit
+  := if h: i < journal.size
+      then 
+        let j := journal[i]
+        let s := VerifyAdapter.verifyOutput.toUInt32 output[2 * i]! output[2 * i + 1]!
+        if j != s
+          then throw (VerificationError.JournalSealRootMismatch i s j)
+          else VerifyAdapter.verifyOutputAux journal output (i + 1)
+      else pure ()
+termination_by _ => journal.size - i
+
+def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (journal: Subarray UInt32) (output: Array Elem): M Unit
+  := do let journal' <-
+          (do let result_length_index := 16
+              let output_len_lo := output[result_length_index]!
+              let output_len_hi := output[result_length_index + 1]!
+              let output_len := (VerifyAdapter.verifyOutput.toUInt32 output_len_lo output_len_hi).toNat
+              let journal_len := journal.size * 4
+              if journal_len != output_len
+                then throw (VerificationError.SealJournalLengthMismatch output_len journal_len)
+                else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_words journal)))
+        VerifyAdapter.verifyOutputAux journal' output
+
+instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter M where
   getPo2
     := do let self <- get
           return self.po2

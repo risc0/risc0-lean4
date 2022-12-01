@@ -134,6 +134,9 @@ instance : Field (Elem p) where
   random := Elem.random p
   fromUInt64 := Elem.fromUInt64 p
 
+instance : PrimeField (Elem p) where
+  toNat x := x.rep.val
+
 end Prime
 
 
