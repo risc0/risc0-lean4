@@ -30,13 +30,11 @@ structure VerifyRoundInfo (ExtElem: Type) where
   merkle: MerkleTreeVerifier
   mix: ExtElem
 
-
-def EXT_SIZE: Nat := 4
-
-def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M] [R0sy.Algebra.Field ExtElem] 
+def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M] 
+  [R0sy.Algebra.Field ExtElem] [e : R0sy.Algebra.Algebra Elem ExtElem]
   (in_domain: Nat) : M (VerifyRoundInfo ExtElem) := do
   let domain := in_domain / FRI_FOLD
-  let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * EXT_SIZE) QUERIES
+  let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * e.EXT_SIZE) QUERIES
   let mix : ExtElem <- Field.random
   return VerifyRoundInfo.mk domain merkle mix
 

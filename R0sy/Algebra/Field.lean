@@ -284,6 +284,7 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Algebra F (Elem q) where
   hMul := sorry
   ofBase := Elem.ofBase _
+  EXT_SIZE := sorry
 
 end Ext
 
