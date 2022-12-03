@@ -1,0 +1,23 @@
+[package]
+name = "circuit"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+clap = { version = "4.0.27", features = ["derive"] }
+risc0-circuit-rv32im = { workspace = true }
+risc0-zkp = { workspace = true }
+serde = { workspace = true }
+snafu = { workspace = true }
+
+[dev-dependencies]
+env_logger = "0.9"
+escargot = "0.5"
+tempfile = "3.3"
+tokio = { version = "1", features = ["macros", "rt"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+default = ["std"]
+std = []

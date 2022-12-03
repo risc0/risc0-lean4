@@ -12,7 +12,7 @@ open R0sy.Algebra.Field
 def riscv: Circuit BabyBear.Elem BabyBear.ExtElem where
   outputSize := 18
   mixSize := 36
-  taps := Inhabited.default
+  taps := Inhabited.default -- TODO! sorry
   poly_ext mix u args := sorry
 
 end Zkvm.Circuit.Riscv
