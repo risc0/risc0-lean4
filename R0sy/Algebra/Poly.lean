@@ -15,6 +15,10 @@ structure Poly (R: Type) [Ring R] where
   rep: Array R
   deriving Repr
 
+def Poly.ofArray [Ring R] (rep: Array R): Poly R := { rep }
+
+def Poly.ofSubarray [Ring R] (rep: Subarray R): Poly R := { rep }
+
 def Poly.zero [Ring R]: Poly R := {
   rep := #[]
 }

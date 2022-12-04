@@ -14,6 +14,7 @@ import Zkvm.Verify.Monad
 namespace Zkvm.Verify
 
 open R0sy.Algebra
+open R0sy.Algebra.Poly
 open R0sy.Hash.Sha2
 open Circuit
 open Classes
@@ -36,7 +37,7 @@ def MerkleVerifiers.check_code_root [Monad.MonadVerify M Elem ExtElem] [Algebrai
         pure ()
 
 def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M MerkleVerifiers
-  := do let circuit: Circuit Elem ExtElem <- MonadCircuit.getCircuit
+  := do let circuit <- MonadCircuit.getCircuit
         let domain <- MonadVerifyAdapter.get_domain
         let code <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
         MerkleVerifiers.check_code_root code
@@ -61,9 +62,19 @@ structure CheckVerifier (ExtElem: Type) where
   result: ExtElem
 
 def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
-  := do let po2 <- MonadVerifyAdapter.get_po2
+  := do let circuit <- MonadCircuit.getCircuit
+        let po2 <- MonadVerifyAdapter.get_po2
         let back_one := (@RootsOfUnity.ROU_REV Elem _)[po2]!
-        throw (VerificationError.Sorry "CheckVerifier.evaluate")
+        let mut cur_pos := 0
+        let mut eval_u: Array ExtElem := Array.mkEmpty (TapSet.tapSize circuit.taps)
+        for reg in regs do
+          let reg_size := RegRef.size reg
+          for i in [0:reg_size] do
+            let x := z * Algebra.ofBase (back_one ^ (RegRef.back reg i))
+            let poly := Poly.ofSubarray (Array.toSubarray coeff_u cur_pos (cur_pos + reg_size))
+            eval_u := eval_u.push (Poly.eval poly x)
+          cur_pos := cur_pos + reg_size
+        pure eval_u
 
 def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M (CheckVerifier ExtElem)
   := do let poly_mix <- @Field.random ExtElem _ M _ _
@@ -72,7 +83,7 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
                 MerkleTreeVerifier.new domain Constants.CHECK_SIZE Constants.QUERIES
         let z <- @Field.random ExtElem _ M _ _
         -- Read the U coeffs + commit their hash
-        let circuit: Circuit Elem ExtElem <- MonadCircuit.getCircuit
+        let circuit <- MonadCircuit.getCircuit
         let num_taps := TapSet.tapSize circuit.taps
         let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Constants.CHECK_SIZE)
         MonadReadIop.commit (Sha256.hash_pod coeff_u)
@@ -81,6 +92,7 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         -- Compute the core polynomial
         let out <- MonadVerifyAdapter.get_out
         let mix <- MonadVerifyAdapter.get_mix
+        throw (VerificationError.Sorry "Zkvm.Verify.verify about to call circuit.poly_ext")
         let result := (circuit.poly_ext poly_mix eval_u #[out, mix]).tot
         pure {
           check,
