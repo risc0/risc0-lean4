@@ -128,9 +128,17 @@ def TapSet.byteRead [Monad M] [MonadByteReader M]: M TapSet
 
 def TapSet.tapSize (self: TapSet): Nat := self.group_begin[REGISTER_GROUPS.size]!.toNat
 
-def TapSet.tapIter (self: TapSet): TapIter := sorry
+def TapSet.tapIter (self: TapSet): TapIter := {
+  iter_data := self.taps.toSubarray
+  iter_cursor := 0
+  iter_end := self.group_begin[REGISTER_GROUPS.size]!.toNat
+}
 
-def TapSet.regIter (self: TapSet): RegIter := sorry
+def TapSet.regIter (self: TapSet): RegIter := {
+  iter_data := self.taps.toSubarray
+  iter_cursor := 0
+  iter_end := self.group_begin[REGISTER_GROUPS.size]!.toNat
+}
 
 def TapSet.groupSize (self: TapSet) (group: RegisterGroup): Nat :=
   let group_id := RegisterGroup.toNat group
@@ -138,13 +146,38 @@ def TapSet.groupSize (self: TapSet) (group: RegisterGroup): Nat :=
   let last := self.taps[idx]!.offset.toNat
   last + 1
 
-def TapSet.groupTapIter (self: TapSet) (group: RegisterGroup): TapIter := sorry
+def TapSet.groupTapIter (self: TapSet) (group: RegisterGroup): TapIter :=
+  let group_id := RegisterGroup.toNat group
+  {
+    iter_data := self.taps.toSubarray
+    iter_cursor := self.group_begin[group_id]!.toNat
+    iter_end := self.group_begin[group_id + 1]!.toNat
+  }
 
-def TapSet.groupRegIter (self: TapSet) (group: RegisterGroup): RegIter := sorry
+def TapSet.groupRegIter (self: TapSet) (group: RegisterGroup): RegIter :=
+  let group_id := RegisterGroup.toNat group
+  {
+    iter_data := self.taps.toSubarray
+    iter_cursor := self.group_begin[group_id]!.toNat
+    iter_end := self.group_begin[group_id + 1]!.toNat
+  }
 
-def TapSet.combosIter (self: TapSet): ComboIter := sorry
+def TapSet.combosIter (self: TapSet): ComboIter := {
+  iter_data := {
+    taps := self.combo_taps.toSubarray
+    offsets := self.combo_begin.toSubarray
+  }
+  iter_id := 0
+  iter_end := self.combos_count.toNat
+}
 
-def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := sorry
+def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := {
+  data := {
+    taps := self.combo_taps.toSubarray
+    offsets := self.combo_begin.toSubarray
+  }
+  id
+}
 
 
 /- TapsProvider -/

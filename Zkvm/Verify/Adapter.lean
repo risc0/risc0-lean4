@@ -80,13 +80,21 @@ def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Pr
                 else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_pod journal)))
         VerifyAdapter.verifyOutputAux journal' output
 
-instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter M where
+instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter Elem M where
   get_po2
     := do let self <- get
-          return self.po2
+          pure self.po2
   get_domain
     := do let self <- get
-          return self.domain
+          pure self.domain
+  get_out
+    := do let self <- get
+          match self.out with
+          | none => panic s!"No output!"
+          | some out => pure out
+  get_mix
+    := do let self <- get
+          pure self.mix
   execute
     := do let circuit: Circuit Elem ExtElem <- MonadCircuit.getCircuit
           VerifyAdapter.execute circuit

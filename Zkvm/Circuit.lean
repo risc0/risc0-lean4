@@ -16,6 +16,6 @@ structure Circuit (Elem ExtElem: Type) where
   outputSize: Nat
   mixSize: Nat
   taps: TapSet
-  poly_ext: ExtElem -> Array ExtElem -> Array (Array Elem) -> MixState ExtElem
+  poly_ext (mix: ExtElem) (u: Array ExtElem) (args: Array (Array Elem)): MixState ExtElem
 
 end Zkvm.Circuit

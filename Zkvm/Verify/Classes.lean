@@ -79,9 +79,11 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
   verifyComplete: M Unit
 
 
-class MonadVerifyAdapter (M: Type -> Type) where
+class MonadVerifyAdapter (Elem: Type) (M: Type -> Type) where
   get_po2: M Nat
   get_domain: M Nat
+  get_out: M (Array Elem)
+  get_mix: M (Array Elem)
   execute: M Unit
   accumulate: M Unit
   verifyOutput (journal: Array UInt32): M Unit
