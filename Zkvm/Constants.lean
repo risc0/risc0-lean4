@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Lean.Nat
+import R0sy
 
 namespace Zkvm.Constants
 

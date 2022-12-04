@@ -2,9 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Hash
-import R0sy.Hash.Sha2
-import R0sy.Lean.Nat
+import R0sy
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Merkle
