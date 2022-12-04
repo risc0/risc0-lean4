@@ -36,15 +36,12 @@ def verify (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] [Pr
         let domain := Constants.INV_RATE * size
         -- Get taps and compute sizes
         let circuit <- @MonadCircuit.getCircuit Elem ExtElem _ _
-        let code_size := TapSet.groupSize circuit.taps RegisterGroup.Code
-        let data_size := TapSet.groupSize circuit.taps RegisterGroup.Data
-        let accum_size := TapSet.groupSize circuit.taps RegisterGroup.Accum
-        -- Get the code and data roots
-        let code_merkle <- MerkleTreeVerifier.new domain code_size Constants.QUERIES
+        -- Get the code, data, and accum roots
+        let code_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
         check_code po2 (MerkleTreeVerifier.root code_merkle)
-        let data_merkle <- MerkleTreeVerifier.new domain code_size Constants.QUERIES
+        let data_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
         MonadVerifyAdapter.accumulate
-        let accum_merkle <- MerkleTreeVerifier.new domain code_size Constants.QUERIES
+        let accum_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES
         -- Begin the check process
         let poly_mix <- @Field.random ExtElem _ M _ _
         let check_merkle <- MerkleTreeVerifier.new domain Constants.CHECK_SIZE Constants.QUERIES
