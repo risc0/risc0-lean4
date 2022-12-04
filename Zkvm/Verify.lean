@@ -87,7 +87,6 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         -- Compute the core polynomial
         let out <- MonadVerifyAdapter.get_out
         let mix <- MonadVerifyAdapter.get_mix
-        throw (VerificationError.Sorry "Zkvm.Verify.verify about to call circuit.poly_ext")
         let result := (circuit.poly_ext poly_mix eval_u #[out, mix]).tot
         pure {
           check,
