@@ -10,6 +10,7 @@ namespace Zkvm.ArithVM.Circuit
 
 open R0sy.Algebra
 open R0sy.Algebra.Field
+open R0sy.ByteDeserial
 open AST
 open Taps
 
@@ -42,17 +43,39 @@ instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem whe
 
 
 structure Circuit (Elem ExtElem: Type) where
-  outputSize: Nat
-  mixSize: Nat
+  output_size: Nat
+  mix_size: Nat
   taps: TapSet
   polydef: PolyExtStepDef
+
+def Circuit.byteRead (Elem ExtElem: Type) [Monad M] [MonadByteReader M]: M (Circuit Elem ExtElem)
+  := do let output_size <- MonadByteReader.readUInt32le >>= (fun x => pure <| x.toNat)
+        let mix_size <- MonadByteReader.readUInt32le >>= (fun x => pure <| x.toNat)
+        let taps <- TapSet.byteRead
+        let polydef <- PolyExtStepDef.byteRead
+        pure {
+          output_size,
+          mix_size,
+          taps,
+          polydef
+        }
+
+def Circuit.ofFile (Elem ExtElem: Type) (filename: System.FilePath): IO (Circuit Elem ExtElem)
+  := do let meta <- filename.metadata
+        let byteSize := meta.byteSize
+        let handle <- IO.FS.Handle.mk filename IO.FS.Mode.read
+        let bytes <- handle.read (byteSize.toNat.toUSize)
+        let result := R0sy.ByteDeserial.ByteReader.run (Circuit.byteRead Elem ExtElem) bytes.data.toSubarray
+        match result with
+        | Except.ok circuit => pure circuit
+        | Except.error error => panic! s!"ERROR: {error}"
 
 def Circuit.poly_ext [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem) (u: Array ExtElem) (args: Array (Array Elem)): MixState ExtElem
   := PolyExtStepDef.run self.polydef mix u args
 
 def riscv (taps: TapSet): Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem where
-  outputSize := 18
-  mixSize := 36
+  output_size := 18
+  mix_size := 36
   taps := taps
   polydef := {
     block := #[],       -- TODO!

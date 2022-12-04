@@ -9,16 +9,6 @@ open R0sy.Lean.ByteArray
 
 def Circuit: Type := Zkvm.ArithVM.Circuit.Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem
 
-def read_tapset (filename: System.FilePath): IO Zkvm.ArithVM.Taps.TapSet
-  := do let meta <- filename.metadata
-        let byteSize := meta.byteSize
-        let handle <- IO.FS.Handle.mk filename IO.FS.Mode.read
-        let bytes <- handle.read (byteSize.toNat.toUSize)
-        let result := R0sy.ByteDeserial.ByteReader.run Zkvm.ArithVM.Taps.TapSet.byteRead bytes.data.toSubarray
-        match result with
-        | Except.ok tapset => pure tapset
-        | Except.error error => panic! s!"ERROR: {error}"
-
 def read_file (filename : System.FilePath): IO (Array UInt32)
   := do let meta <- filename.metadata
         let byteSize := meta.byteSize
@@ -43,14 +33,17 @@ def check_seal (circuit: Circuit) (base_name: String): IO Unit
 
 def read_circuit (filename : System.FilePath): IO Circuit
   := do IO.println s!"Reading circuit ..."
-        let taps <- read_tapset s!"{filename}.tapset"
-        IO.println s!"TapSet size:  {taps.taps.size}"
+        let circuit <- Zkvm.ArithVM.Circuit.Circuit.ofFile _ _ filename
+        IO.println s!"output_size:  {circuit.output_size}"
+        IO.println s!"mix_size:     {circuit.mix_size}"
+        IO.println s!"TapSet size:  {circuit.taps.taps.size}"
+        IO.println s!"Step size:    {circuit.polydef.block.size}"
         IO.println ""
-        pure (Zkvm.ArithVM.Circuit.riscv taps)
+        pure circuit
 
 def main : IO Unit
   := do -- Read the circuit
-        let circuit <- read_circuit "rust/output/circuit"
+        let circuit <- read_circuit "rust/output/riscv.circuit"
         -- Check a seal
         check_seal circuit "rust/output/hello_world"
         check_seal circuit "rust/output/hw"

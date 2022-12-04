@@ -32,7 +32,7 @@ def VerifyAdapter.new: VerifyAdapter Elem := {
 }
 
 def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem): M Unit
-  := do let out <- MonadReadIop.readFields Elem circuit.outputSize >>= (fun x => pure (some x))
+  := do let out <- MonadReadIop.readFields Elem circuit.output_size >>= (fun x => pure (some x))
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
         let domain := Constants.INV_RATE * (1 <<< po2)
         let steps := UInt64.ofNat (1 <<< po2)
@@ -45,12 +45,12 @@ def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [Monad
         }
 
 def VerifyAdapter.accumulate [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem) (i := 0) (mix: Array Elem := #[]): M Unit
-  := if i < circuit.mixSize
+  := if i < circuit.mix_size
       then do let x: Elem <- Field.random
               VerifyAdapter.accumulate circuit (i + 1) (mix.push x)
       else do let self <- get
               set { self with mix }
-termination_by _ => circuit.mixSize - i
+termination_by _ => circuit.mix_size - i
 
 def VerifyAdapter.verifyOutput.toUInt32 [PrimeField Elem] (lo hi: Elem): UInt32 :=
   let lo' := PrimeField.toNat lo
