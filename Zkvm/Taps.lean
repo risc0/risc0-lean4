@@ -100,18 +100,18 @@ structure RegIter where
   iter_cursor: Nat
   iter_end: Nat
 
-def RegIter.next (self: RegIter): (Option RegRef × RegIter) :=
-  let cursor := self.iter_cursor
-  if cursor >= self.iter_data.size
-    then (none, self)
-    else
-      let next := cursor + self.iter_data[cursor]!.skip.toNat
-      if next > self.iter_end
-        then (none, self)
-        else
-          let ref := { data := self.iter_data, cursor }
-          let self' := { self with iter_cursor := next }
-          (some ref, self')
+partial def RegIter.forIn [Monad M] [Inhabited X] (self: RegIter) (x: X) (f: RegRef -> X -> M (ForInStep X)): M X
+  := do let cursor := self.iter_cursor
+        if cursor >= self.iter_data.size then return x
+        let next := cursor + self.iter_data[cursor]!.skip.toNat
+        if next > self.iter_end then return x
+        let step <- f { data := self.iter_data, cursor } x
+        match step with
+        | ForInStep.done x' => pure x'
+        | ForInStep.yield x' => RegIter.forIn { self with iter_cursor := next } x' f
+
+instance : ForIn M RegIter RegRef where
+  forIn iter b f := @RegIter.forIn _ _ _ { default := b } iter b f
 
 
 /- Combo -/
