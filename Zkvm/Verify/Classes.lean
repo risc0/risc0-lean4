@@ -89,7 +89,7 @@ class MonadVerifyAdapter (M: Type -> Type) (Elem: outParam Type) where
   verifyOutput (journal: Array UInt32): M Unit
 
 
-class MonadCircuit(M: Type -> Type) (Elem ExtElem: outParam Type) where
+class MonadCircuit (M: Type -> Type) (Elem ExtElem: outParam Type) where
   getCircuit: M (Circuit Elem ExtElem)
 
 
