@@ -3,15 +3,15 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.ArithVM
 import Zkvm.Circuit
 import Zkvm.Taps
-import Zkvm.VM
 
 namespace Zkvm.Circuit.Riscv
 
 open R0sy.Algebra.Field
+open ArithVM
 open Taps
-open VM
 
 def riscv (taps: TapSet): Circuit BabyBear.Elem BabyBear.ExtElem where
   outputSize := 18

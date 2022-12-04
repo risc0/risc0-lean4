@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import Zkvm.ArithVM
 import Zkvm.Circuit
 import Zkvm.Circuit.Riscv
 import Zkvm.Constants
@@ -14,4 +15,3 @@ import Zkvm.Verify.Fri
 import Zkvm.Verify.Monad
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
-import Zkvm.VM

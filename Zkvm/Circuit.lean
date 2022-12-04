@@ -3,14 +3,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.ArithVM
 import Zkvm.Taps
-import Zkvm.VM
 
 namespace Zkvm.Circuit
 
 open R0sy.Algebra
+open ArithVM
 open Taps
-open VM
 
 structure Circuit (Elem ExtElem: Type) where
   outputSize: Nat
