@@ -59,10 +59,10 @@ instance : Field Elem where
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
 
-instance ElemPrimeField : PrimeField Elem where
+instance Elem.PrimeField : PrimeField Elem where
   toNat x := PrimeField.toNat x.rep
 
-instance ElemRootsOfUnity : RootsOfUnity Elem where
+instance Elem.RootsOfUnity : RootsOfUnity Elem where
   MAX_ROU_SIZE := 32
   ROU_FWD := #[
     1,
@@ -173,7 +173,7 @@ instance : SerialUInt32 ExtElem where
   toUInt32Words x := SerialUInt32.toUInt32Words x.rep
   fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
 
-instance ExtElemField : Field ExtElem where
+instance ExtElem.Field : Field ExtElem where
   inv x := { rep := x.rep.inv }
   random
     := do let rep <- Ext.Elem.random Q
@@ -183,7 +183,7 @@ instance ExtElemField : Field ExtElem where
 
 /- The extension is an algebra over the base -/
 
-instance ElemExtElemAlgebra : Algebra Elem ExtElem where
+instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
 
 

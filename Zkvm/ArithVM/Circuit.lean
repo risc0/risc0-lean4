@@ -28,17 +28,17 @@ instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext Elem
 
 instance [Algebraic Elem ExtElem] : Algebra Elem ExtElem := Algebraic.alg
 
-instance : Algebraic BabyBear.Elem BabyBear.ExtElem where
-  prime := BabyBear.ElemPrimeField
-  rou := BabyBear.ElemRootsOfUnity
-  ext := BabyBear.ExtElemField
-  alg := BabyBear.ElemExtElemAlgebra
+instance BabyBear.Algebraic : Algebraic BabyBear.Elem BabyBear.ExtElem where
+  prime := BabyBear.Elem.PrimeField
+  rou := BabyBear.Elem.RootsOfUnity
+  ext := BabyBear.ExtElem.Field
+  alg := BabyBear.ElemExt.Elem.Algebra
 
-instance : Algebraic Goldilocks.Elem Goldilocks.ExtElem where
-  prime := Goldilocks.ElemPrimeField
-  rou := Goldilocks.ElemRootsOfUnity
-  ext := Goldilocks.ExtElemField
-  alg := Goldilocks.ElemExtElemAlgebra
+instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem where
+  prime := Goldilocks.Elem.PrimeField
+  rou := Goldilocks.Elem.RootsOfUnity
+  ext := Goldilocks.ExtElem.Field
+  alg := Goldilocks.ElemExt.Elem.Algebra
 
 
 structure Circuit (Elem ExtElem: Type) where
