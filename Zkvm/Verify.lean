@@ -31,14 +31,15 @@ structure MerkleVerifiers (ExtElem: Type) where
 
 def MerkleVerifiers.check_code_root (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (code: MerkleTreeVerifier): M Unit
   := do let method_id <- MonadMethodId.getMethodId
-        let po2 <- MonadVerifyAdapter.getPo2
+        let po2 <- MonadVerifyAdapter.get_po2
         let which := po2 - Constants.MIN_CYCLES_PO2
         if which >= method_id.table.size then throw (VerificationError.MethodCycleError po2)
         if method_id.table[which]! != MerkleTreeVerifier.root code then throw VerificationError.MethodVerificationError
         pure ()
 
-def MerkleVerifiers.new (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (taps: TapSet) (domain: Nat): M (MerkleVerifiers ExtElem)
-  := do let code <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Code) Constants.QUERIES
+def MerkleVerifiers.new (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (taps: TapSet): M (MerkleVerifiers ExtElem)
+  := do let domain <- MonadVerifyAdapter.get_domain
+        let code <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Code) Constants.QUERIES
         MerkleVerifiers.check_code_root Elem ExtElem code
         let data <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Data) Constants.QUERIES
         MonadVerifyAdapter.accumulate
@@ -53,22 +54,24 @@ def MerkleVerifiers.new (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.Mon
           check
         }
 
-def verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (journal: Array UInt32)
-  : M Unit
+def verify.enforce_max_cycles (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M]: M Unit
+  := do let po2 <- MonadVerifyAdapter.get_po2
+        if po2 > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
+        pure ()
+
+def verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (journal: Array UInt32): M Unit
   := do -- Initialize the adapter
         MonadVerifyAdapter.execute
         MonadVerifyAdapter.verifyOutput journal
-        -- Get the size
-        let po2 <- MonadVerifyAdapter.getPo2
-        if po2 > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
-        let size := 1 <<< po2
-        let domain := Constants.INV_RATE * size
+        -- Enforce constraints on cycle count
+        verify.enforce_max_cycles Elem ExtElem
         -- Get taps and compute sizes
         let circuit <- @MonadCircuit.getCircuit Elem ExtElem _ _
         -- Get the code, data, and accum roots
-        let merkle <- MerkleVerifiers.new Elem ExtElem circuit.taps domain
+        let merkle <- MerkleVerifiers.new Elem ExtElem circuit.taps
         -- Begin the check process
         let z <- @Field.random ExtElem _ M _ _
+        let po2 <- MonadVerifyAdapter.get_po2
         let back_one := (@RootsOfUnity.ROU_REV Elem _)[po2]!
         -- Read the U coeffs + commit their hash
         let num_taps := TapSet.tapSize circuit.taps

@@ -4,6 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy
 import Zkvm.Circuit
+import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.Taps
 
@@ -79,7 +80,8 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
 
 
 class MonadVerifyAdapter (M: Type -> Type) where
-  getPo2: M Nat
+  get_po2: M Nat
+  get_domain: M Nat
   execute: M Unit
   accumulate: M Unit
   verifyOutput (journal: Array UInt32): M Unit

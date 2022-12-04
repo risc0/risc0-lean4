@@ -2,11 +2,9 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra
-import R0sy.Hash.Sha2
-import R0sy.Lean.UInt32
-import R0sy.Serial
+import R0sy
 import Zkvm.Circuit
+import Zkvm.Constants
 import Zkvm.Verify.Classes
 
 namespace Zkvm.Verify.Adapter
@@ -20,28 +18,28 @@ open Classes
 
 structure VerifyAdapter (Elem: Type) where
   po2: Nat
+  domain: Nat
   steps: UInt64
   out: Option (Array Elem)
   mix: Array Elem
 
 def VerifyAdapter.new: VerifyAdapter Elem := {
   po2 := 0,
+  domain := 0,
   steps := 0,
   out := none,
   mix := #[]
 }
 
 def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem): M Unit
-  := do let out <-
-          (do let out <- MonadReadIop.readFields Elem circuit.outputSize
-              return (some out))
-        let po2 <-
-          (do let po2 <- MonadReadIop.readU32s 1
-              return po2[0]!.toNat)
+  := do let out <- MonadReadIop.readFields Elem circuit.outputSize >>= (fun x => pure (some x))
+        let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
+        let domain := Constants.INV_RATE * (1 <<< po2)
         let steps := UInt64.ofNat (1 <<< po2)
         let self: VerifyAdapter Elem <- get
         set { self with
           po2,
+          domain,
           steps,
           out,
         }
@@ -83,9 +81,12 @@ def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Pr
         VerifyAdapter.verifyOutputAux journal' output
 
 instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter M where
-  getPo2
+  get_po2
     := do let self <- get
           return self.po2
+  get_domain
+    := do let self <- get
+          return self.domain
   execute
     := do let circuit: Circuit Elem ExtElem <- MonadCircuit.getCircuit
           VerifyAdapter.execute circuit
