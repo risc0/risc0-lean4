@@ -11,7 +11,7 @@ open Algebra
 
 /- Polynomials -/
 
-structure Poly (R: Type) [Ring R] where
+structure Poly (R: Type) where
   rep: Array R
   deriving Repr
 
