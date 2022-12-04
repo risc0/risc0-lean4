@@ -19,7 +19,7 @@ open Circuit
 open Classes
 
 structure VerifyAdapter (Elem: Type) where
-  po2: UInt32
+  po2: Nat
   steps: UInt64
   out: Option (Array Elem)
   mix: Array Elem
@@ -37,8 +37,8 @@ def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [Monad
               return (some out))
         let po2 <-
           (do let po2 <- MonadReadIop.readU32s 1
-              return po2[0]!)
-        let steps := UInt64.ofNat (1 <<< (UInt32.toNat po2))
+              return po2[0]!.toNat)
+        let steps := UInt64.ofNat (1 <<< po2)
         let self: VerifyAdapter Elem <- get
         set { self with
           po2,

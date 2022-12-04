@@ -29,16 +29,17 @@ structure MerkleVerifiers (ExtElem: Type) where
   poly_mix: ExtElem
   check: MerkleTreeVerifier
 
-def MerkleVerifiers.check_code_root (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] (po2: Nat) (code_root: Sha256.Digest): M Unit
+def MerkleVerifiers.check_code_root (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (code: MerkleTreeVerifier): M Unit
   := do let method_id <- MonadMethodId.getMethodId
+        let po2 <- MonadVerifyAdapter.getPo2
         let which := po2 - Constants.MIN_CYCLES_PO2
         if which >= method_id.table.size then throw (VerificationError.MethodCycleError po2)
-        if method_id.table[which]! != code_root then throw VerificationError.MethodVerificationError
+        if method_id.table[which]! != MerkleTreeVerifier.root code then throw VerificationError.MethodVerificationError
         pure ()
 
-def MerkleVerifiers.new (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] [PrimeField Elem] [Field ExtElem] (po2: Nat) (taps: TapSet) (domain: Nat): M (MerkleVerifiers ExtElem)
+def MerkleVerifiers.new (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (taps: TapSet) (domain: Nat): M (MerkleVerifiers ExtElem)
   := do let code <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Code) Constants.QUERIES
-        MerkleVerifiers.check_code_root Elem ExtElem po2 (MerkleTreeVerifier.root code)
+        MerkleVerifiers.check_code_root Elem ExtElem code
         let data <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Data) Constants.QUERIES
         MonadVerifyAdapter.accumulate
         let accum <- MerkleTreeVerifier.new domain (TapSet.groupSize taps RegisterGroup.Accum) Constants.QUERIES
@@ -52,23 +53,23 @@ def MerkleVerifiers.new (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem E
           check
         }
 
-def verify (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] [PrimeField Elem] [RootsOfUnity Elem] [Field ExtElem] (journal: Array UInt32)
+def verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] [Monad.MonadVerify Elem ExtElem M] (journal: Array UInt32)
   : M Unit
   := do -- Initialize the adapter
         MonadVerifyAdapter.execute
         MonadVerifyAdapter.verifyOutput journal
         -- Get the size
         let po2 <- MonadVerifyAdapter.getPo2
-        if po2.toNat > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
-        let size := (1 <<< po2).toNat
+        if po2 > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
+        let size := 1 <<< po2
         let domain := Constants.INV_RATE * size
         -- Get taps and compute sizes
         let circuit <- @MonadCircuit.getCircuit Elem ExtElem _ _
         -- Get the code, data, and accum roots
-        let merkle <- MerkleVerifiers.new Elem ExtElem po2.toNat circuit.taps domain
+        let merkle <- MerkleVerifiers.new Elem ExtElem circuit.taps domain
         -- Begin the check process
         let z <- @Field.random ExtElem _ M _ _
-        let back_one := (@RootsOfUnity.ROU_REV Elem _)[po2.toNat]!
+        let back_one := (@RootsOfUnity.ROU_REV Elem _)[po2]!
         -- Read the U coeffs + commit their hash
         let num_taps := TapSet.tapSize circuit.taps
         let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Constants.CHECK_SIZE)
@@ -79,7 +80,7 @@ def verify (Elem ExtElem: Type) [Monad M] [Monad.MonadVerify Elem ExtElem M] [Pr
         -- Sorry! We have not implemented the rest of the logic yet ;)
         throw (VerificationError.Sorry "Zkvm.Verify.verify")
 
-def run_verify [PrimeField Elem] [RootsOfUnity Elem] [Field ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32)
+def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32)
   := Monad.VerifyContext.run circuit method_id seal (verify Elem ExtElem journal)
 
 end Zkvm.Verify

@@ -32,14 +32,15 @@ structure VerifyContext (Elem ExtElem: Type) where
   adapter: VerifyAdapter Elem
   read_iop: ReadIop
 
-
 class MonadVerify (Elem ExtElem: Type) (M: Type -> Type)
   extends
+    Monad M,
     MonadStateOf (VerifyContext Elem ExtElem) M,
     MonadExceptOf VerificationError M
   where
 
 instance
+  [Monad M]
   [MonadStateOf (VerifyContext Elem ExtElem) M]
   [MonadExceptOf VerificationError M]
   : MonadVerify Elem ExtElem M where
@@ -82,7 +83,7 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf 
           pure result
 
 
-def VerifyContext.run [Field Elem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (seal: Array UInt32)
+def VerifyContext.run [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (seal: Array UInt32)
   (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify Elem ExtElem M] -> [Field Elem] -> M Unit)
   : Id (Except VerificationError Unit)
   := do let verify_context: VerifyContext Elem ExtElem := {

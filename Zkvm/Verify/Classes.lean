@@ -10,12 +10,40 @@ import Zkvm.Taps
 namespace Zkvm.Verify.Classes
 
 open R0sy.Algebra
+open R0sy.Algebra.Field
 open R0sy.Hash
 open R0sy.Hash.Sha2
 open R0sy.Serial
 open Circuit
 open MethodId
 open Taps
+
+
+class Algebraic (Elem ExtElem: Type) where
+  prime: PrimeField Elem
+  rou: RootsOfUnity Elem
+  ext: Field ExtElem
+  alg: Algebra Elem ExtElem
+
+instance [Algebraic Elem ExtElem] : PrimeField Elem := Algebraic.prime ExtElem
+
+instance [Algebraic Elem ExtElem] : RootsOfUnity Elem := Algebraic.rou ExtElem
+
+instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext Elem
+
+instance [Algebraic Elem ExtElem] : Algebra Elem ExtElem := Algebraic.alg
+
+instance : Algebraic BabyBear.Elem BabyBear.ExtElem where
+  prime := BabyBear.ElemPrimeField
+  rou := BabyBear.ElemRootsOfUnity
+  ext := BabyBear.ExtElemField
+  alg := BabyBear.ElemExtElemAlgebra
+
+instance : Algebraic Goldilocks.Elem Goldilocks.ExtElem where
+  prime := Goldilocks.ElemPrimeField
+  rou := Goldilocks.ElemRootsOfUnity
+  ext := Goldilocks.ExtElemField
+  alg := Goldilocks.ElemExtElemAlgebra
 
 
 inductive VerificationError where
@@ -51,7 +79,7 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
 
 
 class MonadVerifyAdapter (M: Type -> Type) where
-  getPo2: M UInt32
+  getPo2: M Nat
   execute: M Unit
   accumulate: M Unit
   verifyOutput (journal: Array UInt32): M Unit
@@ -59,6 +87,7 @@ class MonadVerifyAdapter (M: Type -> Type) where
 
 class MonadCircuit (Elem ExtElem: Type) (M: Type -> Type) where
   getCircuit: M (Circuit Elem ExtElem)
+
 
 class MonadMethodId (M: Type -> Type) where
   getMethodId: M MethodId
