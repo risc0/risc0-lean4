@@ -70,12 +70,48 @@ structure TapIter where
   iter_end: Nat
 
 
+/- RegRef -/
+
+structure RegRef where
+  data: Subarray TapData
+  cursor: Nat
+
+def RegRef.group (self: RegRef): RegisterGroup := self.data[self.cursor]!.group
+
+def RegRef.offset (self: RegRef): Nat := self.data[self.cursor]!.offset.toNat
+
+def RegRef.combo_id (self: RegRef): Nat := self.data[self.cursor]!.combo.toNat
+
+def RegRef.size (self: RegRef): Nat := self.data[self.cursor]!.skip.toNat
+
+def RegRef.back (self: RegRef) (i: Nat): Nat := self.data[self.cursor + i]!.back.toNat
+
+def RegRef.into_iter (self: RegRef): TapIter := {
+  iter_data := self.data
+  iter_cursor := self.cursor
+  iter_end := self.cursor + RegRef.size self
+}
+
+
 /- RegIter -/
 
 structure RegIter where
   iter_data: Subarray TapData
   iter_cursor: Nat
   iter_end: Nat
+
+def RegIter.next (self: RegIter): (Option RegRef × RegIter) :=
+  let cursor := self.iter_cursor
+  if cursor >= self.iter_data.size
+    then (none, self)
+    else
+      let next := cursor + self.iter_data[cursor]!.skip.toNat
+      if next > self.iter_end
+        then (none, self)
+        else
+          let ref := { data := self.iter_data, cursor }
+          let self' := { self with iter_cursor := next }
+          (some ref, self')
 
 
 /- Combo -/

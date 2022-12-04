@@ -80,7 +80,7 @@ def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Pr
                 else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_pod journal)))
         VerifyAdapter.verifyOutputAux journal' output
 
-instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit Elem ExtElem M] [PrimeField Elem] : MonadVerifyAdapter Elem M where
+instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit M Elem ExtElem] [PrimeField Elem] : MonadVerifyAdapter M Elem where
   get_po2
     := do let self <- get
           pure self.po2
