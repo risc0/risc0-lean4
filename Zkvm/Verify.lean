@@ -51,11 +51,6 @@ def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtEl
         }
 
 
-def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do let po2 <- MonadVerifyAdapter.get_po2
-        if po2 > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
-        pure ()
-
 structure CheckVerifier (ExtElem: Type) where
   check: MerkleTreeVerifier
   coeff_u: Array ExtElem
@@ -99,6 +94,12 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           coeff_u,
           result
         }
+
+
+def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
+  := do let po2 <- MonadVerifyAdapter.get_po2
+        if po2 > Constants.MAX_CYCLES_PO2 then panic s!"po2:{po2} > Constants.MAX_CYCLES_PO2:{Constants.MAX_CYCLES_PO2}"
+        pure ()
 
 def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
   := do -- Initialize the adapter
