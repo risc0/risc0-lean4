@@ -34,7 +34,8 @@ def check_seal (circuit: Circuit) (base_name: String): IO Unit
         IO.println s!"ID size:      {id.size} words"
         IO.println s!"Journal size: {journal.size} words"
         IO.println s!"Seal size:    {seal.size} words"
-        let result := Zkvm.Verify.run_verify circuit journal seal
+        let method_id := Zkvm.MethodId.MethodId.ofWords id.toSubarray
+        let result := Zkvm.Verify.run_verify circuit method_id journal seal
         match result with
         | Except.ok _ => IO.println "Seal is OK"
         | Except.error error => IO.println s!"ERROR: {error}"

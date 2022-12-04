@@ -5,6 +5,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import Zkvm.Circuit
 import Zkvm.Circuit.Riscv
 import Zkvm.Constants
+import Zkvm.MethodId
 import Zkvm.Taps
 import Zkvm.Verify
 import Zkvm.Verify.Adapter
