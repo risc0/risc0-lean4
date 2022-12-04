@@ -3,7 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Circuit
+import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Classes
 
@@ -13,7 +13,7 @@ open R0sy.Algebra
 open R0sy.Hash.Sha2
 open R0sy.Lean.UInt32
 open R0sy.Serial
-open Circuit
+open ArithVM.Circuit
 open Classes
 
 structure VerifyAdapter (Elem: Type) where

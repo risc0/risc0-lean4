@@ -3,10 +3,10 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Circuit
+import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
-import Zkvm.Taps
+import Zkvm.ArithVM.Taps
 
 namespace Zkvm.Verify.Classes
 
@@ -15,9 +15,9 @@ open R0sy.Algebra.Field
 open R0sy.Hash
 open R0sy.Hash.Sha2
 open R0sy.Serial
-open Circuit
+open ArithVM.Circuit
+open ArithVM.Taps
 open MethodId
-open Taps
 
 
 class Algebraic (Elem ExtElem: Type) where

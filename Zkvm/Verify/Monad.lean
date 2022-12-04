@@ -3,8 +3,8 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Circuit
-import Zkvm.Taps
+import Zkvm.ArithVM.Circuit
+import Zkvm.ArithVM.Taps
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Fri
@@ -17,13 +17,13 @@ namespace Zkvm.Verify.Monad
 open R0sy.Algebra
 open R0sy.Hash.Sha2
 open Adapter
-open Circuit
+open ArithVM.Circuit
+open ArithVM.Taps
 open Classes
 open Fri
 open Merkle
 open MethodId
 open ReadIop
-open Taps
 
 
 structure VerifyContext (Elem ExtElem: Type) where

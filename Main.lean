@@ -7,14 +7,14 @@ import Zkvm
 
 open R0sy.Lean.ByteArray
 
-def Circuit: Type := Zkvm.Circuit.Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem
+def Circuit: Type := Zkvm.ArithVM.Circuit.Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem
 
-def read_tapset (filename: System.FilePath): IO Zkvm.Taps.TapSet
+def read_tapset (filename: System.FilePath): IO Zkvm.ArithVM.Taps.TapSet
   := do let meta <- filename.metadata
         let byteSize := meta.byteSize
         let handle <- IO.FS.Handle.mk filename IO.FS.Mode.read
         let bytes <- handle.read (byteSize.toNat.toUSize)
-        let result := R0sy.ByteDeserial.ByteReader.run Zkvm.Taps.TapSet.byteRead bytes.data.toSubarray
+        let result := R0sy.ByteDeserial.ByteReader.run Zkvm.ArithVM.Taps.TapSet.byteRead bytes.data.toSubarray
         match result with
         | Except.ok tapset => pure tapset
         | Except.error error => panic! s!"ERROR: {error}"
@@ -46,7 +46,7 @@ def read_circuit (filename : System.FilePath): IO Circuit
         let taps <- read_tapset s!"{filename}.tapset"
         IO.println s!"TapSet size:  {taps.taps.size}"
         IO.println ""
-        pure (Zkvm.Circuit.Riscv.riscv taps)
+        pure (Zkvm.ArithVM.Circuit.riscv taps)
 
 def main : IO Unit
   := do -- Read the circuit

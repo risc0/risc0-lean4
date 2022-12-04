@@ -2,9 +2,9 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.ByteDeserial
+import R0sy
 
-namespace Zkvm.Taps
+namespace Zkvm.ArithVM.Taps
 
 open R0sy.ByteDeserial
 
@@ -221,4 +221,4 @@ def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := {
 class TapsProvider (C: Type) where
   taps: C -> TapSet
 
-end Zkvm.Taps
+end Zkvm.ArithVM.Taps

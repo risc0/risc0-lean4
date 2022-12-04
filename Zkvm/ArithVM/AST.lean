@@ -3,9 +3,9 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Taps
+import Zkvm.ArithVM.Taps
 
-namespace Zkvm.ArithVM
+namespace Zkvm.ArithVM.AST
 
 open R0sy.Algebra
 
@@ -86,4 +86,4 @@ def PolyExtStepDef.run [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self
               (fp_vars, mix_vars) := PolyExtStep.step op fp_vars mix_vars mix u args
             pure mix_vars[self.ret.rep.toNat]!
 
-end Zkvm.ArithVM
+end Zkvm.ArithVM.AST

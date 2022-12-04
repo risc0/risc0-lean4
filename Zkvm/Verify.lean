@@ -3,10 +3,10 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Circuit
+import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
-import Zkvm.Taps
+import Zkvm.ArithVM.Taps
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.Monad
@@ -16,11 +16,11 @@ namespace Zkvm.Verify
 open R0sy.Algebra
 open R0sy.Algebra.Poly
 open R0sy.Hash.Sha2
-open Circuit
+open ArithVM.Circuit
+open ArithVM.Taps
 open Classes
 open Merkle
 open MethodId
-open Taps
 
 
 structure MerkleVerifiers where
