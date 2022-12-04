@@ -14,3 +14,4 @@ import Zkvm.Verify.Fri
 import Zkvm.Verify.Monad
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
+import Zkvm.VM
