@@ -38,7 +38,9 @@ def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M]
   let mix : ExtElem <- Field.random
   return VerifyRoundInfo.mk domain merkle mix
 
-def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry
+def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry -- TODO(Bolton) port NTT code
+
+def from_subelems (inps : Array Elem) : ExtElem := sorry
 
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
   [RootsOfUnity Elem] -- FIXME should be Elem
@@ -51,8 +53,9 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   --
   let quot := pos_ / self.domain
   let group := pos_ % self.domain
-  let data : Array ExtElem <- self.merkle.verify group
-  let data_ext : Array ExtElem := sorry -- Get the column data, not sure yet what the rust is doing here
+  let data : Array Elem <- self.merkle.verify group
+  let collate_data : Array (Array Elem) := sorry -- collect field elements into groups of size EXT_SIZE
+  let data_ext : Array ExtElem := collate_data.map from_subelems 
   if data_ext[quot]! != goal_
     then throw VerificationError.InvalidProof
   else 
