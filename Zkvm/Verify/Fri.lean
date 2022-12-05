@@ -38,12 +38,20 @@ def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M]
   let mix : ExtElem <- Field.random
   return VerifyRoundInfo.mk domain merkle mix
 
-def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry -- TODO(Bolton) port NTT code
+def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry
+
+def poly_eval (coeffs : Array ExtElem) (x : ExtElem) : ExtElem := sorry
 
 def from_subelems (inps : Array Elem) : ExtElem := sorry
 
+-- Takes a array of `T`s of length (outersize * inner_size) 
+-- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
+-- Adjacent elems do not go in the same sublist
+def collate (arr : Array T) (outer_size : Nat) : (Array (Array T)) := sorry
+  -- (arr.toList.toChunks outer_size).transpose.toArray
+
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
-  [RootsOfUnity Elem] -- FIXME should be Elem
+  [RootsOfUnity Elem]
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M) -- Weird to do this with typeclasses, what if we had two mutable Nats for example?
   [R0sy.Algebra.Field Elem] [R0sy.Algebra.Field ExtElem] [R0sy.Algebra.Algebra Elem ExtElem]
   (self: VerifyRoundInfo ExtElem) : M Unit := do
@@ -54,7 +62,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   let quot := pos_ / self.domain
   let group := pos_ % self.domain
   let data : Array Elem <- self.merkle.verify group
-  let collate_data : Array (Array Elem) := sorry -- collect field elements into groups of size EXT_SIZE
+  let collate_data : Array (Array Elem) := collate data FRI_FOLD -- collect field elements into groups of size EXT_SIZE
   let data_ext : Array ExtElem := collate_data.map from_subelems 
   if data_ext[quot]! != goal_
     then throw VerificationError.InvalidProof
@@ -114,8 +122,8 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
       
       -- // Do final verification
       let x : Elem := gen ^ (<- pos.get)
-
-      let collate_final_coeffs : Array (Array Elem) := sorry -- collect field elements into groups of size EXT_SIZE
+      -- collect field elements into groups of size EXT_SIZE
+      let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_
       poly_buf := collate_final_coeffs.map from_subelems
 
       let fx : ExtElem := poly_eval poly_buf (e.ofBase x)
