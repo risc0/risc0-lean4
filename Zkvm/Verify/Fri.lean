@@ -11,6 +11,7 @@ import Zkvm.Verify.Merkle
 namespace Zkvm.Verify.Fri
 
 open R0sy.Algebra
+open R0sy.Algebra.Poly
 open R0sy.Lean.Subarray
 open R0sy.Lean.Nat
 open R0sy.Hash.Sha2
@@ -35,8 +36,6 @@ def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M]
   return VerifyRoundInfo.mk domain merkle mix
 
 def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry
-
-def poly_eval (coeffs : Array ExtElem) (x : ExtElem) : ExtElem := sorry
 
 def from_subelems (inps : Array Elem) : ExtElem := sorry
 
@@ -122,7 +121,8 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
       let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_
       poly_buf := collate_final_coeffs.map from_subelems
 
-      let fx : ExtElem := poly_eval poly_buf (Algebra.ofBase x)
+      let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
+
       if fx != (<- goal.get)
         then
           throw VerificationError.InvalidProof -- XXX surprised this is valid syntax (without the "else"), I assume it does what it looks like it does?
