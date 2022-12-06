@@ -7,7 +7,7 @@ import R0sy.Algebra.Field
 import R0sy.Lean.Subarray
 import R0sy.Lean.Nat
 import R0sy.Hash.Sha2
-import Zkvm.Circuit
+import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Merkle
