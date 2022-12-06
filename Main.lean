@@ -7,6 +7,8 @@ import Zkvm
 
 open R0sy.Lean.ByteArray
 
+def Circuit: Type := Zkvm.ArithVM.Circuit.Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem
+
 def read_file (filename : System.FilePath): IO (Array UInt32)
   := do let meta <- filename.metadata
         let byteSize := meta.byteSize
@@ -14,7 +16,7 @@ def read_file (filename : System.FilePath): IO (Array UInt32)
         let bytes <- handle.read (byteSize.toNat.toUSize)
         pure (ByteArray.to_le32 bytes)
 
-def check_seal (base_name: String): IO Unit
+def check_seal (circuit: Circuit) (base_name: String): IO Unit
   := do IO.println s!"Checking {base_name} ..."
         let id <- read_file s!"{base_name}.id"
         let journal <- read_file s!"{base_name}.journal"
@@ -22,13 +24,26 @@ def check_seal (base_name: String): IO Unit
         IO.println s!"ID size:      {id.size} words"
         IO.println s!"Journal size: {journal.size} words"
         IO.println s!"Seal size:    {seal.size} words"
-        let result := Zkvm.Verify.run_verify Zkvm.Circuit.Riscv.riscv journal seal
+        let method_id := Zkvm.MethodId.MethodId.ofWords id.toSubarray
+        let result := Zkvm.Verify.run_verify circuit method_id journal seal
         match result with
         | Except.ok _ => IO.println "Seal is OK"
         | Except.error error => IO.println s!"ERROR: {error}"
         IO.println ""
 
+def read_circuit (filename : System.FilePath): IO Circuit
+  := do IO.println s!"Reading circuit ..."
+        let circuit <- Zkvm.ArithVM.Circuit.Circuit.ofFile _ _ filename
+        IO.println s!"output_size:  {circuit.output_size}"
+        IO.println s!"mix_size:     {circuit.mix_size}"
+        IO.println s!"TapSet size:  {circuit.taps.taps.size}"
+        IO.println s!"Step size:    {circuit.polydef.block.size}"
+        IO.println ""
+        pure circuit
+
 def main : IO Unit
-  := do -- Check a seal
-        check_seal "rust/output/hello_world"
-        check_seal "rust/output/hw"
+  := do -- Read the circuit
+        let circuit <- read_circuit "rust/output/riscv.circuit"
+        -- Check a seal
+        check_seal circuit "rust/output/hello_world"
+        check_seal circuit "rust/output/hw"

@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Lean.Nat
+import R0sy
 
 namespace Zkvm.Constants
 
@@ -22,5 +22,7 @@ def INV_RATE: Nat := 4
 def FRI_FOLD_PO2: Nat := 4
 def FRI_FOLD: Nat := 1 <<< FRI_FOLD_PO2
 def FRI_MIN_DEGREE: Nat := 256
+
+def CHECK_SIZE := INV_RATE * 4 -- TODO: field extension degree
 
 end Zkvm.Constants

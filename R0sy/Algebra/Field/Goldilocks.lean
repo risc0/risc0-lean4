@@ -27,6 +27,8 @@ structure Elem where
   rep: Prime.Elem P
   deriving Repr
 
+instance : ToString Elem where toString x := toString x.rep
+
 instance : Inhabited Elem where default := { rep := Inhabited.default }
 
 instance : OfNat Elem n where ofNat := { rep := Prime.Elem.ofNat _ n }
@@ -59,10 +61,10 @@ instance : Field Elem where
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
 
-instance : PrimeField Elem where
+instance Elem.PrimeField : PrimeField Elem where
   toNat x := PrimeField.toNat x.rep
 
-instance : RootsOfUnity Elem where
+instance Elem.RootsOfUnity : RootsOfUnity Elem where
   MAX_ROU_SIZE := 32
   ROU_FWD := #[
     1,
@@ -150,6 +152,8 @@ def ExtElem.new (a0 a1: Elem): ExtElem := {
   rep := { rep := { rep := #[a0, a1] } }
 }
 
+instance : ToString ExtElem where toString x := toString x.rep
+
 instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 
 instance : BEq ExtElem where beq x y := x.rep == y.rep
@@ -173,7 +177,7 @@ instance : SerialUInt32 ExtElem where
   toUInt32Words x := SerialUInt32.toUInt32Words x.rep
   fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
 
-instance : Field ExtElem where
+instance ExtElem.Field : Field ExtElem where
   inv x := { rep := x.rep.inv }
   random
     := do let rep <- Ext.Elem.random Q
@@ -183,8 +187,9 @@ instance : Field ExtElem where
 
 /- The extension is an algebra over the base -/
 
-instance : Algebra Elem ExtElem where
+instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
+  ofBasis i x := { rep := Algebra.ofBasis i x }
 
 
 /- Examples -/

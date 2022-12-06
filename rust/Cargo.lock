@@ -201,6 +201,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "circuit"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "env_logger",
+ "escargot",
+ "risc0-circuit-rv32im",
+ "risc0-zkp",
+ "serde",
+ "snafu",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "clap"
 version = "4.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1475,8 +1492,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-build"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "cargo_metadata",
  "downloader",
@@ -1493,8 +1510,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-circuit-rv32im"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "anyhow",
  "cc",
@@ -1514,8 +1531,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zeroio"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "bytemuck",
  "impl-trait-for-tuples",
@@ -1526,8 +1543,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zeroio-derive"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1536,8 +1553,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkp"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -1560,8 +1577,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -1586,8 +1603,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm-platform"
-version = "0.12.0"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=1bb6db18e012261baf20c2011f38a1fd3fe72695#1bb6db18e012261baf20c2011f38a1fd3fe72695"
+version = "1.0.0-rc.2"
+source = "git+ssh://git@github.com/risc0/risc0.git?rev=18f9257fa6c4c2e1887139228153531977876cf5#18f9257fa6c4c2e1887139228153531977876cf5"
 
 [[package]]
 name = "rustacuda_core"

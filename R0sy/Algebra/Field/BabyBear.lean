@@ -27,6 +27,8 @@ structure Elem where
   rep: Prime.Elem P
   deriving Repr
 
+instance : ToString Elem where toString x := toString x.rep
+
 instance : Inhabited Elem where default := { rep := Inhabited.default }
 
 instance : OfNat Elem n where ofNat := { rep := Prime.Elem.ofNat _ n }
@@ -59,10 +61,10 @@ instance : Field Elem where
           return { rep }
   fromUInt64 x := { rep := Field.fromUInt64 x }
 
-instance : PrimeField Elem where
+instance Elem.PrimeField : PrimeField Elem where
   toNat x := PrimeField.toNat x.rep
 
-instance : RootsOfUnity Elem where
+instance Elem.RootsOfUnity : RootsOfUnity Elem where
   MAX_ROU_SIZE := 27
   ROU_FWD := #[
     1, 2013265920, 284861408, 1801542727, 567209306, 740045640, 918899846, 1881002012,
@@ -81,7 +83,7 @@ instance : RootsOfUnity Elem where
 /- Extension field -/
 
 def Q: Irreducible Elem (Poly.Poly Elem) := {
-  rep := Poly.mono 4 Ring.one - Poly.mono 0 (Ring.ofNat 11)
+  rep := Poly.mono 4 Ring.one + Poly.mono 0 (Ring.ofNat 11)
 }
 
 structure ExtElem where
@@ -91,6 +93,8 @@ structure ExtElem where
 def ExtElem.new (a0 a1 a2 a3: Elem): ExtElem := {
   rep := { rep := { rep := #[a0, a1, a2, a3] } }
 }
+
+instance : ToString ExtElem where toString x := toString x.rep
 
 instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 
@@ -117,7 +121,7 @@ instance : SerialUInt32 ExtElem where
   toUInt32Words x := SerialUInt32.toUInt32Words x.rep
   fromUInt32Words x := { rep := SerialUInt32.fromUInt32Words x }
 
-instance : Field ExtElem where
+instance ExtElem.Field : Field ExtElem where
   inv x := { rep := x.rep.inv }
   random
     := do let rep <- Ext.Elem.random Q
@@ -127,8 +131,9 @@ instance : Field ExtElem where
 
 /- The extension is an algebra over the base -/
 
-instance : Algebra Elem ExtElem where
+instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
+  ofBasis i x := { rep := Algebra.ofBasis i x }
 
 
 /- Examples -/
@@ -173,9 +178,44 @@ example:
 
 #eval
   let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
+  let y: ExtElem := { rep := { rep := { rep := #[3473847, 2323254, 65765, 23233546] } } }
+  x + y == y + x
+
+#eval
+  let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
+  let y: ExtElem := { rep := { rep := { rep := #[3473847, 2323254, 65765, 23233546] } } }
+  x * y == y * x
+
+#eval
+  let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
+  let y: ExtElem := { rep := { rep := { rep := #[3473847, 2323254, 65765, 23233546] } } }
+  let z: ExtElem := { rep := { rep := { rep := #[656546, 7657568, 2344325, 786857543] } } }
+  x * (y + z) == x * y + x * z
+
+#eval
+  let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
+  let y: ExtElem := { rep := { rep := { rep := #[3473847, 2323254, 65765, 23233546] } } }
+  let z: ExtElem := { rep := { rep := { rep := #[656546, 7657568, 2344325, 786857543] } } }
+  x * (y * z) == (x * y) * z
+
+#eval
+  let x: ExtElem := { rep := { rep := { rep := #[3432, 213424, 765, 235465] } } }
   let to: ExtElem -> Array UInt32 := SerialUInt32.toUInt32Words
   let fr: Subarray UInt32 -> ExtElem := SerialUInt32.fromUInt32Words
   x == fr (to x).toSubarray
+
+#eval
+  let x: ExtElem := { rep := {rep := { rep := #[1880084280, 1788985953, 1273325207, 277471107] }}}
+  let c1: ExtElem := { rep := {rep := { rep := #[1262573828, 1903841444, 1738307519, 100967278] }}}
+  let expected: ExtElem := { rep := {rep := { rep := #[876029217, 1948387849, 498773186, 1997003991] }}}
+  x * c1 == expected
+
+#eval
+  let x: ExtElem := { rep := {rep := { rep := #[1880084280, 1788985953, 1273325207, 277471107] }}}
+  let c0: ExtElem := { rep := {rep := { rep := #[1582815482, 2011839994, 589901, 698998108] }}}
+  let c1: ExtElem := { rep := {rep := { rep := #[1262573828, 1903841444, 1738307519, 100967278] }}}
+  let expected: ExtElem := { rep := {rep := { rep := #[445578778, 1946961922, 499363087, 682736178] }}}
+  c0 + x * c1 == expected
 
 #eval
   let x: Elem := RootsOfUnity.ROU_FWD[15]!

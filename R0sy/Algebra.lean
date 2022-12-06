@@ -39,6 +39,7 @@ instance [BEq R] : BEq (Irreducible F R) where beq := Irreducible.beq
 
 class Ring (R: Type)
   extends
+    ToString R,
     Inhabited R,
     BEq R,
     Add R,
@@ -78,6 +79,7 @@ class Algebra (F: Type) (R: Type)
   where
     ofBase: F -> R
     EXT_SIZE: Nat
+    ofBasis: Nat -> F -> R
 
 class PolyRing (F: Type) (R: Type)
   extends
