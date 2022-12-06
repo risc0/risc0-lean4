@@ -15,6 +15,8 @@ structure Poly (R: Type) where
   rep: Array R
   deriving Repr
 
+instance [ToString R] : ToString (Poly R) where toString x := toString x.rep
+
 def Poly.ofArray [Ring R] (rep: Array R): Poly R := { rep }
 
 def Poly.ofSubarray [Ring R] (rep: Subarray R): Poly R := { rep }
@@ -136,29 +138,6 @@ def Poly.sub [Ring R] (x y: Poly R): Poly R := x + (- y)
 instance [Ring R] : Sub (Poly R) where sub := Poly.sub
 
 
-/- Mul -/
-
-partial def Poly.mulAux [Ring R] (xx yy out: Array R) (i j: Nat): Array R :=
-  if hi: i < xx.size
-    then
-      if hj: j < yy.size
-        then
-          let a := xx[i]
-          let b := yy[j]
-          let c := Array.getD out (i + j) Ring.zero
-          mulAux xx yy (Array.setD out (i + j) (a * b + c)) (i + 1) j
-        else out
-    else mulAux xx yy out 0 (j + 1)
-
-def Poly.mul [Ring R] (x y: Poly R): Poly R :=
-  if x == 0 || y == 0 then 0
-  else {
-    rep := mulAux x.rep y.rep (mkArray (x.deg + y.deg + 1) Ring.zero) 0 0
-  }
-
-instance [Ring R] : Mul (Poly R) where mul := Poly.mul
-
-
 /- Scale -/
 
 partial def Poly.scaleAux [Ring R] (s: R) (xx: Array R) (i: Nat): Array R :=
@@ -172,6 +151,19 @@ partial def Poly.scaleAux [Ring R] (s: R) (xx: Array R) (i: Nat): Array R :=
 def Poly.scale [Ring R] (s: R) (x: Poly R): Poly R := {
   rep := scaleAux s x.rep 0
 }
+
+
+/- Mul -/
+
+def Poly.mul [Ring R] (x y: Poly R): Poly R
+  := Id.run do
+    let mut out: Poly R := Poly.zero
+    for i in [0:Poly.deg x + 1] do
+      let c := Poly.coeff x i
+      if c != Ring.zero then out := out + { rep := Array.mkArray i Ring.zero ++ (Poly.scale c y).rep }
+    pure out
+
+instance [Ring R] : Mul (Poly R) where mul := Poly.mul
 
 
 /- Pow -/
@@ -188,9 +180,9 @@ instance [Ring R] : HPow (Poly R) Nat (Poly R) where hPow := Poly.pow
 
 /- Div -/
 
-partial def Poly.divAux [Field R] (n d q r: Poly R): Poly R :=
+partial def Poly.divAux [Field R] (n d q r: Poly R): (Poly R × Poly R) :=
   if r == 0 || r.deg < d.deg
-    then q
+    then (q, r)
     else
       let t := Poly.mono (r.deg - d.deg) (r.lead_coeff / d.lead_coeff)
       let q' := q + t
@@ -200,26 +192,17 @@ partial def Poly.divAux [Field R] (n d q r: Poly R): Poly R :=
 def Poly.div [Field R] (n d: Poly R): Poly R :=
   if d == 0 then panic! "divide by zero!"
   else if n == 0 then 0
-  else (divAux n d Poly.zero n).normalize
+  else (divAux n d Poly.zero n).1.normalize
 
 instance [Field R] : Div (Poly R) where div := Poly.div
 
 
 /- Mod -/
 
-partial def Poly.modAux [Field R] (n d q r: Poly R): Poly R :=
-  if r == 0 || r.deg < d.deg
-    then r
-    else
-      let t := Poly.mono (r.deg - d.deg) (r.lead_coeff / d.lead_coeff)
-      let q' := q + t
-      let r' := r - t * d
-      modAux n d q' r'
-
 def Poly.mod [Field R] (n d: Poly R): Poly R :=
   if d == 0 then panic! "divide by zero!"
   else if n == 0 then 0
-  else (modAux n d Poly.zero n).normalize
+  else (divAux n d Poly.zero n).2.normalize
 
 instance [Field R] : Mod (Poly R) where mod := Poly.mod
 
@@ -237,7 +220,14 @@ def Poly.subst [Ring R] (x y: Poly R): Poly R := substAux x.rep y 1 0
 
 /- Eval -/
 
-def Poly.eval [Ring R] (x: Poly R) (y: R): R := (subst x (Poly.mono 0 y)).coeff 0
+def Poly.eval [Ring R] (poly: Poly R) (x: R): R -- := (Poly.subst x (Poly.mono 0 y)).coeff 0
+  := Id.run do
+    let mut mul_x: R := Ring.one
+    let mut tot: R := Ring.zero
+    for i in [0:Poly.deg poly + 1] do
+      tot := tot + (Poly.coeff poly i * mul_x)
+      mul_x := mul_x * x
+    pure tot
 
 
 /- GCD -/
@@ -280,6 +270,7 @@ instance [Field R] : GcdRing (Poly R) where gcd := Poly.gcd
 
 instance [Ring R] : Algebra R (Poly R) where
   ofBase f := Poly.mono 0 f
+  ofBasis := Poly.mono
 
 instance [Ring R] : Ring (Poly R) where
   ofNat n := Poly.mono 0 (Ring.ofNat n)
@@ -297,44 +288,3 @@ instance [Field R] : GcdRing (Poly R) where
   gcd := Poly.gcd
 
 end R0sy.Algebra.Poly
-
-
-/-
-
-def poly1: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 1, 12 ]
-}
-
-def poly2: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 3, 0, 7 ]
-}
-
-def poly3: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 4, 12, 7 ]
-}
-
-#eval (poly1 + poly2).rep == poly3.rep
-
-def poly4: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 1 ]
-}
-
-def poly5: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 0, 1 ]
-}
-
-def poly6 := poly5 * (poly5 + poly4) + poly4
-
-def poly7: PolyRing.Poly (Elem BabyBear.P) := {
-  rep := #[ 1, 2, 3, 2, 1 ]
-}
-
-#eval (poly6 * poly6).rep == poly7.rep
-
-#eval ((poly6 - poly4) % poly5).rep
-#eval (poly6 / poly5).rep
-
-#eval poly6.rep
-#eval PolyRing.eval poly6 (1 + 1 + 1)
-
--/

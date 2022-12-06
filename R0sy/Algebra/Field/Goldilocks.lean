@@ -27,6 +27,8 @@ structure Elem where
   rep: Prime.Elem P
   deriving Repr
 
+instance : ToString Elem where toString x := toString x.rep
+
 instance : Inhabited Elem where default := { rep := Inhabited.default }
 
 instance : OfNat Elem n where ofNat := { rep := Prime.Elem.ofNat _ n }
@@ -150,6 +152,8 @@ def ExtElem.new (a0 a1: Elem): ExtElem := {
   rep := { rep := { rep := #[a0, a1] } }
 }
 
+instance : ToString ExtElem where toString x := toString x.rep
+
 instance : Inhabited ExtElem where default := { rep := Inhabited.default }
 
 instance : BEq ExtElem where beq x y := x.rep == y.rep
@@ -185,6 +189,7 @@ instance ExtElem.Field : Field ExtElem where
 
 instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
+  ofBasis i x := { rep := Algebra.ofBasis i x }
 
 
 /- Examples -/

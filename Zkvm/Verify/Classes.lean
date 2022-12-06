@@ -25,7 +25,9 @@ inductive VerificationError where
   | MethodCycleError (required: Nat)
   | MethodVerificationError
   | MerkleQueryOutOfRange (idx: Nat) (rows: Nat)
+  | TooManyCycles (po2 max_po2: Nat)
   | InvalidProof
+  | InvalidCheck (result check: String)
   | JournalSealRootMismatch (idx: Nat) (seal: UInt32) (journal: UInt32)
   | SealJournalLengthMismatch (seal_len: Nat) (journal_len: Nat)
   deriving Repr
@@ -38,7 +40,9 @@ instance : ToString VerificationError where
         | VerificationError.MethodCycleError required => s!"MethodCycleError required:{required}"
         | VerificationError.MethodVerificationError => s!"MethodVerificationError"
         | VerificationError.MerkleQueryOutOfRange idx rows => s!"MerkleQueryOutOfRange idx:{idx} rows:{rows}"
+        | VerificationError.TooManyCycles po2 max_po2 => s!"TooManycycles po2:{po2} max_po2:{max_po2}"
         | VerificationError.InvalidProof => s!"InvalidProof"
+        | VerificationError.InvalidCheck result check => s!"InvalidProof result:{result} check:{check}"
         | VerificationError.JournalSealRootMismatch idx seal journal => s!"JournalSealRootMismatch idx:{idx} seal:{seal} journal:{journal}"
         | VerificationError.SealJournalLengthMismatch seal_len journal_len => s!"SealJournalLengthMismatch seal_len:{seal_len} journal_len:{journal_len}"
 
@@ -53,6 +57,7 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
 
 class MonadVerifyAdapter (M: Type -> Type) (Elem: outParam Type) where
   get_po2: M Nat
+  get_size: M Nat
   get_domain: M Nat
   get_out: M (Array Elem)
   get_mix: M (Array Elem)

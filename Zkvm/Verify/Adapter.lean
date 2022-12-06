@@ -18,15 +18,15 @@ open Classes
 
 structure VerifyAdapter (Elem: Type) where
   po2: Nat
+  size: Nat
   domain: Nat
-  steps: UInt64
   out: Option (Array Elem)
   mix: Array Elem
 
 def VerifyAdapter.new: VerifyAdapter Elem := {
   po2 := 0,
+  size := 0,
   domain := 0,
-  steps := 0,
   out := none,
   mix := #[]
 }
@@ -34,13 +34,13 @@ def VerifyAdapter.new: VerifyAdapter Elem := {
 def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem): M Unit
   := do let out <- MonadReadIop.readFields Elem circuit.output_size >>= (fun x => pure (some x))
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
-        let domain := Constants.INV_RATE * (1 <<< po2)
-        let steps := UInt64.ofNat (1 <<< po2)
+        let size := 1 <<< po2
+        let domain := Constants.INV_RATE * size
         let self: VerifyAdapter Elem <- get
         set { self with
           po2,
+          size,
           domain,
-          steps,
           out,
         }
 
@@ -84,6 +84,9 @@ instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf Verifica
   get_po2
     := do let self <- get
           pure self.po2
+  get_size
+    := do let self <- get
+          pure self.size
   get_domain
     := do let self <- get
           pure self.domain

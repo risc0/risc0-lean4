@@ -24,6 +24,11 @@ structure Elem (p: Prime) where
   deriving Repr
 
 
+/- ToString -/
+
+instance : ToString (Elem p) where toString x := toString x.rep
+
+
 /- BEq -/
 
 def Elem.beq (x y: Elem p): Bool := x.rep.val == y.rep.val
@@ -151,6 +156,11 @@ structure Elem (q: Irreducible F R) where
 def Elem.beq [BEq R] {q: Irreducible F R} (x y: Elem q): Bool := x.rep == y.rep
 
 instance [BEq R] {q: Irreducible F R} : BEq (Elem q) where beq := Elem.beq
+
+
+/- ToString -/
+
+instance [ToString R] {q: Irreducible F R} : ToString (Elem q) where toString x := toString x.rep
 
 
 /- OfNat -/
@@ -283,6 +293,7 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : Algebra F (Elem q) where
   ofBase := Elem.ofBase _
+  ofBasis i x := { rep := PolyRing.mono i x }
 
 end Ext
 
