@@ -2,11 +2,8 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra
-import R0sy.Algebra.Field
-import R0sy.Lean.Subarray
-import R0sy.Lean.Nat
-import R0sy.Hash.Sha2
+
+import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Classes
@@ -22,7 +19,7 @@ open R0sy.Hash
 open Classes
 open Constants
 open Merkle
--- open Field
+open Field
 
 -- The structure needs to be given the type of the field it is proving over, lmk if there's a more elegant way for this.
 structure VerifyRoundInfo (ExtElem: Type) where
@@ -31,10 +28,10 @@ structure VerifyRoundInfo (ExtElem: Type) where
   mix: ExtElem
 
 def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M] 
-  [R0sy.Algebra.Field ExtElem] [e : R0sy.Algebra.Algebra Elem ExtElem]
+  [Field ExtElem] [ExtField Elem ExtElem]
   (in_domain: Nat) : M (VerifyRoundInfo ExtElem) := do
   let domain := in_domain / FRI_FOLD
-  let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * e.EXT_SIZE) QUERIES
+  let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
   let mix : ExtElem <- Field.random
   return VerifyRoundInfo.mk domain merkle mix
 
@@ -53,7 +50,7 @@ def collate (arr : Array T) (outer_size : Nat) : (Array (Array T)) := sorry
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
   [RootsOfUnity Elem]
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M) -- Weird to do this with typeclasses, what if we had two mutable Nats for example?
-  [R0sy.Algebra.Field Elem] [R0sy.Algebra.Field ExtElem] [R0sy.Algebra.Algebra Elem ExtElem]
+  [Field Elem] [Field ExtElem] [Algebra Elem ExtElem]
   (self: VerifyRoundInfo ExtElem) : M Unit := do
   -- Get the args out of the monad state
   let pos_ : Nat <- pos.get 
@@ -79,7 +76,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
 def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [rng : MonadRng M]
   [RootsOfUnity Elem]
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M)
-  [R0sy.Algebra.Field Elem] [R0sy.Algebra.Field ExtElem] [e: R0sy.Algebra.Algebra Elem ExtElem]
+  [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] [Algebra Elem ExtElem]
   (degree : Nat) (inner : Monad M -> Nat -> ExtElem) : M Unit := do
     let mut degree_ := degree
     let orig_domain := INV_RATE * degree
@@ -103,7 +100,7 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
     --     rounds_capacity
     -- );
     -- // Grab the final coeffs + commit
-    let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (e.EXT_SIZE * degree)
+    let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
     let final_digest := Hash.hash_pod (final_coeffs)
     MonadReadIop.commit final_digest
 
@@ -126,7 +123,8 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
       let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_
       poly_buf := collate_final_coeffs.map from_subelems
 
-      let fx : ExtElem := poly_eval poly_buf (e.ofBase x)
+      let fx : ExtElem := poly_eval poly_buf (Algebra.ofBase x)
+
       if fx != (<- goal.get)
         then
           throw VerificationError.InvalidProof -- XXX surprised this is valid syntax (without the "else"), I assume it does what it looks like it does?

@@ -68,6 +68,9 @@ class PrimeField (F: Type)
   where
     toNat: F -> Nat
 
+class ExtField (F R: Type) where
+  EXT_DEG: Nat
+
 class RootsOfUnity (F: Type) where
   MAX_ROU_SIZE: Nat
   ROU_FWD: Array F
@@ -82,7 +85,7 @@ class Algebra (F: Type) (R: Type)
     ofBasis: Nat -> F -> R
     hMul := λ r f => (r * (ofBase f))
 
-class PolyRing (F: Type) (R: Type)
+class PolyRing (F R: Type)
   extends
     Algebra F R
   where
