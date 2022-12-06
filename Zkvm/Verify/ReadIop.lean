@@ -2,10 +2,6 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra
-import R0sy.Lean.Subarray
-import R0sy.Hash.Sha2
-import Zkvm.Circuit
 import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.Verify.Classes
