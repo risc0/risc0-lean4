@@ -53,7 +53,8 @@ def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtEl
 
 structure CheckVerifier (ExtElem: Type) where
   check_merkle: MerkleTreeVerifier
-  coeff_u: Array ExtElem
+  mix: ExtElem
+  combo_u: Array ExtElem
 
 def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
@@ -106,9 +107,35 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         let size <- MonadVerifyAdapter.get_size
         check := check * ((Ring.ofNat 3 * z) ^ size - Ring.one)
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
+        -- Set the mix value
+        let mix: ExtElem <- Field.random
+        -- Make the mixed polynomials
+        let mut combo_u: Array ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
+        let mut cur_mix: ExtElem := Ring.one
+        let mut cur_pos := 0
+        let mut tap_mix_pows: Array ExtElem := Array.mkEmpty circuit.taps.reg_count.toNat
+        for reg in (TapSet.regIter circuit.taps) do
+          let reg_size := RegRef.size reg
+          for i in [0:reg_size] do
+            let idx := circuit.taps.combo_begin[reg.combo_id]!.toNat + i
+            let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos + i]!
+            combo_u := Array.set! combo_u idx val
+          tap_mix_pows := tap_mix_pows.push cur_mix
+          cur_mix := cur_mix * mix
+          cur_pos := cur_pos + reg_size
+        -- Handle check group
+        let mut check_mix_pows := Array.mkEmpty Constants.CHECK_SIZE
+        for _ in [0:Constants.CHECK_SIZE] do
+          let idx := circuit.taps.tot_combo_backs.toNat
+          let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos]!
+          combo_u := Array.set! combo_u idx val
+          cur_pos := cur_pos + 1
+          check_mix_pows := check_mix_pows.push cur_mix
+          cur_mix := cur_mix * mix
         pure {
           check_merkle,
-          coeff_u
+          mix,
+          combo_u
         }
 
 
@@ -127,7 +154,7 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         let merkle_verifiers <- MerkleVerifiers.new
         -- Begin the check process
         let check_verifier <- CheckVerifier.new
-        -- Sorry! We have not implemented the rest of the logic yet ;)
+        -- Next step: FRI verify!
         throw (VerificationError.Sorry "Zkvm.Verify.verify")
 
 
