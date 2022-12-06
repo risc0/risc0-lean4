@@ -191,6 +191,9 @@ instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
   ofBasis i x := { rep := Algebra.ofBasis i x }
 
+instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
+  EXT_DEG := Poly.deg Q.rep
+
 
 /- Examples -/
 

@@ -295,6 +295,10 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
   ofBase := Elem.ofBase _
   ofBasis i x := { rep := PolyRing.mono i x }
 
+instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : ExtField F (Elem q) where
+  EXT_DEG := PolyRing.deg F q.rep
+
+
 end Ext
 
 end R0sy.Algebra.Field

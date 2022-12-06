@@ -100,33 +100,36 @@ def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries
         MonadReadIop.commit (MerkleTreeVerifier.root verifier)
         pure verifier
 
-def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [MonadStateOf Nat M] [R0sy.Algebra.Field Elem] 
-  (self: MerkleTreeVerifier) (idx_: Nat): M (Array Elem)
-  := do let mut idx := idx_
-        if idx >= 2 * self.params.row_size 
-          then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size) 
-          else
-        let out <- MonadReadIop.readFields Elem self.params.col_size
-        let mut cur := Hash.hash_pod out
-        idx := idx + self.params.row_size
-        while idx >= 2 * self.params.row_size do
-          let low_bit := idx % 2
-          let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
-          let other := otherArray[0]!
-          idx := idx / 2
-          if low_bit == 1 
-          then 
-            cur := Hash.hash_pair other cur
-          else 
-            cur := Hash.hash_pair cur other
-        let present_hash := 
-          if idx >= self.params.top_size 
-            then self.top[self.params.idx_to_top idx]!
-            else self.top[self.params.idx_to_rest idx]!
-        if present_hash == cur 
-        then
-          return out
-        else 
-          throw VerificationError.InvalidProof
+def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
+  (self: MerkleTreeVerifier) (idx_ : Nat) : M (Array Elem) := do 
+  -- Although the Rust code has "mut" in the line where it specifies the idx argument, 
+  -- this is just a mutable variable, not a pointer. Rust does not mutate the value in the caller, 
+  -- so MonadStateOf is not needed for idx
+  let mut idx := idx_
+  if idx >= 2 * self.params.row_size 
+    then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size) 
+    else
+  let out <- MonadReadIop.readFields Elem self.params.col_size
+  let mut cur := Hash.hash_pod out
+  idx := idx + self.params.row_size
+  while idx >= 2 * self.params.row_size do
+    let low_bit := idx % 2
+    let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
+    let other := otherArray[0]!
+    idx := idx / 2
+    if low_bit == 1 
+    then 
+      cur := Hash.hash_pair other cur
+    else 
+      cur := Hash.hash_pair cur other
+  let present_hash := 
+    if idx >= self.params.top_size 
+      then self.top[self.params.idx_to_top idx]!
+      else self.top[self.params.idx_to_rest idx]!
+  if present_hash == cur 
+  then
+    return out
+  else 
+    throw VerificationError.InvalidProof
 
 end Zkvm.Verify.Merkle

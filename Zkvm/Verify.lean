@@ -56,6 +56,8 @@ structure CheckVerifier (ExtElem: Type) where
   mix: ExtElem
   combo_u: Array ExtElem
 
+def CHECK_SIZE Elem ExtElem [ExtField Elem ExtElem] := Constants.INV_RATE * (ExtField.EXT_DEG Elem ExtElem)
+
 def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
         let po2 <- MonadVerifyAdapter.get_po2
@@ -76,12 +78,12 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
   := do let poly_mix: ExtElem <- Field.random
         let check_merkle
           <- do let domain <- MonadVerifyAdapter.get_domain
-                MerkleTreeVerifier.new domain Constants.CHECK_SIZE Constants.QUERIES
+                MerkleTreeVerifier.new domain (CHECK_SIZE Elem ExtElem) Constants.QUERIES
         let z: ExtElem <- Field.random
         -- Read the U coeffs + commit their hash
         let circuit <- MonadCircuit.getCircuit
         let num_taps := TapSet.tapSize circuit.taps
-        let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Constants.CHECK_SIZE)
+        let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + CHECK_SIZE Elem ExtElem)
         let hash_u := Sha256.hash_pod coeff_u
         MonadReadIop.commit hash_u
         -- Now convert to evaluated values
@@ -124,8 +126,8 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           cur_mix := cur_mix * mix
           cur_pos := cur_pos + reg_size
         -- Handle check group
-        let mut check_mix_pows := Array.mkEmpty Constants.CHECK_SIZE
-        for _ in [0:Constants.CHECK_SIZE] do
+        let mut check_mix_pows := Array.mkEmpty (CHECK_SIZE Elem ExtElem)
+        for _ in [0:CHECK_SIZE Elem ExtElem] do
           let idx := circuit.taps.tot_combo_backs.toNat
           let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos]!
           combo_u := Array.set! combo_u idx val
