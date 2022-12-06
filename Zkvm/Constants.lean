@@ -23,6 +23,4 @@ def FRI_FOLD_PO2: Nat := 4
 def FRI_FOLD: Nat := 1 <<< FRI_FOLD_PO2
 def FRI_MIN_DEGREE: Nat := 256
 
-def CHECK_SIZE := INV_RATE * 4 -- TODO: field extension degree
-
 end Zkvm.Constants

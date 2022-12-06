@@ -16,30 +16,36 @@ open Taps
 
 
 class Algebraic (Elem ExtElem: Type) where
-  prime: PrimeField Elem
+  prime_field: PrimeField Elem
   rou: RootsOfUnity Elem
-  ext: Field ExtElem
+  ext_field: Field ExtElem
   alg: Algebra Elem ExtElem
+  ext: ExtField Elem ExtElem
 
-instance [Algebraic Elem ExtElem] : PrimeField Elem := Algebraic.prime ExtElem
+instance [Algebraic Elem ExtElem] : PrimeField Elem := Algebraic.prime_field ExtElem
 
 instance [Algebraic Elem ExtElem] : RootsOfUnity Elem := Algebraic.rou ExtElem
 
-instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext Elem
+instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext_field Elem
 
 instance [Algebraic Elem ExtElem] : Algebra Elem ExtElem := Algebraic.alg
 
+instance [Algebraic Elem ExtElem] : ExtField Elem ExtElem := Algebraic.ext
+
+
 instance BabyBear.Algebraic : Algebraic BabyBear.Elem BabyBear.ExtElem where
-  prime := BabyBear.Elem.PrimeField
+  prime_field := BabyBear.Elem.PrimeField
   rou := BabyBear.Elem.RootsOfUnity
-  ext := BabyBear.ExtElem.Field
+  ext_field := BabyBear.ExtElem.Field
   alg := BabyBear.ElemExt.Elem.Algebra
+  ext := BabyBear.ElemExt.Elem.ExtField
 
 instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem where
-  prime := Goldilocks.Elem.PrimeField
+  prime_field := Goldilocks.Elem.PrimeField
   rou := Goldilocks.Elem.RootsOfUnity
-  ext := Goldilocks.ExtElem.Field
+  ext_field := Goldilocks.ExtElem.Field
   alg := Goldilocks.ElemExt.Elem.Algebra
+  ext := Goldilocks.ElemExt.Elem.ExtField
 
 
 structure Circuit (Elem ExtElem: Type) where
