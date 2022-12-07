@@ -13,6 +13,10 @@ lean_lib Zkvm {
   -- add library configuration options here
 }
 
+lean_lib cirgen {
+  -- add library configuration options here
+}
+
 @[default_target]
 lean_exe «zkvm-verify» {
   root := `Main
