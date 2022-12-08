@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+
 import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
@@ -19,7 +20,7 @@ open R0sy.Hash
 open Classes
 open Constants
 open Merkle
--- open Field
+open Field
 
 -- The structure needs to be given the type of the field it is proving over, lmk if there's a more elegant way for this.
 structure VerifyRoundInfo (ExtElem: Type) where
@@ -67,7 +68,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group -- Weird why type ascription needed?
   -- Track the states of the mutable arguments
   pos.set group 
-  let new_goal := fold_eval data_ext (Algebra.ofBase inv_wk * self.mix)
+  let new_goal := fold_eval data_ext (self.mix * inv_wk)
   goal.set new_goal
   pure ()
 

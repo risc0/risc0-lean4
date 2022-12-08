@@ -76,10 +76,14 @@ class RootsOfUnity (F: Type) where
   ROU_FWD: Array F
   ROU_REV: Array F
 
-class Algebra (F R: Type)
+class Algebra (F: Type) (R: Type)
+  extends
+    Ring R,
+    HMul R F R
   where
     ofBase: F -> R
     ofBasis: Nat -> F -> R
+    hMul := λ r f => (r * (ofBase f))
 
 class PolyRing (F R: Type)
   extends
