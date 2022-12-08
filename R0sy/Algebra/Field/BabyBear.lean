@@ -137,6 +137,9 @@ instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
 
 instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
   EXT_DEG := Poly.deg Q.rep
+  ofSubelems x := ExtElem.new x[0]! x[1]! x[2]! x[3]!
+-- XXX in actuality only 4-element arrays should ever be passed to this, 
+-- but more elegant would be to mod out by the irreducible polynomial
 
 
 /- Examples -/
