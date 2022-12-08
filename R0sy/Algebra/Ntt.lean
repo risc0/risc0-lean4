@@ -4,10 +4,6 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy.Algebra
 import R0sy.Lean.Nat
--- import Zkvm.ArithVM.Circuit
--- import Zkvm.Constants
--- import Zkvm.Verify.Classes
--- import Zkvm.Verify.Merkle
 
 namespace R0sy.Algebra.Ntt
 
