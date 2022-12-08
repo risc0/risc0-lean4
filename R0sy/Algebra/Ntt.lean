@@ -15,6 +15,9 @@ partial def reverse_bits (n b : Nat) : Nat :=
     then 0
     else 2 ^ (b-1) * (n % 2) + (reverse_bits (n / 2) (b - 1)) 
 
+def bit_reverse [Inhabited T] (io : Array T) : Array T :=
+  ((List.range io.size).map (λ i => io[reverse_bits i (Nat.log2_ceil io.size)]!)).toArray
+
 instance [Add T] : Add (Array T) where add x y := Array.zipWith x y (λ a b => a + b)
 
 instance [Sub T] : Sub (Array T) where sub x y := Array.zipWith x y (λ a b => a - b)
