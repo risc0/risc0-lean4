@@ -19,11 +19,11 @@ partial def reverse_bits (n b : Nat) : Nat :=
     then 0
     else 2 ^ (b-1) * (n % 2) + (reverse_bits (n / 2) (b - 1)) 
 
-instance [Add T] : Add (Array T) where add x y := (Array.zip x y).map (λ (a,b) => a + b)
+instance [Add T] : Add (Array T) where add x y := Array.zipWith x y (λ a b => a + b)
 
-instance [Sub T] : Sub (Array T) where sub x y := (Array.zip x y).map (λ (a,b) => a - b)
+instance [Sub T] : Sub (Array T) where sub x y := Array.zipWith x y (λ a b => a - b)
 
-instance [Mul T] : Mul (Array T) where mul x y := (Array.zip x y).map (λ (a,b) => a * b)
+instance [Mul T] : Mul (Array T) where mul x y := Array.zipWith x y (λ a b => a * b)
 
 instance [Mul T] : HMul (Array T) T (Array T) where hMul x y := x.map (λ a => a * y)
 
