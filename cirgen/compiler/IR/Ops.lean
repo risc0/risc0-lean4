@@ -1,6 +1,9 @@
 /- Transcription of risczero-wip/blob/main/cirgen/compiler/IR/Ops.td -/
 
-import Types.
+import cirgen
+import cirgen.compiler
+import cirgen.compiler.IR
+import cirgen.compiler.IR.Types
 
 /- ******************************** From Ops.td  ********************** -/
 section CirgenOp_Syntax
