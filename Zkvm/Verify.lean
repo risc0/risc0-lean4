@@ -144,29 +144,13 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         }
 
 def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit Elem ExtElem) (tap_mix_pows check_mix_pows combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  (circuit: Circuit Elem ExtElem) (tap_mix_pows check_mix_pows combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
   := do let mut tot: Array ExtElem := Array.mkArray (circuit.taps.combos_count.toNat + 1) Ring.zero
         let combo_count := circuit.taps.combos_count
-        let x: ExtElem := Algebra.ofBase x
         throw (VerificationError.Sorry "Need to implement verify.fri_eval_taps!")
 
-def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do let po2 <- MonadVerifyAdapter.get_po2
-        if po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles po2 Constants.MAX_CYCLES_PO2)
-        pure ()
-
-def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do -- Initialize the adapter
-        MonadVerifyAdapter.execute
-        MonadVerifyAdapter.verifyOutput journal
-        -- Enforce constraints on cycle count
-        verify.enforce_max_cycles
-        -- Get the Merkle trees
-        let merkle_verifiers <- MerkleVerifiers.new
-        -- Begin the check process
-        let check_verifier <- CheckVerifier.new
-        -- Next step: FRI verify!
-        let circuit <- MonadCircuit.getCircuit
+def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (merkle_verifiers: MerkleVerifiers) (check_verifier: CheckVerifier ExtElem): M Unit
+  := do let circuit <- MonadCircuit.getCircuit
         let po2 <- MonadVerifyAdapter.get_po2
         let domain <- MonadVerifyAdapter.get_domain
         let size <- MonadVerifyAdapter.get_size
@@ -182,8 +166,37 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
                   <- merkle_verifiers.data_merkle.verify idx
                 ]
                 let check_row: Array Elem <- check_verifier.check_merkle.verify idx
-                verify.fri_eval_taps circuit tap_mix_pows check_mix_pows check_verifier.combo_u check_row back_one x check_verifier.z rows
+                verify.fri_eval_taps
+                  circuit
+                  tap_mix_pows
+                  check_mix_pows
+                  check_verifier.combo_u
+                  check_row
+                  back_one
+                  (Algebra.ofBase x)
+                  check_verifier.z
+                  rows
         )
+
+def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
+  := do let po2 <- MonadVerifyAdapter.get_po2
+        if po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles po2 Constants.MAX_CYCLES_PO2)
+        pure ()
+
+def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
+  := do -- Initialize the adapter
+        MonadVerifyAdapter.execute
+        -- Check the journal
+        MonadVerifyAdapter.verifyOutput journal
+        -- Enforce constraints on cycle count
+        verify.enforce_max_cycles
+        -- Get the Merkle trees
+        let merkle_verifiers <- MerkleVerifiers.new
+        -- Begin the check process
+        let check_verifier <- CheckVerifier.new
+        -- FRI verify
+        verify.fri merkle_verifiers check_verifier
+        -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
 
 
