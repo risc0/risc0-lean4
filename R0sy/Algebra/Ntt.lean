@@ -9,14 +9,29 @@ namespace R0sy.Algebra.Ntt
 
 open R0sy.Lean.Nat
 
-/-- Reverses the bits of n, treating n as a b-bit binary number -/
-partial def reverse_bits (n b : Nat) : Nat :=
-  if b == 0
-    then 0
-    else 2 ^ (b-1) * (n % 2) + (reverse_bits (n / 2) (b - 1)) 
+def bit_rev_32 (in_x: UInt32): UInt32
+  := Id.run do
+      let mut x := in_x
+      x := ((x &&& 0xaaaaaaaa) >>> 1) ||| ((x &&& 0x55555555) <<< 1);
+      x := ((x &&& 0xcccccccc) >>> 2) ||| ((x &&& 0x33333333) <<< 2);
+      x := ((x &&& 0xf0f0f0f0) >>> 4) ||| ((x &&& 0x0f0f0f0f) <<< 4);
+      x := ((x &&& 0xff00ff00) >>> 8) ||| ((x &&& 0x00ff00ff) <<< 8);
+      (x >>> 16) ||| (x <<< 16)
 
-def bit_reverse [Inhabited T] (io : Array T) : Array T :=
-  ((List.range io.size).map (λ i => io[reverse_bits i (Nat.log2_ceil io.size)]!)).toArray
+def bit_reverse [Inhabited T] (io: Array T): Array T
+  := Id.run do
+      let mut out := io
+      let n := Nat.log2_ceil io.size
+      if 1 <<< n != io.size then panic! s!"n:{n} io.size:{io.size}"
+      for i in [0:io.size] do
+        let rev_idx := (bit_rev_32 i.toUInt32).toNat >>> (32 - n)
+        if rev_idx >= out.size then panic! s!"n:{n} i:{i} rev_idx:{rev_idx} out.size:{out.size}"
+        if i < rev_idx then do
+          let x := out[i]!
+          let y := out[rev_idx]!
+          out := Array.set! out i y
+          out := Array.set! out rev_idx x
+      pure out
 
 instance [Add T] : Add (Array T) where add x y := Array.zipWith x y (λ a b => a + b)
 
@@ -47,11 +62,11 @@ partial def rev_butterfly [Field ExtElem] [RootsOfUnity ExtElem] (n : Nat) (arr 
     else 
       let a : Array ExtElem := (arr.toSubarray 0 (2 ^ (n-1)));
       let b : Array ExtElem := (arr.toSubarray (2 ^ (n-1)) (2 ^ n));
-      let first_half : Array ExtElem := a + b;
-      let second_half : Array ExtElem := (a - b) * ((RootsOfUnity.ROU_REV[n]! : ExtElem) ^ ((List.range n).toArray) : Array ExtElem);
+      let first_half : Array ExtElem := rev_butterfly (n-1) <| a + b;
+      let second_half : Array ExtElem := rev_butterfly (n-1) <| (a - b) * ((RootsOfUnity.ROU_REV[n]! : ExtElem) ^ ((List.range n).toArray) : Array ExtElem);
       first_half ++ second_half
 
-partial def interpolate_ntt [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) : Array ExtElem :=
+def interpolate_ntt [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) : Array ExtElem :=
   let n := Nat.log2_ceil io.size;
   (rev_butterfly n io) * (Field.inv (Field.fromUInt64 io.size.toUInt64 : ExtElem))
 

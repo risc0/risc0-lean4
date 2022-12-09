@@ -67,7 +67,10 @@ def VerifyRoundInfo.new (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field E
         }
 
 def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : ExtElem) : ExtElem
-  := Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt io))) x
+  := Id.run do
+      let interpolate_io := interpolate_ntt io
+      let reverse_io := bit_reverse interpolate_io
+      pure <| Poly.eval (Poly.ofArray reverse_io) x
 
 -- Takes a array of `T`s of length (outersize * inner_size) 
 -- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
@@ -92,9 +95,7 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
         let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
         -- Track the states of the mutable arguments
         FriVerifyState.set_pos group
-        if true then panic! s!"begin"
         let new_goal := fold_eval data_ext (self.mix * inv_wk)
-        if true then panic! s!"end"
         FriVerifyState.set_goal new_goal
         pure ()
 
@@ -120,7 +121,7 @@ def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf Ve
         -- // Do queries
         FriVerifyState.run do
           let mut poly_buf: Array ExtElem := Array.mkEmpty degree
-          for _ in [0:QUERIES] do
+          for query_no in [0:QUERIES] do
             let rng: UInt32 <- MonadLift.monadLift (MonadRng.nextUInt32: M UInt32)
             let pos_val := rng.toNat % orig_domain
             FriVerifyState.set_pos pos_val
@@ -134,8 +135,9 @@ def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf Ve
             -- collect field elements into groups of size EXT_SIZE
             let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
             poly_buf := collate_final_coeffs.map ExtField.ofSubelems 
-            let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
-            if fx != (<- FriVerifyState.get_goal) then throw VerificationError.InvalidProof
+            let goal <- FriVerifyState.get_goal
+            let actual : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
+            if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
 
 
