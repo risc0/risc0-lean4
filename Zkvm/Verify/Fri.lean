@@ -92,7 +92,9 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
         let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
         -- Track the states of the mutable arguments
         FriVerifyState.set_pos group
+        if true then panic! s!"begin"
         let new_goal := fold_eval data_ext (self.mix * inv_wk)
+        if true then panic! s!"end"
         FriVerifyState.set_goal new_goal
         pure ()
 
@@ -132,9 +134,7 @@ def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf Ve
             -- collect field elements into groups of size EXT_SIZE
             let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
             poly_buf := collate_final_coeffs.map ExtField.ofSubelems 
-
             let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
-
             if fx != (<- FriVerifyState.get_goal) then throw VerificationError.InvalidProof
         return ()
 

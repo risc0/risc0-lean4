@@ -77,15 +77,16 @@ def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem Ex
         pure eval_u
 
 def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M (CheckVerifier ExtElem)
-  := do let poly_mix: ExtElem <- Field.random
+  := do let circuit <- MonadCircuit.getCircuit
+        let poly_mix: ExtElem <- Field.random
         let check_merkle
           <- do let domain <- MonadVerifyAdapter.get_domain
-                MerkleTreeVerifier.new domain (CHECK_SIZE Elem ExtElem) Constants.QUERIES
+                MerkleTreeVerifier.new domain circuit.check_size Constants.QUERIES
         let z: ExtElem <- Field.random
         -- Read the U coeffs + commit their hash
         let circuit <- MonadCircuit.getCircuit
         let num_taps := TapSet.tapSize circuit.taps
-        let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + CHECK_SIZE Elem ExtElem)
+        let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + circuit.check_size)
         let hash_u := Sha256.hash_pod coeff_u
         MonadReadIop.commit hash_u
         -- Now convert to evaluated values
@@ -128,8 +129,7 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           cur_mix := cur_mix * mix
           cur_pos := cur_pos + reg_size
         -- Handle check group
-        let check_size := CHECK_SIZE Elem ExtElem
-        for _ in [0:check_size] do
+        for _ in [0:circuit.check_size] do
           let idx := circuit.taps.tot_combo_backs.toNat
           let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos]!
           combo_u := Array.set! combo_u idx val
@@ -147,18 +147,21 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         let mut cur_mix: ExtElem := Ring.one
+        -- Tap group
         for reg in circuit.taps.regIter do
           let idx := reg.combo_id
           tot := Array.setD tot idx (tot[idx]! + cur_mix * rows[reg.group.toNat]![reg.offset]!)
           cur_mix := cur_mix * check_verifier.mix
-        for i in [0:CHECK_SIZE Elem ExtElem] do
+        -- Check group
+        for i in [0:circuit.check_size] do
           tot := Array.setD tot combos_count (tot[combos_count]! + cur_mix * check_row[i]!)
           cur_mix := cur_mix * check_verifier.mix
+        -- Compute the return value
         let mut ret: ExtElem := Ring.zero
         for i in [0:combos_count] do
           let start := circuit.taps.combo_begin[i]!.toNat
           let stop := circuit.taps.combo_begin[i + 1]!.toNat
-          let poly: Poly ExtElem := Poly.ofSubarray (check_verifier.combo_u.toSubarray start stop) -- TODO: off by one in stop?
+          let poly: Poly ExtElem := Poly.ofSubarray (check_verifier.combo_u.toSubarray start stop)
           let num := tot[i]! - Poly.eval poly x
           let mut divisor: ExtElem := Ring.one
           for back in (circuit.taps.getCombo i).slice do

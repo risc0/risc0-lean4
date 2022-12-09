@@ -54,9 +54,6 @@ instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem whe
   ext := Goldilocks.ElemExt.Elem.ExtField
 
 
-def CHECK_SIZE Elem ExtElem [ExtField Elem ExtElem] := Constants.INV_RATE * (ExtField.EXT_DEG Elem ExtElem)
-
-
 structure Circuit (Elem ExtElem: Type) where
   output_size: Nat
   mix_size: Nat
@@ -85,6 +82,8 @@ def Circuit.ofFile (Elem ExtElem: Type) (filename: System.FilePath): IO (Circuit
         | Except.ok circuit => pure circuit
         | Except.error error => panic! s!"ERROR: {error}"
 
+def Circuit.check_size [ExtField Elem ExtElem] (self: Circuit Elem ExtElem) := Constants.INV_RATE * (ExtField.EXT_DEG Elem ExtElem)
+
 def Circuit.poly_ext [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem) (u: Array ExtElem) (args: Array (Array Elem)): MixState ExtElem
   := PolyExtStepDef.run self.polydef mix u args
 
@@ -99,8 +98,8 @@ def Circuit.tap_cache [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self
       for _ in self.taps.regIter do
         tap_mix_pows := tap_mix_pows.push cur_mix
         cur_mix := cur_mix * mix
-      let mut check_mix_pows := Array.mkEmpty (CHECK_SIZE Elem ExtElem)
-      for _ in [0:CHECK_SIZE Elem ExtElem] do
+      let mut check_mix_pows := Array.mkEmpty self.check_size
+      for _ in [0:self.check_size] do
         check_mix_pows := check_mix_pows.push cur_mix
         cur_mix := cur_mix * mix
       pure {
