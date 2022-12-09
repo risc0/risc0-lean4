@@ -88,22 +88,24 @@ def Circuit.ofFile (Elem ExtElem: Type) (filename: System.FilePath): IO (Circuit
 def Circuit.poly_ext [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem) (u: Array ExtElem) (args: Array (Array Elem)): MixState ExtElem
   := PolyExtStepDef.run self.polydef mix u args
 
-def Circuit.tap_mix_pows [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem): Array ExtElem
+structure TapCache (ExtElem: Type) where
+  tap_mix_pows: Array ExtElem
+  check_mix_pows: Array ExtElem
+
+def Circuit.tap_cache [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem): TapCache ExtElem
   := Id.run do
       let mut cur_mix: ExtElem := Ring.one
-      let mut out := Array.mkEmpty self.taps.reg_count.toNat
+      let mut tap_mix_pows := Array.mkEmpty self.taps.reg_count.toNat
       for _ in self.taps.regIter do
-        out := out.push cur_mix
+        tap_mix_pows := tap_mix_pows.push cur_mix
         cur_mix := cur_mix * mix
-      pure out
-
-def Circuit.check_mix_pows [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem): Array ExtElem
-  := Id.run do
-      let mut cur_mix: ExtElem := mix ^ self.taps.reg_count.toNat
-      let mut out := Array.mkEmpty (CHECK_SIZE Elem ExtElem)
+      let mut check_mix_pows := Array.mkEmpty (CHECK_SIZE Elem ExtElem)
       for _ in [0:CHECK_SIZE Elem ExtElem] do
-        out := out.push cur_mix
+        check_mix_pows := check_mix_pows.push cur_mix
         cur_mix := cur_mix * mix
-      pure out
+      pure {
+        tap_mix_pows,
+        check_mix_pows
+      }
 
 end Zkvm.ArithVM.Circuit
