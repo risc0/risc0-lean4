@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV
 import Zkvm
 
 open R0sy.Lean.ByteArray

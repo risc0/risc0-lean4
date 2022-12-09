@@ -9,6 +9,10 @@ lean_lib R0sy {
   -- add library configuration options here
 }
 
+lean_lib RiscV {
+  -- add library configuration options here
+}
+
 lean_lib Zkvm {
   -- add library configuration options here
 }
