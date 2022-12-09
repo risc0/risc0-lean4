@@ -43,8 +43,9 @@ def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : E
 -- Takes a array of `T`s of length (outersize * inner_size) 
 -- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
 -- Adjacent elems do not go in the same sublist
-def collate (arr : Array T) (outer_size : Nat) : (Array (Array T)) := sorry
-  -- (arr.toList.toChunks outer_size).transpose.toArray
+def collate [Inhabited T] (arr : Array T) (outer_size inner_size : Nat) : (Array (Array T)) :=
+  ((List.range outer_size).map (λ i => ((List.range inner_size).map (λ j => arr[outer_size * j + i]!)).toArray)).toArray
+  -- (arr.toList.toChunks outer_size).transpose.toArray -- Uses Std
 
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
   [RootsOfUnity Elem] [RootsOfUnity ExtElem] -- TODO roots of unity extelem should be typeclass inherited from RootsOfUnity Elem and Algebra Elem ExtElem
@@ -58,7 +59,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   let quot := pos_ / self.domain
   let group := pos_ % self.domain
   let data : Array Elem <- self.merkle.verify group
-  let collate_data : Array (Array Elem) := collate data FRI_FOLD -- collect field elements into groups of size EXT_SIZE
+  let collate_data : Array (Array Elem) := collate data FRI_FOLD ex.EXT_DEG -- collect field elements into groups of size EXT_SIZE
   let data_ext : Array ExtElem := collate_data.map ex.ofSubelems 
   if data_ext[quot]! != goal_
     then throw VerificationError.InvalidProof
@@ -76,7 +77,7 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
   [RootsOfUnity Elem] [RootsOfUnity ExtElem]
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M)
   [Field Elem] [Field ExtElem] [ex : ExtField Elem ExtElem]
-  (degree : Nat) (inner : Monad M -> Nat -> ExtElem) : M Unit := do
+  (degree : Nat) (inner : Nat -> M ExtElem) : M Unit := do
     let mut degree_ := degree
     let orig_domain := INV_RATE * degree
     let mut domain := orig_domain
@@ -109,9 +110,11 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
     let mut poly_buf: Array ExtElem := Array.mkEmpty degree_
     for _ in [0:QUERIES] do
       let rng: UInt32 <- @MonadRng.nextUInt32 _ rng
-      pos.set ((rng.toNat) % orig_domain)
+      let pos_val := ((rng.toNat) % orig_domain)
+      pos.set pos_val
       -- // Do the 'inner' verification for this index
-      goal.set sorry --inner(iop, pos)?
+      let eval_inner : ExtElem <- inner pos_val 
+      goal.set eval_inner --inner(iop, pos)?
       -- // Verify the per-round proofs
       for round in rounds do
         @VerifyRoundInfo.verify_query _ Elem ExtElem _ _ _ _ _ pos goal _ _ _ round
@@ -119,7 +122,7 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
       -- // Do final verification
       let x : Elem := gen ^ (<- pos.get)
       -- collect field elements into groups of size EXT_SIZE
-      let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_
+      let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_ ex.EXT_DEG
       poly_buf := collate_final_coeffs.map ex.ofSubelems 
 
       let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
