@@ -281,6 +281,7 @@ instance [Ring R] : PolyRing R (Poly R) where
   mono := Poly.mono
   eval := Poly.eval
   subst := Poly.subst
+  ofArray := Poly.ofArray
 
 instance [Field R] : DivRemRing (Poly R) where
 

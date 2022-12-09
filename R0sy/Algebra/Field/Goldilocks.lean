@@ -193,7 +193,7 @@ instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
 
 instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
   EXT_DEG := Poly.deg Q.rep
-
+  ofSubelems x := ExtElem.new x[0]! x[1]!
 
 /- Examples -/
 
