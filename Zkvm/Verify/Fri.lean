@@ -12,6 +12,7 @@ import Zkvm.Verify.Merkle
 namespace Zkvm.Verify.Fri
 
 open R0sy.Algebra
+open R0sy.Algebra.Ntt
 open R0sy.Algebra.Poly
 open R0sy.Lean.Subarray
 open R0sy.Lean.Nat
@@ -36,9 +37,8 @@ def VerifyRoundInfo.new [Monad M] [MonadReadIop M] [MonadRng M]
   let mix : ExtElem <- Field.random
   return VerifyRoundInfo.mk domain merkle mix
 
-def fold_eval (io : Array ExtElem) (x : ExtElem) : ExtElem := sorry
-
-def from_subelems (inps : Array Elem) : ExtElem := sorry
+def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : ExtElem) : ExtElem := 
+  Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt io))) x
 
 -- Takes a array of `T`s of length (outersize * inner_size) 
 -- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
@@ -47,9 +47,9 @@ def collate (arr : Array T) (outer_size : Nat) : (Array (Array T)) := sorry
   -- (arr.toList.toChunks outer_size).transpose.toArray
 
 def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] 
-  [RootsOfUnity Elem]
+  [RootsOfUnity Elem] [RootsOfUnity ExtElem] -- TODO roots of unity extelem should be typeclass inherited from RootsOfUnity Elem and Algebra Elem ExtElem
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M) -- Weird to do this with typeclasses, what if we had two mutable Nats for example?
-  [Field Elem] [Field ExtElem] [Algebra Elem ExtElem]
+  [Field Elem] [Field ExtElem] [ex : ExtField Elem ExtElem]
   (self: VerifyRoundInfo ExtElem) : M Unit := do
   -- Get the args out of the monad state
   let pos_ : Nat <- pos.get 
@@ -59,7 +59,7 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   let group := pos_ % self.domain
   let data : Array Elem <- self.merkle.verify group
   let collate_data : Array (Array Elem) := collate data FRI_FOLD -- collect field elements into groups of size EXT_SIZE
-  let data_ext : Array ExtElem := collate_data.map from_subelems 
+  let data_ext : Array ExtElem := collate_data.map ex.ofSubelems 
   if data_ext[quot]! != goal_
     then throw VerificationError.InvalidProof
   else 
@@ -73,9 +73,9 @@ def VerifyRoundInfo.verify_query [Monad M] [MonadReadIop M] [MonadExceptOf Verif
   pure ()
 
 def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [rng : MonadRng M]
-  [RootsOfUnity Elem]
+  [RootsOfUnity Elem] [RootsOfUnity ExtElem]
   (pos : MonadStateOf Nat M) (goal : MonadStateOf ExtElem M)
-  [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] [Algebra Elem ExtElem]
+  [Field Elem] [Field ExtElem] [ex : ExtField Elem ExtElem]
   (degree : Nat) (inner : Monad M -> Nat -> ExtElem) : M Unit := do
     let mut degree_ := degree
     let orig_domain := INV_RATE * degree
@@ -114,13 +114,13 @@ def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [r
       goal.set sorry --inner(iop, pos)?
       -- // Verify the per-round proofs
       for round in rounds do
-        @VerifyRoundInfo.verify_query _ Elem ExtElem _ _ _ _ pos goal _ _ _ round
+        @VerifyRoundInfo.verify_query _ Elem ExtElem _ _ _ _ _ pos goal _ _ _ round
       
       -- // Do final verification
       let x : Elem := gen ^ (<- pos.get)
       -- collect field elements into groups of size EXT_SIZE
       let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_
-      poly_buf := collate_final_coeffs.map from_subelems
+      poly_buf := collate_final_coeffs.map ex.ofSubelems 
 
       let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
 
