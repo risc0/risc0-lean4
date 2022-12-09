@@ -11,6 +11,7 @@ namespace Zkvm.Verify.ReadIop
 open R0sy.Algebra
 open R0sy.Lean.Subarray
 open R0sy.Hash.Sha2
+open R0sy.Serial
 
 open Classes
 
