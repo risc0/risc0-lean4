@@ -5,6 +5,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy
 import Zkvm.ArithVM.AST
 import Zkvm.ArithVM.Taps
+import Zkvm.Constants
 
 namespace Zkvm.ArithVM.Circuit
 
@@ -53,6 +54,9 @@ instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem whe
   ext := Goldilocks.ElemExt.Elem.ExtField
 
 
+def CHECK_SIZE Elem ExtElem [ExtField Elem ExtElem] := Constants.INV_RATE * (ExtField.EXT_DEG Elem ExtElem)
+
+
 structure Circuit (Elem ExtElem: Type) where
   output_size: Nat
   mix_size: Nat
@@ -84,13 +88,22 @@ def Circuit.ofFile (Elem ExtElem: Type) (filename: System.FilePath): IO (Circuit
 def Circuit.poly_ext [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem) (u: Array ExtElem) (args: Array (Array Elem)): MixState ExtElem
   := PolyExtStepDef.run self.polydef mix u args
 
-def riscv (taps: TapSet): Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem where
-  output_size := 18
-  mix_size := 36
-  taps := taps
-  polydef := {
-    block := #[],       -- TODO!
-    ret := { rep := 0 } -- TODO!
-  }
+def Circuit.tap_mix_pows [Field Elem] [Field ExtElem] [Algebra Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem): Array ExtElem
+  := Id.run do
+      let mut cur_mix: ExtElem := Ring.one
+      let mut out := Array.mkEmpty self.taps.reg_count.toNat
+      for _ in self.taps.regIter do
+        out := out.push cur_mix
+        cur_mix := cur_mix * mix
+      pure out
+
+def Circuit.check_mix_pows [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self: Circuit Elem ExtElem) (mix: ExtElem): Array ExtElem
+  := Id.run do
+      let mut cur_mix: ExtElem := mix ^ self.taps.reg_count.toNat
+      let mut out := Array.mkEmpty (CHECK_SIZE Elem ExtElem)
+      for _ in [0:CHECK_SIZE Elem ExtElem] do
+        out := out.push cur_mix
+        cur_mix := cur_mix * mix
+      pure out
 
 end Zkvm.ArithVM.Circuit

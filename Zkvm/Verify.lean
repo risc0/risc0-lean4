@@ -60,8 +60,6 @@ structure CheckVerifier (ExtElem: Type) where
   mix: ExtElem
   combo_u: Array ExtElem
 
-def CHECK_SIZE Elem ExtElem [ExtField Elem ExtElem] := Constants.INV_RATE * (ExtField.EXT_DEG Elem ExtElem)
-
 def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
         let po2 <- MonadVerifyAdapter.get_po2
@@ -145,9 +143,13 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           combo_u
         }
 
-
-def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] (taps: TapSet) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
-  := throw (VerificationError.Sorry "Need to implement verify.fri_eval_taps!")
+def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  := do let mut tot: Array ExtElem := Array.mkArray (circuit.taps.combos_count.toNat + 1) Ring.zero
+        let combo_count := circuit.taps.combos_count
+        let x: ExtElem := Algebra.ofBase x
+        let tap_mix_pows := Circuit.tap_mix_pows circuit mix
+        let check_mix_pows := Circuit.check_mix_pows circuit mix
+        throw (VerificationError.Sorry "Need to implement verify.fri_eval_taps!")
 
 def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
   := do let po2 <- MonadVerifyAdapter.get_po2
@@ -179,7 +181,7 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
                   <- merkle_verifiers.data_merkle.verify idx
                 ]
                 let check_row: Array Elem <- check_verifier.check_merkle.verify idx
-                verify.fri_eval_taps circuit.taps check_verifier.mix check_verifier.combo_u check_row back_one x check_verifier.z rows
+                verify.fri_eval_taps circuit check_verifier.mix check_verifier.combo_u check_row back_one x check_verifier.z rows
         )
         -- TODO: assert that there is no buffer remaining!
 
