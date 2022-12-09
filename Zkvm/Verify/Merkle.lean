@@ -103,23 +103,23 @@ def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries
 def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
   (self: MerkleTreeVerifier) (base_idx : Nat) : M (Array Elem)
   := do let mut idx := base_idx
-        if idx >= 2 * self.params.row_size  then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
+        if idx >= self.params.row_size then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
         let out <- MonadReadIop.readFields Elem self.params.col_size
         let mut cur := Hash.hash_pod out
         idx := idx + self.params.row_size
-        while idx >= 2 * self.params.row_size do
+        while idx >= 2 * self.params.top_size do
           let low_bit := idx % 2
           let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
           let other := otherArray[0]!
           idx := idx / 2
-          if low_bit == 1 
+          if low_bit == 1
           then cur := Hash.hash_pair other cur
           else cur := Hash.hash_pair cur other
         let present_hash := 
           if idx >= self.params.top_size 
             then self.top[self.params.idx_to_top idx]!
             else self.top[self.params.idx_to_rest idx]!
-        if present_hash == cur then return out
-        else throw VerificationError.InvalidProof
+        if present_hash != cur then throw VerificationError.InvalidProof
+        pure out
 
 end Zkvm.Verify.Merkle

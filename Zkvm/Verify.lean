@@ -146,8 +146,8 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         }
 
 
-def verify.fri_eval_taps [Monad M] (taps: TapSet) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
-  := sorry
+def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] (taps: TapSet) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  := throw (VerificationError.Sorry "Need to implement verify.fri_eval_taps!")
 
 def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
   := do let po2 <- MonadVerifyAdapter.get_po2

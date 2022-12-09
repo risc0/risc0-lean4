@@ -60,7 +60,11 @@ def VerifyRoundInfo.new (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field E
   := do let domain := in_domain / FRI_FOLD
         let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
         let mix : ExtElem <- Field.random
-        return VerifyRoundInfo.mk domain merkle mix
+        pure {
+          domain,
+          merkle,
+          mix
+        }
 
 def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : ExtElem) : ExtElem
   := Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt io))) x
@@ -94,18 +98,18 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
 
 
 def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (degree : Nat) (inner : Nat -> M ExtElem) : M Unit
-  := do let mut degree_ := degree
-        let orig_domain := INV_RATE * degree
+  (in_degree : Nat) (inner : Nat -> M ExtElem) : M Unit
+  := do let mut degree := in_degree
+        let orig_domain := INV_RATE * in_degree
         let mut domain := orig_domain
         -- Prep the folding verfiers
-        let rounds_capacity := ((Nat.log2_ceil ((degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
+        let rounds_capacity := ((Nat.log2_ceil ((in_degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
         let mut rounds : Array (VerifyRoundInfo ExtElem) := Array.mkEmpty rounds_capacity
         while degree > FRI_MIN_DEGREE do
           let round <- VerifyRoundInfo.new Elem ExtElem domain
           rounds := rounds.push round
           domain := domain / FRI_FOLD
-          degree_ := degree_ / FRI_FOLD
+          degree := degree / FRI_FOLD
         let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
         let final_digest := Hash.hash_pod (final_coeffs)
         MonadReadIop.commit final_digest
@@ -113,21 +117,20 @@ def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf Ve
         let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
         -- // Do queries
         FriVerifyState.run do
-          let mut poly_buf: Array ExtElem := Array.mkEmpty degree_
+          let mut poly_buf: Array ExtElem := Array.mkEmpty degree
           for _ in [0:QUERIES] do
             let rng: UInt32 <- MonadLift.monadLift (MonadRng.nextUInt32: M UInt32)
-            let pos_val := ((rng.toNat) % orig_domain)
+            let pos_val := rng.toNat % orig_domain
             FriVerifyState.set_pos pos_val
             -- // Do the 'inner' verification for this index
-            let eval_inner : ExtElem <- inner pos_val 
-            FriVerifyState.set_goal eval_inner --inner(iop, pos)?
+            inner pos_val >>= FriVerifyState.set_goal
             -- // Verify the per-round proofs
             for round in rounds do
               VerifyRoundInfo.verify_query Elem ExtElem round
             -- // Do final verification
             let x : Elem := gen ^ (<- FriVerifyState.get_pos)
             -- collect field elements into groups of size EXT_SIZE
-            let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree_ (ExtField.EXT_DEG Elem ExtElem)
+            let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
             poly_buf := collate_final_coeffs.map ExtField.ofSubelems 
 
             let fx : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
