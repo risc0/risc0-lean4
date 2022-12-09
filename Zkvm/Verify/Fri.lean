@@ -93,7 +93,7 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
         pure ()
 
 
-def fri_verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
+def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
   (degree : Nat) (inner : Nat -> M ExtElem) : M Unit
   := do let mut degree_ := degree
         let orig_domain := INV_RATE * degree

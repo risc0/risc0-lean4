@@ -8,6 +8,7 @@ import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.ArithVM.Taps
 import Zkvm.Verify.Classes
+import Zkvm.Verify.Fri
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.Monad
 
@@ -16,10 +17,12 @@ namespace Zkvm.Verify
 open R0sy.Algebra
 open R0sy.Algebra.Poly
 open R0sy.Hash.Sha2
+open R0sy.Lean.Nat
 open R0sy.Serial
 open ArithVM.Circuit
 open ArithVM.Taps
 open Classes
+open Fri
 open Merkle
 open MethodId
 
@@ -53,6 +56,7 @@ def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtEl
 
 structure CheckVerifier (ExtElem: Type) where
   check_merkle: MerkleTreeVerifier
+  z: ExtElem
   mix: ExtElem
   combo_u: Array ExtElem
 
@@ -136,10 +140,14 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           cur_mix := cur_mix * mix
         pure {
           check_merkle,
+          z,
           mix,
           combo_u
         }
 
+
+def verify.fri_eval_taps [Monad M] (taps: TapSet) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  := sorry
 
 def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
   := do let po2 <- MonadVerifyAdapter.get_po2
@@ -157,7 +165,23 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         -- Begin the check process
         let check_verifier <- CheckVerifier.new
         -- Next step: FRI verify!
-        throw (VerificationError.Sorry "Zkvm.Verify.verify")
+        let circuit <- MonadCircuit.getCircuit
+        let po2 <- MonadVerifyAdapter.get_po2
+        let domain <- MonadVerifyAdapter.get_domain
+        let size <- MonadVerifyAdapter.get_size
+        let back_one: Elem := RootsOfUnity.ROU_REV[po2]!
+        let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
+        fri_verify Elem ExtElem size (fun idx
+          => do let x := gen ^ idx
+                let rows: Array (Array Elem) := #[
+                  <- merkle_verifiers.accum_merkle.verify idx,
+                  <- merkle_verifiers.code_merkle.verify idx,
+                  <- merkle_verifiers.data_merkle.verify idx
+                ]
+                let check_row: Array Elem <- check_verifier.check_merkle.verify idx
+                verify.fri_eval_taps circuit.taps check_verifier.mix check_verifier.combo_u check_row back_one x check_verifier.z rows
+        )
+        -- TODO: assert that there is no buffer remaining!
 
 
 def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32)
