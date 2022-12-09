@@ -143,12 +143,11 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           combo_u
         }
 
-def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (mix: ExtElem) (combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
+  (circuit: Circuit Elem ExtElem) (tap_mix_pows check_mix_pows combo_u: Array ExtElem) (check_row: Array Elem) (back_one: Elem) (x: Elem) (z: ExtElem) (rows: Array (Array Elem)): M ExtElem
   := do let mut tot: Array ExtElem := Array.mkArray (circuit.taps.combos_count.toNat + 1) Ring.zero
         let combo_count := circuit.taps.combos_count
         let x: ExtElem := Algebra.ofBase x
-        let tap_mix_pows := Circuit.tap_mix_pows circuit mix
-        let check_mix_pows := Circuit.check_mix_pows circuit mix
         throw (VerificationError.Sorry "Need to implement verify.fri_eval_taps!")
 
 def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
@@ -173,6 +172,8 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         let size <- MonadVerifyAdapter.get_size
         let back_one: Elem := RootsOfUnity.ROU_REV[po2]!
         let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
+        let tap_mix_pows := Circuit.tap_mix_pows circuit check_verifier.mix
+        let check_mix_pows := Circuit.check_mix_pows circuit check_verifier.mix
         fri_verify Elem ExtElem size (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
@@ -181,9 +182,9 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
                   <- merkle_verifiers.data_merkle.verify idx
                 ]
                 let check_row: Array Elem <- check_verifier.check_merkle.verify idx
-                verify.fri_eval_taps circuit check_verifier.mix check_verifier.combo_u check_row back_one x check_verifier.z rows
+                verify.fri_eval_taps circuit tap_mix_pows check_mix_pows check_verifier.combo_u check_row back_one x check_verifier.z rows
         )
-        -- TODO: assert that there is no buffer remaining!
+        MonadReadIop.verifyComplete
 
 
 def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32)
