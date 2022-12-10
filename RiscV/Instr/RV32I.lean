@@ -69,47 +69,95 @@ inductive RV32I where
   | XOR   | SRL   | SRA   | OR    | AND   | FENCE | ECALL | EBREAK
 
 instance : InstructionSet RV32I where
+  all := #[
+    .LUI,   .AUIPC, .JAL,   .JALR,  .BEQ,   .BNE,   .BLT,   .BGE,
+    .BLTU,  .BGEU,  .LB,    .LH,    .LW,    .LBU,   .LHU,   .SB,
+    .SH,    .SW,    .ADDI,  .SLTI,  .SLTIU, .XORI,  .ORI,   .ANDI,
+    .SLLI,  .SRLI,  .SRAI,  .ADD,   .SUB,   .SLL,   .SLT,   .SLTU,
+    .XOR,   .SRL,   .SRA,   .OR,    .AND,   .FENCE, .ECALL, .EBREAK
+  ]
   code (m: RV32I)
     := match m with
-        | .LUI    => { format := CodeType.U, code := UCode.new                      0b0110111 }
-        | .AUIPC  => { format := CodeType.U, code := UCode.new                      0b0010111 }
-        | .JAL    => { format := CodeType.J, code := JCode.new                      0b1101111 }
-        | .JALR   => { format := CodeType.I, code := ICode.new              0b000   0b1100111 }
-        | .BEQ    => { format := CodeType.B, code := BCode.new              0b000   0b1100011 }
-        | .BNE    => { format := CodeType.B, code := BCode.new              0b001   0b1100011 }
-        | .BLT    => { format := CodeType.B, code := BCode.new              0b100   0b1100011 }
-        | .BGE    => { format := CodeType.B, code := BCode.new              0b101   0b1100011 }
-        | .BLTU   => { format := CodeType.B, code := BCode.new              0b110   0b1100011 }
-        | .BGEU   => { format := CodeType.B, code := BCode.new              0b111   0b1100011 }
-        | .LB     => { format := CodeType.I, code := ICode.new              0b000   0b0000011 }
-        | .LH     => { format := CodeType.I, code := ICode.new              0b001   0b0000011 }
-        | .LW     => { format := CodeType.I, code := ICode.new              0b010   0b0000011 }
-        | .LBU    => { format := CodeType.I, code := ICode.new              0b100   0b0000011 }
-        | .LHU    => { format := CodeType.I, code := ICode.new              0b101   0b0000011 }
-        | .SB     => { format := CodeType.S, code := SCode.new              0b000   0b0100011 }
-        | .SH     => { format := CodeType.S, code := SCode.new              0b001   0b0100011 }
-        | .SW     => { format := CodeType.S, code := SCode.new              0b010   0b0100011 }
-        | .ADDI   => { format := CodeType.I, code := ICode.new              0b000   0b0010011 }
-        | .SLTI   => { format := CodeType.I, code := ICode.new              0b010   0b0010011 }
-        | .SLTIU  => { format := CodeType.I, code := ICode.new              0b011   0b0010011 }
-        | .XORI   => { format := CodeType.I, code := ICode.new              0b100   0b0010011 }
-        | .ORI    => { format := CodeType.I, code := ICode.new              0b110   0b0010011 }
-        | .ANDI   => { format := CodeType.I, code := ICode.new              0b111   0b0010011 }
-        | .SLLI   => { format := CodeType.R, code := RCode.new  0b0000000   0b001   0b0010011 }
-        | .SRLI   => { format := CodeType.R, code := RCode.new  0b0000000   0b101   0b0010011 }
-        | .SRAI   => { format := CodeType.R, code := RCode.new  0b0100000   0b101   0b0010011 }
-        | .ADD    => { format := CodeType.R, code := RCode.new  0b0000000   0b000   0b0110011 }
-        | .SUB    => { format := CodeType.R, code := RCode.new  0b0100000   0b000   0b0110011 }
-        | .SLL    => { format := CodeType.R, code := RCode.new  0b0000000   0b001   0b0110011 }
-        | .SLT    => { format := CodeType.R, code := RCode.new  0b0000000   0b010   0b0110011 }
-        | .SLTU   => { format := CodeType.R, code := RCode.new  0b0000000   0b011   0b0110011 }
-        | .XOR    => { format := CodeType.R, code := RCode.new  0b0000000   0b100   0b0110011 }
-        | .SRL    => { format := CodeType.R, code := RCode.new  0b0000000   0b101   0b0110011 }
-        | .SRA    => { format := CodeType.R, code := RCode.new  0b0100000   0b101   0b0110011 }
-        | .OR     => { format := CodeType.R, code := RCode.new  0b0000000   0b110   0b0110011 }
-        | .AND    => { format := CodeType.R, code := RCode.new  0b0000000   0b111   0b0110011 }
-        | .FENCE  => { format := CodeType.I, code := ICode.new              0b000   0b0001111 }
-        | .ECALL  => { format := CodeType.Const, code := ConstCode.new  0b000000000000    0b00000   0b000   0b00000   0b1110011 }
-        | .EBREAK => { format := CodeType.Const, code := ConstCode.new  0b000000000001    0b00000   0b000   0b00000   0b1110011 }
+        | .LUI    => { type := .U, code := UCode.new                      0b0110111 }
+        | .AUIPC  => { type := .U, code := UCode.new                      0b0010111 }
+        | .JAL    => { type := .J, code := JCode.new                      0b1101111 }
+        | .JALR   => { type := .I, code := ICode.new              0b000   0b1100111 }
+        | .BEQ    => { type := .B, code := BCode.new              0b000   0b1100011 }
+        | .BNE    => { type := .B, code := BCode.new              0b001   0b1100011 }
+        | .BLT    => { type := .B, code := BCode.new              0b100   0b1100011 }
+        | .BGE    => { type := .B, code := BCode.new              0b101   0b1100011 }
+        | .BLTU   => { type := .B, code := BCode.new              0b110   0b1100011 }
+        | .BGEU   => { type := .B, code := BCode.new              0b111   0b1100011 }
+        | .LB     => { type := .I, code := ICode.new              0b000   0b0000011 }
+        | .LH     => { type := .I, code := ICode.new              0b001   0b0000011 }
+        | .LW     => { type := .I, code := ICode.new              0b010   0b0000011 }
+        | .LBU    => { type := .I, code := ICode.new              0b100   0b0000011 }
+        | .LHU    => { type := .I, code := ICode.new              0b101   0b0000011 }
+        | .SB     => { type := .S, code := SCode.new              0b000   0b0100011 }
+        | .SH     => { type := .S, code := SCode.new              0b001   0b0100011 }
+        | .SW     => { type := .S, code := SCode.new              0b010   0b0100011 }
+        | .ADDI   => { type := .I, code := ICode.new              0b000   0b0010011 }
+        | .SLTI   => { type := .I, code := ICode.new              0b010   0b0010011 }
+        | .SLTIU  => { type := .I, code := ICode.new              0b011   0b0010011 }
+        | .XORI   => { type := .I, code := ICode.new              0b100   0b0010011 }
+        | .ORI    => { type := .I, code := ICode.new              0b110   0b0010011 }
+        | .ANDI   => { type := .I, code := ICode.new              0b111   0b0010011 }
+        | .SLLI   => { type := .R, code := RCode.new  0b0000000   0b001   0b0010011 }
+        | .SRLI   => { type := .R, code := RCode.new  0b0000000   0b101   0b0010011 }
+        | .SRAI   => { type := .R, code := RCode.new  0b0100000   0b101   0b0010011 }
+        | .ADD    => { type := .R, code := RCode.new  0b0000000   0b000   0b0110011 }
+        | .SUB    => { type := .R, code := RCode.new  0b0100000   0b000   0b0110011 }
+        | .SLL    => { type := .R, code := RCode.new  0b0000000   0b001   0b0110011 }
+        | .SLT    => { type := .R, code := RCode.new  0b0000000   0b010   0b0110011 }
+        | .SLTU   => { type := .R, code := RCode.new  0b0000000   0b011   0b0110011 }
+        | .XOR    => { type := .R, code := RCode.new  0b0000000   0b100   0b0110011 }
+        | .SRL    => { type := .R, code := RCode.new  0b0000000   0b101   0b0110011 }
+        | .SRA    => { type := .R, code := RCode.new  0b0100000   0b101   0b0110011 }
+        | .OR     => { type := .R, code := RCode.new  0b0000000   0b110   0b0110011 }
+        | .AND    => { type := .R, code := RCode.new  0b0000000   0b111   0b0110011 }
+        | .FENCE  => { type := .I, code := ICode.new              0b000   0b0001111 }
+        | .ECALL  => { type := .Const, code := ConstCode.new  0b000000000000    0b00000   0b000   0b00000   0b1110011 }
+        | .EBREAK => { type := .Const, code := ConstCode.new  0b000000000001    0b00000   0b000   0b00000   0b1110011 }
+  run
+    | .LUI, args => pure ()
+    | .AUIPC, args => pure ()
+    | .JAL, args => pure ()
+    | .JALR, args => pure ()
+    | .BEQ, args => pure ()
+    | .BNE, args => pure ()
+    | .BLT, args => pure ()
+    | .BGE, args => pure ()
+    | .BLTU, args => pure ()
+    | .BGEU, args => pure ()
+    | .LB, args => pure ()
+    | .LH, args => pure ()
+    | .LW, args => pure ()
+    | .LBU, args => pure ()
+    | .LHU, args => pure ()
+    | .SB, args => pure ()
+    | .SH, args => pure ()
+    | .SW, args => pure ()
+    | .ADDI, args => pure ()
+    | .SLTI, args => pure ()
+    | .SLTIU, args => pure ()
+    | .XORI, args => pure ()
+    | .ORI, args => pure ()
+    | .ANDI, args => pure ()
+    | .SLLI, args => pure ()
+    | .SRLI, args => pure ()
+    | .SRAI, args => pure ()
+    | .ADD, args => pure ()
+    | .SUB, args => pure ()
+    | .SLL, args => pure ()
+    | .SLT, args => pure ()
+    | .SLTU, args => pure ()
+    | .XOR, args => pure ()
+    | .SRL, args => pure ()
+    | .SRA, args => pure ()
+    | .OR, args => pure ()
+    | .AND, args => pure ()
+    | .FENCE, args => pure ()
+    | .ECALL, args => pure ()
+    | .EBREAK, args => pure ()
 
 end RiscV.Instr.RV32I

@@ -3,10 +3,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Monad
 
 namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
+open Monad
+
 
 def funct7_mask: UInt32 := Bits.mask 31 25
 def funct3_mask: UInt32 := Bits.mask 14 12
@@ -32,14 +35,12 @@ def RCode.pattern (x: RCode): UInt32
 
 
 structure RArgs where
-  instr: RCode
   rs2: Bits 24 20
   rs1: Bits 19 15
   rd: Bits 11 7
 
-def RArgs.mkArgs (instr: RCode) (x: UInt32): RArgs
+def RArgs.mkArgs (x: UInt32): RArgs
   := {
-    instr
     rs2 := Bits.ofUInt32 x
     rs1 := Bits.ofUInt32 x
     rd := Bits.ofUInt32 x
@@ -63,14 +64,12 @@ def ICode.pattern (x: ICode): UInt32
 
 
 structure IArgs where
-  instr: ICode
   imm11_0: Bits 31 20
   rs1: Bits 19 15
   rd: Bits 11 7
 
-def IArgs.mkArgs (instr: ICode) (x: UInt32): IArgs
+def IArgs.mkArgs (x: UInt32): IArgs
   := {
-    instr,
     imm11_0 := Bits.ofUInt32 x
     rs1 := Bits.ofUInt32 x
     rd := Bits.ofUInt32 x
@@ -94,15 +93,13 @@ def SCode.pattern (x: SCode): UInt32
 
 
 structure SArgs where
-  instr: SCode
   imm11_5: Bits 31 25
   rs2: Bits 24 20
   rs1: Bits 19 15
   imm4_0: Bits 11 7
 
-def SArgs.mkArgs (instr: SCode) (x: UInt32): SArgs
+def SArgs.mkArgs (x: UInt32): SArgs
   := {
-    instr
     imm11_5 := Bits.ofUInt32 x
     rs2 := Bits.ofUInt32 x
     rs1 := Bits.ofUInt32 x
@@ -127,7 +124,6 @@ def BCode.pattern (x: BCode): UInt32
 
 
 structure BArgs where
-  instr: BCode
   imm12: Bits 31 31
   imm10_5: Bits 30 25
   rs2: Bits 24 20
@@ -135,9 +131,8 @@ structure BArgs where
   imm4_1: Bits 11 8
   imm11: Bits 7 7
 
-def BArgs.mkArgs (instr: BCode) (x: UInt32): BArgs
+def BArgs.mkArgs (x: UInt32): BArgs
   := {
-    instr
     imm12 := Bits.ofUInt32 x
     imm10_5 := Bits.ofUInt32 x
     rs2 := Bits.ofUInt32 x
@@ -162,13 +157,11 @@ def UCode.pattern (x: UCode): UInt32
 
 
 structure UArgs where
-  instr: UCode
   imm31_12: Bits 31 12
   rd: Bits 11 7
 
-def UArgs.mkArgs (instr: UCode) (x: UInt32): UArgs
+def UArgs.mkArgs (x: UInt32): UArgs
   := {
-    instr
     imm31_12 := Bits.ofUInt32 x
     rd := Bits.ofUInt32 x
   }
@@ -189,16 +182,14 @@ def JCode.pattern (x: JCode): UInt32
 
 
 structure JArgs where
-  instr: JCode
   imm20: Bits 31 31
   imm10_1: Bits 30 21
   imm11: Bits 20 20
   imm19_12: Bits 19 12
   rd: Bits 11 7
 
-def JArgs.mkArgs (instr: JCode) (x: UInt32): JArgs
+def JArgs.mkArgs (x: UInt32): JArgs
   := {
-    instr
     imm20 := Bits.ofUInt32 x
     imm10_1 := Bits.ofUInt32 x
     imm11 := Bits.ofUInt32 x
@@ -258,7 +249,7 @@ def CodeType.Code (t: CodeType): Type
       | J => JCode
       | Const => ConstCode
 
-def CodeType.pattern (t: CodeType) (code: CodeType.Code t): UInt32
+def CodeType.pattern {t: CodeType} (code: CodeType.Code t): UInt32
   := match t with
       | R => RCode.pattern code
       | I => ICode.pattern code
@@ -278,33 +269,45 @@ def CodeType.Args (t: CodeType): Type
       | J => JArgs
       | Const => Unit
 
-def CodeType.mkArgs: (t: CodeType) -> CodeType.Code t -> UInt32 -> CodeType.Args t
-  | R, code, x => RArgs.mkArgs code x
-  | I, code, x => IArgs.mkArgs code x
-  | S, code, x => SArgs.mkArgs code x
-  | B, code, x => BArgs.mkArgs code x
-  | U, code, x => UArgs.mkArgs code x
-  | J, code, x => JArgs.mkArgs code x
-  | Const, _, _ => ()
+def CodeType.mkArgs: {t: CodeType} -> UInt32 -> CodeType.Args t
+  | R, x => RArgs.mkArgs x
+  | I, x => IArgs.mkArgs x
+  | S, x => SArgs.mkArgs x
+  | B, x => BArgs.mkArgs x
+  | U, x => UArgs.mkArgs x
+  | J, x => JArgs.mkArgs x
+  | Const, _ => ()
 
 
 structure Code where
-  format: CodeType
-  code: CodeType.Code format
+  type: CodeType
+  code: CodeType.Code type
+
 
 class InstructionSet (Mnemonic: Type) where
+  all: Array Mnemonic
   code (m: Mnemonic): Code
+  run [MonadMachine M] (m: Mnemonic) (args: CodeType.Args (code m).type): M Unit
 
 def InstructionSet.mask [InstructionSet Mnemonic] (m: Mnemonic): UInt32
-  := CodeType.mask (InstructionSet.code m).format
+  := CodeType.mask (InstructionSet.code m).type
 
 def InstructionSet.pattern [InstructionSet Mnemonic] (m: Mnemonic): UInt32
-  := CodeType.pattern (InstructionSet.code m).format (InstructionSet.code m).code
+  := CodeType.pattern (InstructionSet.code m).code
 
 def InstructionSet.code_matches [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): Bool
   := x &&& (InstructionSet.mask m) == InstructionSet.pattern m
 
-def InstructionSet.mkArgs [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): CodeType.Args (InstructionSet.code m).format
-  := CodeType.mkArgs (InstructionSet.code m).format (InstructionSet.code m).code x
+def InstructionSet.decode (Mnemonic: Type) [InstructionSet Mnemonic] (x: UInt32): Option Mnemonic
+  := Id.run do
+      for mnemonic in @InstructionSet.all Mnemonic _ do
+        if InstructionSet.code_matches mnemonic x then return (some mnemonic)
+      pure none
+
+def InstructionSet.Args [InstructionSet Mnemonic] (m: Mnemonic): Type
+  := CodeType.Args (InstructionSet.code m).type
+
+def InstructionSet.mkArgs [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): InstructionSet.Args m
+  := CodeType.mkArgs x
 
 end RiscV.Instr.Types
