@@ -4,7 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import RiscV.Instr.Types
 
-namespace RiscV.Instr.RV32I
+namespace RiscV.Instr.InstrRV32I
 
 open Types
 
@@ -160,4 +160,4 @@ instance : InstructionSet RV32I where
     | .ECALL, args => pure ()
     | .EBREAK, args => pure ()
 
-end RiscV.Instr.RV32I
+end RiscV.Instr.InstrRV32I

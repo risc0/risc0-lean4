@@ -4,7 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import RiscV.Instr.Types
 
-namespace RiscV.Instr.RV32M
+namespace RiscV.Instr.InstrRV32M
 
 open Types
 
@@ -51,4 +51,4 @@ instance : InstructionSet RV32M where
     | .REM, args => pure ()
     | .REMU, args => pure ()
 
-end RiscV.Instr.RV32M
+end RiscV.Instr.InstrRV32M
