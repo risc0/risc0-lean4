@@ -78,46 +78,46 @@ instance : InstructionSet RV32I where
   ]
   encode_mnemonic (m: RV32I)
     := match m with
-        | .LUI    => { type := .U,  encoded_mnemonic := U.EncMnemonic.new                      0b0110111 }
-        | .AUIPC  => { type := .U,  encoded_mnemonic := U.EncMnemonic.new                      0b0010111 }
-        | .JAL    => { type := .J,  encoded_mnemonic := J.EncMnemonic.new                      0b1101111 }
-        | .JALR   => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b000   0b1100111 }
-        | .BEQ    => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b000   0b1100011 }
-        | .BNE    => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b001   0b1100011 }
-        | .BLT    => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b100   0b1100011 }
-        | .BGE    => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b101   0b1100011 }
-        | .BLTU   => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b110   0b1100011 }
-        | .BGEU   => { type := .B,  encoded_mnemonic := B.EncMnemonic.new              0b111   0b1100011 }
-        | .LB     => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b000   0b0000011 }
-        | .LH     => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b001   0b0000011 }
-        | .LW     => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b010   0b0000011 }
-        | .LBU    => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b100   0b0000011 }
-        | .LHU    => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b101   0b0000011 }
-        | .SB     => { type := .S,  encoded_mnemonic := S.EncMnemonic.new              0b000   0b0100011 }
-        | .SH     => { type := .S,  encoded_mnemonic := S.EncMnemonic.new              0b001   0b0100011 }
-        | .SW     => { type := .S,  encoded_mnemonic := S.EncMnemonic.new              0b010   0b0100011 }
-        | .ADDI   => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b000   0b0010011 }
-        | .SLTI   => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b010   0b0010011 }
-        | .SLTIU  => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b011   0b0010011 }
-        | .XORI   => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b100   0b0010011 }
-        | .ORI    => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b110   0b0010011 }
-        | .ANDI   => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b111   0b0010011 }
-        | .SLLI   => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b001   0b0010011 }
-        | .SRLI   => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b101   0b0010011 }
-        | .SRAI   => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0100000   0b101   0b0010011 }
-        | .ADD    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b000   0b0110011 }
-        | .SUB    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0100000   0b000   0b0110011 }
-        | .SLL    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b001   0b0110011 }
-        | .SLT    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b010   0b0110011 }
-        | .SLTU   => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b011   0b0110011 }
-        | .XOR    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b100   0b0110011 }
-        | .SRL    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b101   0b0110011 }
-        | .SRA    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0100000   0b101   0b0110011 }
-        | .OR     => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b110   0b0110011 }
-        | .AND    => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000000   0b111   0b0110011 }
-        | .FENCE  => { type := .I,  encoded_mnemonic := I.EncMnemonic.new              0b000   0b0001111 }
-        | .ECALL  => { type := .Const,  encoded_mnemonic := Const.EncMnemonic.new  0b000000000000    0b00000   0b000   0b00000   0b1110011 }
-        | .EBREAK => { type := .Const,  encoded_mnemonic := Const.EncMnemonic.new  0b000000000001    0b00000   0b000   0b00000   0b1110011 }
+        | .LUI    => { type := .U,  mnemonic := U.EncMnemonic.new                       0b0110111 }
+        | .AUIPC  => { type := .U,  mnemonic := U.EncMnemonic.new                       0b0010111 }
+        | .JAL    => { type := .J,  mnemonic := J.EncMnemonic.new                       0b1101111 }
+        | .JALR   => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b1100111 }
+        | .BEQ    => { type := .B,  mnemonic := B.EncMnemonic.new               0b000   0b1100011 }
+        | .BNE    => { type := .B,  mnemonic := B.EncMnemonic.new               0b001   0b1100011 }
+        | .BLT    => { type := .B,  mnemonic := B.EncMnemonic.new               0b100   0b1100011 }
+        | .BGE    => { type := .B,  mnemonic := B.EncMnemonic.new               0b101   0b1100011 }
+        | .BLTU   => { type := .B,  mnemonic := B.EncMnemonic.new               0b110   0b1100011 }
+        | .BGEU   => { type := .B,  mnemonic := B.EncMnemonic.new               0b111   0b1100011 }
+        | .LB     => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0000011 }
+        | .LH     => { type := .I,  mnemonic := I.EncMnemonic.new               0b001   0b0000011 }
+        | .LW     => { type := .I,  mnemonic := I.EncMnemonic.new               0b010   0b0000011 }
+        | .LBU    => { type := .I,  mnemonic := I.EncMnemonic.new               0b100   0b0000011 }
+        | .LHU    => { type := .I,  mnemonic := I.EncMnemonic.new               0b101   0b0000011 }
+        | .SB     => { type := .S,  mnemonic := S.EncMnemonic.new               0b000   0b0100011 }
+        | .SH     => { type := .S,  mnemonic := S.EncMnemonic.new               0b001   0b0100011 }
+        | .SW     => { type := .S,  mnemonic := S.EncMnemonic.new               0b010   0b0100011 }
+        | .ADDI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0010011 }
+        | .SLTI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b010   0b0010011 }
+        | .SLTIU  => { type := .I,  mnemonic := I.EncMnemonic.new               0b011   0b0010011 }
+        | .XORI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b100   0b0010011 }
+        | .ORI    => { type := .I,  mnemonic := I.EncMnemonic.new               0b110   0b0010011 }
+        | .ANDI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b111   0b0010011 }
+        | .SLLI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b001   0b0010011 }
+        | .SRLI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b101   0b0010011 }
+        | .SRAI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b101   0b0010011 }
+        | .ADD    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b000   0b0110011 }
+        | .SUB    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b000   0b0110011 }
+        | .SLL    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b001   0b0110011 }
+        | .SLT    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b010   0b0110011 }
+        | .SLTU   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b011   0b0110011 }
+        | .XOR    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b100   0b0110011 }
+        | .SRL    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b101   0b0110011 }
+        | .SRA    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b101   0b0110011 }
+        | .OR     => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b110   0b0110011 }
+        | .AND    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b111   0b0110011 }
+        | .FENCE  => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0001111 }
+        | .ECALL  => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011 }
+        | .EBREAK => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011 }
   run
     | .LUI, args => pure ()
     | .AUIPC, args => pure ()

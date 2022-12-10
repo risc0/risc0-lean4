@@ -4,11 +4,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy
 import RiscV.Monad
+import RiscV.Reg
 
 namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
 open Monad
+open Reg
 
 
 namespace Masks
@@ -33,7 +35,14 @@ namespace R
 
   def EncMnemonic.mask: UInt32 := Masks.funct7_mask ||| Masks.funct3_mask ||| Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      funct7 := Bits.ofUInt32 x
+      funct3 := Bits.ofUInt32 x
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct7.toUInt32 ||| x.funct3.toUInt32 ||| x.opcode.toUInt32
 
 
@@ -42,11 +51,24 @@ namespace R
     rs1: Bits 19 15
     rd: Bits 11 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       rs2 := Bits.ofUInt32 x
       rs1 := Bits.ofUInt32 x
       rd := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rd: Reg
+    rs1: Reg
+    rs2: Reg
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rd := Reg.ofUInt32 x.rd.val,
+      rs1 := Reg.ofUInt32 x.rs1.val,
+      rs2 := Reg.ofUInt32 x.rs2.val
     }
 end R
 
@@ -64,7 +86,13 @@ namespace I
 
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      funct3 := Bits.ofUInt32 x
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
 
@@ -73,11 +101,24 @@ namespace I
     rs1: Bits 19 15
     rd: Bits 11 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm11_0 := Bits.ofUInt32 x
       rs1 := Bits.ofUInt32 x
       rd := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rd: Reg
+    rs1: Reg
+    imm: UInt32
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rd := Reg.ofUInt32 x.rd.val,
+      rs1 := Reg.ofUInt32 x.rs1.val,
+      imm := sorry
     }
 end I
 
@@ -95,7 +136,13 @@ namespace S
 
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      funct3 := Bits.ofUInt32 x
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
 
@@ -105,12 +152,25 @@ namespace S
     rs1: Bits 19 15
     imm4_0: Bits 11 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm11_5 := Bits.ofUInt32 x
       rs2 := Bits.ofUInt32 x
       rs1 := Bits.ofUInt32 x
       imm4_0 := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rs1: Reg
+    rs2: Reg
+    imm: UInt32
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rs1 := Reg.ofUInt32 x.rs1.val,
+      rs2 := Reg.ofUInt32 x.rs2.val,
+      imm := sorry
     }
 end S
 
@@ -128,7 +188,13 @@ namespace B
 
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      funct3 := Bits.ofUInt32 x
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
 
@@ -140,7 +206,7 @@ namespace B
     imm4_1: Bits 11 8
     imm11: Bits 7 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm12 := Bits.ofUInt32 x
       imm10_5 := Bits.ofUInt32 x
@@ -148,6 +214,19 @@ namespace B
       rs1 := Bits.ofUInt32 x
       imm4_1 := Bits.ofUInt32 x
       imm11 := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rs1: Reg
+    rs2: Reg
+    imm: UInt32
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rs1 := Reg.ofUInt32 x.rs1.val,
+      rs2 := Reg.ofUInt32 x.rs2.val,
+      imm := sorry
     }
 end B
 
@@ -163,7 +242,12 @@ namespace U
 
   def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
 
 
@@ -171,10 +255,21 @@ namespace U
     imm31_12: Bits 31 12
     rd: Bits 11 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm31_12 := Bits.ofUInt32 x
       rd := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rd: Reg
+    imm: UInt32
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rd := Reg.ofUInt32 x.rd.val,
+      imm := sorry
     }
 end U
 
@@ -190,7 +285,12 @@ namespace J
 
   def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
 
 
@@ -201,13 +301,24 @@ namespace J
     imm19_12: Bits 19 12
     rd: Bits 11 7
 
-  def EncArgs.mkEncArgs (x: UInt32): EncArgs
+  def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm20 := Bits.ofUInt32 x
       imm10_1 := Bits.ofUInt32 x
       imm11 := Bits.ofUInt32 x
       imm19_12 := Bits.ofUInt32 x
       rd := Bits.ofUInt32 x
+    }
+
+
+  structure Args where
+    rd: Reg
+    imm: UInt32
+
+  def EncArgs.decode (x: EncArgs): Args
+    := {
+      rd := Reg.ofUInt32 x.rd.val,
+      imm := sorry
     }
 end J
 
@@ -231,7 +342,16 @@ namespace Const
 
   def EncMnemonic.mask: UInt32 := Bits.mask 31 0
 
-  def EncMnemonic.pattern (x: EncMnemonic): UInt32
+  def EncMnemonic.deserialize (x: UInt32): EncMnemonic
+    := {
+      const31_20 := Bits.ofUInt32 x
+      const19_15 := Bits.ofUInt32 x
+      const14_12 := Bits.ofUInt32 x
+      const11_7 := Bits.ofUInt32 x
+      opcode := Bits.ofUInt32 x
+    }
+
+  def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.const31_20.toUInt32 ||| x.const19_15.toUInt32 ||| x.const14_12.toUInt32 ||| x.const11_7.toUInt32 ||| x.opcode.toUInt32
 end Const
 
@@ -245,85 +365,122 @@ inductive EncType where
   | J
   | Const
 
-def EncType.mask (t: EncType): UInt32
-  := match t with
-      | R => R.EncMnemonic.mask
-      | I => I.EncMnemonic.mask
-      | S => S.EncMnemonic.mask
-      | B => B.EncMnemonic.mask
-      | U => U.EncMnemonic.mask
-      | J => J.EncMnemonic.mask
-      | Const => Const.EncMnemonic.mask
+namespace EncType
+  def EncMnemonic (t: EncType): Type
+    := match t with
+        | R => R.EncMnemonic
+        | I => I.EncMnemonic
+        | S => S.EncMnemonic
+        | B => B.EncMnemonic
+        | U => U.EncMnemonic
+        | J => J.EncMnemonic
+        | Const => Const.EncMnemonic
 
-def EncType.EncMnemonic (t: EncType): Type
-  := match t with
-      | R => R.EncMnemonic
-      | I => I.EncMnemonic
-      | S => S.EncMnemonic
-      | B => B.EncMnemonic
-      | U => U.EncMnemonic
-      | J => J.EncMnemonic
-      | Const => Const.EncMnemonic
+  def EncMnemonic.mask (t: EncType): UInt32
+    := match t with
+        | R => R.EncMnemonic.mask
+        | I => I.EncMnemonic.mask
+        | S => S.EncMnemonic.mask
+        | B => B.EncMnemonic.mask
+        | U => U.EncMnemonic.mask
+        | J => J.EncMnemonic.mask
+        | Const => Const.EncMnemonic.mask
 
-def EncType.pattern {t: EncType} (code: EncType.EncMnemonic t): UInt32
-  := match t with
-      | R => R.EncMnemonic.pattern code
-      | I => I.EncMnemonic.pattern code
-      | S => S.EncMnemonic.pattern code
-      | B => B.EncMnemonic.pattern code
-      | U => U.EncMnemonic.pattern code
-      | J => J.EncMnemonic.pattern code
-      | Const => Const.EncMnemonic.pattern code
+  def EncMnemonic.deserialize {t: EncType} (x: UInt32): EncType.EncMnemonic t
+    := match t with
+        | R => R.EncMnemonic.deserialize x
+        | I => I.EncMnemonic.deserialize x
+        | S => S.EncMnemonic.deserialize x
+        | B => B.EncMnemonic.deserialize x
+        | U => U.EncMnemonic.deserialize x
+        | J => J.EncMnemonic.deserialize x
+        | Const => Const.EncMnemonic.deserialize x
 
-def EncType.EncArgs (t: EncType): Type
-  := match t with
-      | R => R.EncArgs
-      | I => I.EncArgs
-      | S => S.EncArgs
-      | B => B.EncArgs
-      | U => U.EncArgs
-      | J => J.EncArgs
-      | Const => Unit
+  def EncMnemonic.serialize {t: EncType} (code: EncType.EncMnemonic t): UInt32
+    := match t with
+        | R => R.EncMnemonic.serialize code
+        | I => I.EncMnemonic.serialize code
+        | S => S.EncMnemonic.serialize code
+        | B => B.EncMnemonic.serialize code
+        | U => U.EncMnemonic.serialize code
+        | J => J.EncMnemonic.serialize code
+        | Const => Const.EncMnemonic.serialize code
 
-def EncType.mkEncArgs: {t: EncType} -> UInt32 -> EncType.EncArgs t
-  | R, x => R.EncArgs.mkEncArgs x
-  | I, x => I.EncArgs.mkEncArgs x
-  | S, x => S.EncArgs.mkEncArgs x
-  | B, x => B.EncArgs.mkEncArgs x
-  | U, x => U.EncArgs.mkEncArgs x
-  | J, x => J.EncArgs.mkEncArgs x
-  | Const, _ => ()
+  def EncArgs (t: EncType): Type
+    := match t with
+        | R => R.EncArgs
+        | I => I.EncArgs
+        | S => S.EncArgs
+        | B => B.EncArgs
+        | U => U.EncArgs
+        | J => J.EncArgs
+        | Const => Unit
+
+  def EncArgs.deserialize: {t: EncType} -> UInt32 -> EncType.EncArgs t
+    | R, x => R.EncArgs.deserialize x
+    | I, x => I.EncArgs.deserialize x
+    | S, x => S.EncArgs.deserialize x
+    | B, x => B.EncArgs.deserialize x
+    | U, x => U.EncArgs.deserialize x
+    | J, x => J.EncArgs.deserialize x
+    | Const, _ => ()
+
+  def Args (t: EncType): Type
+    := match t with
+        | R => R.Args
+        | I => I.Args
+        | S => S.Args
+        | B => B.Args
+        | U => U.Args
+        | J => J.Args
+        | Const => Unit
+
+  def EncArgs.decode: {t: EncType} -> EncType.EncArgs t -> EncType.Args t
+    | R, x => R.EncArgs.decode x
+    | I, x => I.EncArgs.decode x
+    | S, x => S.EncArgs.decode x
+    | B, x => B.EncArgs.decode x
+    | U, x => U.EncArgs.decode x
+    | J, x => J.EncArgs.decode x
+    | Const, _ => ()
+end EncType
 
 
-structure EncMnemonic where
+structure BoxedEncMnemonic where
   type: EncType
-  encoded_mnemonic: EncType.EncMnemonic type
+  mnemonic: EncType.EncMnemonic type
 
 
 class InstructionSet (Mnemonic: Type) where
   all: Array Mnemonic
-  encode_mnemonic (m: Mnemonic): EncMnemonic
-  run [MonadMachine M] (m: Mnemonic) (args: EncType.EncArgs (encode_mnemonic m).type): M Unit
+  encode_mnemonic (m: Mnemonic): BoxedEncMnemonic
+  run [MonadMachine M] (m: Mnemonic) (args: EncType.Args (encode_mnemonic m).type): M Unit
 
-def InstructionSet.mask [InstructionSet Mnemonic] (m: Mnemonic): UInt32
-  := EncType.mask (InstructionSet.encode_mnemonic m).type
+namespace InstructionSet
+  def EncMnemonic.serialize [InstructionSet Mnemonic] (m: Mnemonic): UInt32
+    := EncType.EncMnemonic.serialize (InstructionSet.encode_mnemonic m).mnemonic
 
-def InstructionSet.pattern [InstructionSet Mnemonic] (m: Mnemonic): UInt32
-  := EncType.pattern (InstructionSet.encode_mnemonic m).encoded_mnemonic
+  def code_matches [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): Bool
+    := let mask := EncType.EncMnemonic.mask (InstructionSet.encode_mnemonic m).type
+      x &&& mask == InstructionSet.EncMnemonic.serialize m
 
-def InstructionSet.code_matches [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): Bool
-  := x &&& (InstructionSet.mask m) == InstructionSet.pattern m
+  def deserialize_mnemonic (Mnemonic: Type) [InstructionSet Mnemonic] (x: UInt32): Option Mnemonic
+    := Id.run do
+        for mnemonic in @InstructionSet.all Mnemonic _ do
+          if InstructionSet.code_matches mnemonic x then return (some mnemonic)
+        pure none
 
-def InstructionSet.decode (Mnemonic: Type) [InstructionSet Mnemonic] (x: UInt32): Option Mnemonic
-  := Id.run do
-      for mnemonic in @InstructionSet.all Mnemonic _ do
-        if InstructionSet.code_matches mnemonic x then return (some mnemonic)
-      pure none
+  def EncArgs [InstructionSet Mnemonic] (m: Mnemonic): Type
+    := EncType.EncArgs (InstructionSet.encode_mnemonic m).type
 
-def InstructionSet.EncArgs [InstructionSet Mnemonic] (m: Mnemonic): Type
-  := EncType.EncArgs (InstructionSet.encode_mnemonic m).type
+  def EncArgs.deserialize [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): InstructionSet.EncArgs m
+    := EncType.EncArgs.deserialize x
 
-def InstructionSet.mkEncArgs [InstructionSet Mnemonic] (m: Mnemonic) (x: UInt32): InstructionSet.EncArgs m
-  := EncType.mkEncArgs x
+  def Args [InstructionSet Mnemonic] (m: Mnemonic): Type
+    := EncType.Args (InstructionSet.encode_mnemonic m).type
+
+  def EncArgs.decode [InstructionSet Mnemonic] (m: Mnemonic) (x: InstructionSet.EncArgs m): InstructionSet.Args m
+    := EncType.EncArgs.decode x
+end InstructionSet
 
 end RiscV.Instr.Types
