@@ -11,9 +11,11 @@ open R0sy.Data.Bits
 open Monad
 
 
-def funct7_mask: UInt32 := Bits.mask 31 25
-def funct3_mask: UInt32 := Bits.mask 14 12
-def opcode_mask: UInt32 := Bits.mask 6 0
+namespace Masks
+  def funct7_mask: UInt32 := Bits.mask 31 25
+  def funct3_mask: UInt32 := Bits.mask 14 12
+  def opcode_mask: UInt32 := Bits.mask 6 0
+end Masks
 
 
 namespace R
@@ -29,7 +31,7 @@ namespace R
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := funct7_mask ||| funct3_mask ||| opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.funct7_mask ||| Masks.funct3_mask ||| Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.funct7.toUInt32 ||| x.funct3.toUInt32 ||| x.opcode.toUInt32
@@ -60,7 +62,7 @@ namespace I
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := funct3_mask ||| opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
@@ -91,7 +93,7 @@ namespace S
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := funct3_mask ||| opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
@@ -124,7 +126,7 @@ namespace B
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := funct3_mask ||| opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
@@ -159,7 +161,7 @@ namespace U
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
@@ -186,7 +188,7 @@ namespace J
       opcode := { val := opcode }
     }
 
-  def EncMnemonic.mask: UInt32 := opcode_mask
+  def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
   def EncMnemonic.pattern (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
