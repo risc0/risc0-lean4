@@ -12,10 +12,10 @@ open R0sy.Lean.Nat
 def bit_rev_32 (in_x: UInt32): UInt32
   := Id.run do
       let mut x := in_x
-      x := ((x &&& 0xaaaaaaaa) >>> 1) ||| ((x &&& 0x55555555) <<< 1);
-      x := ((x &&& 0xcccccccc) >>> 2) ||| ((x &&& 0x33333333) <<< 2);
-      x := ((x &&& 0xf0f0f0f0) >>> 4) ||| ((x &&& 0x0f0f0f0f) <<< 4);
-      x := ((x &&& 0xff00ff00) >>> 8) ||| ((x &&& 0x00ff00ff) <<< 8);
+      x := ((x &&& 0xaaaaaaaa) >>> 1) ||| ((x &&& 0x55555555) <<< 1)
+      x := ((x &&& 0xcccccccc) >>> 2) ||| ((x &&& 0x33333333) <<< 2)
+      x := ((x &&& 0xf0f0f0f0) >>> 4) ||| ((x &&& 0x0f0f0f0f) <<< 4)
+      x := ((x &&& 0xff00ff00) >>> 8) ||| ((x &&& 0x00ff00ff) <<< 8)
       (x >>> 16) ||| (x <<< 16)
 
 def bit_reverse [Inhabited T] (io: Array T): Array T
@@ -49,25 +49,28 @@ partial def fwd_butterfly [Field ExtElem] [RootsOfUnity ExtElem] (n expand_bits 
     else if n == expand_bits 
       then arr
       else 
-        let first_half : Array ExtElem := fwd_butterfly (n-1) expand_bits (arr.toSubarray 0 (2 ^ (n-1))).toArray;
-        let second_half : Array ExtElem := fwd_butterfly (n-1) expand_bits (arr.toSubarray (2 ^ (n-1)) (2 ^ n)).toArray;
+        let first_half : Array ExtElem := fwd_butterfly (n-1) expand_bits (arr.toSubarray 0 (2 ^ (n-1))).toArray
+        let second_half : Array ExtElem := fwd_butterfly (n-1) expand_bits (arr.toSubarray (2 ^ (n-1)) (2 ^ n)).toArray
         let second_half' : Array ExtElem := 
           second_half * 
-          ((RootsOfUnity.ROU_FWD[n]! : ExtElem) ^ ((List.range n).toArray) : Array ExtElem);
+          ((RootsOfUnity.ROU_FWD[n]! : ExtElem) ^ ((List.range n).toArray) : Array ExtElem)
         (first_half + second_half') ++ (first_half - second_half')
 
 partial def rev_butterfly [Field ExtElem] [RootsOfUnity ExtElem] (n : Nat) (arr : Array ExtElem) : Array ExtElem :=
-  if n == 0
-    then arr
-    else 
-      let a : Array ExtElem := (arr.toSubarray 0 (2 ^ (n-1)));
-      let b : Array ExtElem := (arr.toSubarray (2 ^ (n-1)) (2 ^ n));
-      let first_half : Array ExtElem := rev_butterfly (n-1) <| a + b;
-      let second_half : Array ExtElem := rev_butterfly (n-1) <| (a - b) * ((RootsOfUnity.ROU_REV[n]! : ExtElem) ^ ((List.range n).toArray) : Array ExtElem);
+  match n with
+  | 0 => arr
+  | n + 1 =>
+      let half := 1 <<< n
+      let step: ExtElem := RootsOfUnity.ROU_REV[n + 1]!
+      let a : Array ExtElem := arr.toSubarray 0 half
+      let b : Array ExtElem := arr.toSubarray half (2 * half)
+      let first_half  : Array ExtElem := rev_butterfly n <| a + b
+      let second_half : Array ExtElem := rev_butterfly n <| (a - b) * (step ^ ((List.range half).toArray) : Array ExtElem)
       first_half ++ second_half
 
-def interpolate_ntt [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) : Array ExtElem :=
-  let n := Nat.log2_ceil io.size;
-  (rev_butterfly n io) * (Field.inv (Field.fromUInt64 io.size.toUInt64 : ExtElem))
+def interpolate_ntt [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) : Array ExtElem
+  := Id.run do
+      let n := Nat.log2_ceil io.size
+      (rev_butterfly n io) * (Field.inv (Ring.ofNat io.size : ExtElem))
 
 end R0sy.Algebra.Ntt
