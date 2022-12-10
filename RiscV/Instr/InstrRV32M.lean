@@ -31,16 +31,16 @@ instance : InstructionSet RV32M where
   all := #[
     .MUL, .MULH, .MULHSU, .MULHU, .DIV, .DIVU, .REM, .REMU
   ]
-  code (m: RV32M)
+  encode_mnemonic (m: RV32M)
     := match m with
-        | .MUL =>    { type := .R, code := RCode.new  0b0000001   0b000   0b0110011 }
-        | .MULH =>   { type := .R, code := RCode.new  0b0000001   0b001   0b0110011 }
-        | .MULHSU => { type := .R, code := RCode.new  0b0000001   0b010   0b0110011 }
-        | .MULHU =>  { type := .R, code := RCode.new  0b0000001   0b011   0b0110011 }
-        | .DIV =>    { type := .R, code := RCode.new  0b0000001   0b100   0b0110011 }
-        | .DIVU =>   { type := .R, code := RCode.new  0b0000001   0b101   0b0110011 }
-        | .REM =>    { type := .R, code := RCode.new  0b0000001   0b110   0b0110011 }
-        | .REMU =>   { type := .R, code := RCode.new  0b0000001   0b111   0b0110011 }
+        | .MUL =>    { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b000   0b0110011 }
+        | .MULH =>   { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b001   0b0110011 }
+        | .MULHSU => { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b010   0b0110011 }
+        | .MULHU =>  { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b011   0b0110011 }
+        | .DIV =>    { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b100   0b0110011 }
+        | .DIVU =>   { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b101   0b0110011 }
+        | .REM =>    { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b110   0b0110011 }
+        | .REMU =>   { type := .R,  encoded_mnemonic := R.EncMnemonic.new  0b0000001   0b111   0b0110011 }
   run
     | .MUL, args => pure ()
     | .MULH, args => pure ()

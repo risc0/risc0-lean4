@@ -18,9 +18,9 @@ inductive RV32IM where
 
 instance : InstructionSet RV32IM where
   all := (@InstructionSet.all RV32I _).map RV32IM.I ++ (@InstructionSet.all RV32M _).map RV32IM.M
-  code
-    | .I instr => InstructionSet.code instr
-    | .M instr => InstructionSet.code instr
+  encode_mnemonic
+    | .I instr => InstructionSet.encode_mnemonic instr
+    | .M instr => InstructionSet.encode_mnemonic instr
   run
     | .I instr => InstructionSet.run instr
     | .M instr => InstructionSet.run instr
