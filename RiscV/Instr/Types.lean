@@ -9,6 +9,7 @@ import RiscV.Reg
 namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
+open R0sy.Lean.UInt32
 open Monad
 open Reg
 
@@ -115,11 +116,18 @@ namespace I
     imm: UInt32
 
   def EncArgs.decode (x: EncArgs): Args
-    := {
-      rd := Reg.ofUInt32 x.rd.val,
-      rs1 := Reg.ofUInt32 x.rs1.val,
-      imm := sorry
-    }
+    := Id.run do
+        let imm11_0:  Bits 11 0 := { val := x.imm11_0.val }
+        let imm31_12: Bits 31 12 :=
+          if UInt32.test_bit 11 imm11_0.toUInt32
+          then Bits.ofUInt32 0xffffffff
+          else Bits.ofUInt32 0x00000000
+        let imm := imm31_12.toUInt32 ||| imm11_0.toUInt32
+        pure {
+          rd := Reg.ofUInt32 x.rd.val,
+          rs1 := Reg.ofUInt32 x.rs1.val,
+          imm
+        }
 end I
 
 
@@ -167,11 +175,19 @@ namespace S
     imm: UInt32
 
   def EncArgs.decode (x: EncArgs): Args
-    := {
-      rs1 := Reg.ofUInt32 x.rs1.val,
-      rs2 := Reg.ofUInt32 x.rs2.val,
-      imm := sorry
-    }
+    := Id.run do
+        let imm4_0:  Bits 11 0 := { val := x.imm4_0.val }
+        let imm11_5:  Bits 11 0 := { val := x.imm11_5.val }
+        let imm31_12: Bits 31 12 :=
+          if UInt32.test_bit 11 imm11_5.toUInt32
+          then Bits.ofUInt32 0xffffffff
+          else Bits.ofUInt32 0x00000000
+        let imm := imm31_12.toUInt32 ||| imm11_5.toUInt32 ||| imm4_0.toUInt32
+        pure {
+          rs1 := Reg.ofUInt32 x.rs1.val,
+          rs2 := Reg.ofUInt32 x.rs2.val,
+          imm
+        }
 end S
 
 
@@ -223,11 +239,22 @@ namespace B
     imm: UInt32
 
   def EncArgs.decode (x: EncArgs): Args
-    := {
-      rs1 := Reg.ofUInt32 x.rs1.val,
-      rs2 := Reg.ofUInt32 x.rs2.val,
-      imm := sorry
-    }
+    := Id.run do
+        let imm12: Bits 12 12 := { val := x.imm12.val }
+        let imm11: Bits 11 11 := { val := x.imm11.val }
+        let imm10_5: Bits 10 5 := { val := x.imm10_5.val }
+        let imm4_1: Bits 4 1 := { val := x.imm4_1.val }
+        let imm0: Bits 0 0 := { val := 0 }
+        let imm31_13: Bits 31 13 :=
+          if UInt32.test_bit 12 imm12.toUInt32
+          then Bits.ofUInt32 0xffffffff
+          else Bits.ofUInt32 0x00000000
+        let imm := imm31_13.toUInt32 ||| imm12.toUInt32 ||| imm11.toUInt32 ||| imm10_5.toUInt32 ||| imm4_1.toUInt32 ||| imm0.toUInt32
+        pure {
+          rs1 := Reg.ofUInt32 x.rs1.val,
+          rs2 := Reg.ofUInt32 x.rs2.val,
+          imm
+        }
 end B
 
 
@@ -267,10 +294,14 @@ namespace U
     imm: UInt32
 
   def EncArgs.decode (x: EncArgs): Args
-    := {
-      rd := Reg.ofUInt32 x.rd.val,
-      imm := sorry
-    }
+    := Id.run do
+        let imm31_12: Bits 31 12 := { val := x.imm31_12.val }
+        let imm11_13: Bits 11 0 := { val := 0 }
+        let imm := imm31_12.toUInt32 ||| imm11_13.toUInt32
+        pure {
+          rd := Reg.ofUInt32 x.rd.val,
+          imm
+        }
 end U
 
 
@@ -316,10 +347,17 @@ namespace J
     imm: UInt32
 
   def EncArgs.decode (x: EncArgs): Args
-    := {
-      rd := Reg.ofUInt32 x.rd.val,
-      imm := sorry
-    }
+    := Id.run do
+        let imm20: Bits 20 20 := { val := x.imm20.val }
+        let imm19_12: Bits 19 12 := { val := x.imm19_12.val }
+        let imm11: Bits 11 11 := { val := x.imm11.val }
+        let imm10_1: Bits 10 1 := { val := x.imm10_1.val }
+        let imm0: Bits 0 0 := { val := 0 }
+        let imm := imm20.toUInt32 ||| imm19_12.toUInt32 ||| imm11.toUInt32 ||| imm10_1.toUInt32 ||| imm0.toUInt32
+        pure {
+          rd := Reg.ofUInt32 x.rd.val,
+          imm
+        }
 end J
 
 
