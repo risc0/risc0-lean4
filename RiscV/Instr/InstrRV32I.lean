@@ -131,21 +131,65 @@ instance : InstructionSet RV32I where
         => do let pc <- RegFile.get_word .PC
               RegFile.set_word .PC (pc + args.imm)
     | .JAL, args
-        => do pure ()
+        => do let pc <- RegFile.get_word .PC
+              let newPC := pc + args.imm
+              -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+              RegFile.set_word args.rd (pc + 4)
+              RegFile.set_word .PC newPC
     | .JALR, args
-        => do pure ()
+        => do let pc <- RegFile.get_word .PC
+              let newPC := pc + args.imm
+              -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+              RegFile.set_word args.rd (pc + 4)
+              RegFile.set_word .PC newPC
     | .BEQ, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x == y then do
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .BNE, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x != y then do
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .BLT, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x < y then do  -- TODO: signed comparison!
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .BGE, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x >= y then do -- TODO: signed comparison!
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .BLTU, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x < y then do
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .BGEU, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs1
+              let pc <- RegFile.get_word .PC
+              if x >= y then do
+                let newPC := pc + args.imm
+                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                RegFile.set_word .PC newPC
     | .LB, args
         => do pure ()
     | .LH, args

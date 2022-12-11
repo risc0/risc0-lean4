@@ -7,7 +7,7 @@ namespace RiscV.Mem
 
 structure Ptr where
   val: UInt32
-  -- aligned: val &&& 3 == 0
+  -- aligned: val % 4 == 0
   deriving Inhabited
 
 
