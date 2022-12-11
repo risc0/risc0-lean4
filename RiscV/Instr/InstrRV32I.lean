@@ -3,10 +3,16 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import RiscV.Instr.Types
+import RiscV.Mem
+import RiscV.Monad
+import RiscV.Reg
 
 namespace RiscV.Instr.InstrRV32I
 
 open Types
+open Mem
+open Monad
+open Reg
 
 /-
 Volume I: RISC-V Unprivileged ISA V20191213
@@ -119,45 +125,86 @@ instance : InstructionSet RV32I where
         | .ECALL  => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011 }
         | .EBREAK => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011 }
   run
-    | .LUI, args => pure ()
-    | .AUIPC, args => pure ()
-    | .JAL, args => pure ()
-    | .JALR, args => pure ()
-    | .BEQ, args => pure ()
-    | .BNE, args => pure ()
-    | .BLT, args => pure ()
-    | .BGE, args => pure ()
-    | .BLTU, args => pure ()
-    | .BGEU, args => pure ()
-    | .LB, args => pure ()
-    | .LH, args => pure ()
-    | .LW, args => pure ()
-    | .LBU, args => pure ()
-    | .LHU, args => pure ()
-    | .SB, args => pure ()
-    | .SH, args => pure ()
-    | .SW, args => pure ()
-    | .ADDI, args => pure ()
-    | .SLTI, args => pure ()
-    | .SLTIU, args => pure ()
-    | .XORI, args => pure ()
-    | .ORI, args => pure ()
-    | .ANDI, args => pure ()
-    | .SLLI, args => pure ()
-    | .SRLI, args => pure ()
-    | .SRAI, args => pure ()
-    | .ADD, args => pure ()
-    | .SUB, args => pure ()
-    | .SLL, args => pure ()
-    | .SLT, args => pure ()
-    | .SLTU, args => pure ()
-    | .XOR, args => pure ()
-    | .SRL, args => pure ()
-    | .SRA, args => pure ()
-    | .OR, args => pure ()
-    | .AND, args => pure ()
-    | .FENCE, args => pure ()
-    | .ECALL, args => pure ()
-    | .EBREAK, args => pure ()
+    | .LUI, args
+        => RegFile.set_word args.rd args.imm
+    | .AUIPC, args
+        => do let pc <- RegFile.get_word .PC
+              RegFile.set_word .PC (pc + args.imm)
+    | .JAL, args
+        => do pure ()
+    | .JALR, args
+        => do pure ()
+    | .BEQ, args
+        => do pure ()
+    | .BNE, args
+        => do pure ()
+    | .BLT, args
+        => do pure ()
+    | .BGE, args
+        => do pure ()
+    | .BLTU, args
+        => do pure ()
+    | .BGEU, args
+        => do pure ()
+    | .LB, args
+        => do pure ()
+    | .LH, args
+        => do pure ()
+    | .LW, args
+        => do pure ()
+    | .LBU, args
+        => do pure ()
+    | .LHU, args
+        => do pure ()
+    | .SB, args
+        => do pure ()
+    | .SH, args
+        => do pure ()
+    | .SW, args
+        => do pure ()
+    | .ADDI, args
+        => do pure ()
+    | .SLTI, args
+        => do pure ()
+    | .SLTIU, args
+        => do pure ()
+    | .XORI, args
+        => do pure ()
+    | .ORI, args
+        => do pure ()
+    | .ANDI, args
+        => do pure ()
+    | .SLLI, args
+        => do pure ()
+    | .SRLI, args
+        => do pure ()
+    | .SRAI, args
+        => do pure ()
+    | .ADD, args
+        => do pure ()
+    | .SUB, args
+        => do pure ()
+    | .SLL, args
+        => do pure ()
+    | .SLT, args
+        => do pure ()
+    | .SLTU, args
+        => do pure ()
+    | .XOR, args
+        => do pure ()
+    | .SRL, args
+        => do pure ()
+    | .SRA, args
+        => do pure ()
+    | .OR, args
+        => do pure ()
+    | .AND, args
+        => do pure ()
+    | .FENCE, args
+        => do pure ()
+    | .ECALL, args
+        => do pure ()
+    | .EBREAK, args
+        => do pure ()
 
 end RiscV.Instr.InstrRV32I
