@@ -75,14 +75,17 @@ instance : InstructionSet RV32M where
               let q :=
                 if x == UInt32.min_signed && y == UInt32.neg_one then x
                 else if y == 0 then UInt32.neg_one
-                else x / y  -- TODO: quot
+                else
+                  let sgn_x := if UInt32.is_neg x then UInt32.neg_one else 1
+                  let sgn_y := if UInt32.is_neg y then UInt32.neg_one else 1
+                  (sgn_x * sgn_y) * ((x * sgn_x) / (y * sgn_y))
               RegFile.set_word args.rd q
     | .DIVU, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
               let q :=
                 if y == 0 then UInt32.max_unsigned
-                else x / y -- TODO: divu
+                else x / y
               RegFile.set_word args.rd q
     | .REM, args
         => do let x <- RegFile.get_word args.rs1
@@ -90,14 +93,17 @@ instance : InstructionSet RV32M where
               let r :=
                 if x == UInt32.min_signed && y == UInt32.neg_one then 0
                 else if y == 0 then x
-                else x % y -- TODO: rem
+                else
+                  let sgn_x := if UInt32.is_neg x then UInt32.neg_one else 1
+                  let sgn_y := if UInt32.is_neg y then UInt32.neg_one else 1
+                  (sgn_x * sgn_y) * ((x * sgn_x) % (y * sgn_y))
               RegFile.set_word args.rd r
     | .REMU, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
               let r :=
                 if y == 0 then x
-                else x % y -- TODO: remu
+                else x % y
               RegFile.set_word args.rd r
 
 end RiscV.Instr.InstrRV32M
