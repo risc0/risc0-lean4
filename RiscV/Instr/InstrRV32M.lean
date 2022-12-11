@@ -2,10 +2,18 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy
 import RiscV.Instr.Types
+import RiscV.Int
+import RiscV.Monad
+import RiscV.Reg
 
 namespace RiscV.Instr.InstrRV32M
 
+open R0sy.Lean.UInt64
+open Int
+open Monad
+open Reg
 open Types
 
 /-
@@ -42,13 +50,54 @@ instance : InstructionSet RV32M where
         | .REM =>    { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b110   0b0110011 }
         | .REMU =>   { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b111   0b0110011 }
   run
-    | .MUL, args => pure ()
-    | .MULH, args => pure ()
-    | .MULHSU, args => pure ()
-    | .MULHU, args => pure ()
-    | .DIV, args => pure ()
-    | .DIVU, args => pure ()
-    | .REM, args => pure ()
-    | .REMU, args => pure ()
+    | .MUL, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x * y)
+    | .MULH, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let z := UInt32.extend_signed x * UInt32.extend_signed y
+              RegFile.set_word args.rd (UInt64.hi z)
+    | .MULHSU, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let z := UInt32.extend_signed x * UInt32.extend_unsigned y
+              RegFile.set_word args.rd (UInt64.hi z)
+    | .MULHU, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let z := UInt32.extend_unsigned x * UInt32.extend_unsigned y
+              RegFile.set_word args.rd (UInt64.hi z)
+    | .DIV, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let q :=
+                if x == UInt32.min_signed && y == UInt32.neg_one then x
+                else if y == 0 then UInt32.neg_one
+                else x / y  -- TODO: quot
+              RegFile.set_word args.rd q
+    | .DIVU, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let q :=
+                if y == 0 then UInt32.max_unsigned
+                else x / y -- TODO: divu
+              RegFile.set_word args.rd q
+    | .REM, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let r :=
+                if x == UInt32.min_signed && y == UInt32.neg_one then 0
+                else if y == 0 then x
+                else x % y -- TODO: rem
+              RegFile.set_word args.rd r
+    | .REMU, args
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let r :=
+                if y == 0 then x
+                else x % y -- TODO: remu
+              RegFile.set_word args.rd r
 
 end RiscV.Instr.InstrRV32M
