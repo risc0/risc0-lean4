@@ -22,6 +22,18 @@ Now you can perform the build:
 risc0-lean4$ lake build
 ```
 
+## Running the ZKVM verifier
+
+```console
+risc0-lean4$ ./build/bin/zkvm-verify-lean4
+```
+
+## Running the RV32IM emulator
+
+```console
+risc0-lean4$ ./build/bin/rv32im-lean4
+```
+
 ## Building the docs
 
 ```console
@@ -29,25 +41,3 @@ $ lake -Kdoc=on build Zkvm:docs
 ```
 
 The docs will be viewable at `build/doc/index.html`.
-
-
-## Running
-
-Make sure you've generated the example receipt. It should be located in `rust/output`:
-
-```console
-risc0-lean4$ ls rust/output
-hello_world.bin  hello_world.id  hello_world.journal  hello_world.seal
-```
-
-If not, generate it now:
-
-```console
-risc0-lean4$ cd rust ; cargo run --release -- disk --out-base=output/hello_world ; cd ..
-```
-
-You can now run the `zkvm-verify` demo:
-
-```console
-risc0-lean4$ ./build/bin/zkvm-verify
-```
