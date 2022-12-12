@@ -63,6 +63,8 @@ class MonadVerifyAdapter (M: Type -> Type) (Elem: outParam Type) where
   get_po2: M Nat
   get_size: M Nat
   get_domain: M Nat
+  get_back: M Elem
+  get_gen: M Elem
   get_out: M (Array Elem)
   get_mix: M (Array Elem)
   execute: M Unit

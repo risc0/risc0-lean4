@@ -11,6 +11,7 @@ namespace Zkvm.Verify.Adapter
 
 open R0sy.Algebra
 open R0sy.Hash.Sha2
+open R0sy.Lean.Nat
 open R0sy.Lean.UInt32
 open R0sy.Serial
 open ArithVM.Circuit
@@ -20,27 +21,35 @@ structure VerifyAdapter (Elem: Type) where
   po2: Nat
   size: Nat
   domain: Nat
+  back: Elem
+  gen: Elem
   out: Option (Array Elem)
   mix: Array Elem
 
-def VerifyAdapter.new: VerifyAdapter Elem := {
+def VerifyAdapter.new [Field Elem]: VerifyAdapter Elem := {
   po2 := 0,
   size := 0,
   domain := 0,
+  back := Ring.zero,
+  gen := Ring.zero,
   out := none,
   mix := #[]
 }
 
-def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem): M Unit
+def VerifyAdapter.execute [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadReadIop M] [Field Elem] [RootsOfUnity Elem] (circuit: Circuit Elem ExtElem): M Unit
   := do let out <- MonadReadIop.readFields Elem circuit.output_size >>= (fun x => pure (some x))
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
         let size := 1 <<< po2
         let domain := Constants.INV_RATE * size
+        let back := RootsOfUnity.ROU_REV[po2]!
+        let gen := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
         let self: VerifyAdapter Elem <- get
         set { self with
           po2,
           size,
           domain,
+          gen,
+          back,
           out,
         }
 
@@ -80,7 +89,7 @@ def VerifyAdapter.verifyOutput [Monad M] [MonadExceptOf VerificationError M] [Pr
                 else pure <| if journal.size <= 8 then journal else (Sha256.Digest.toSubarray (Sha256.hash_pod journal)))
         VerifyAdapter.verifyOutputAux journal' output
 
-instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit M Elem ExtElem] [PrimeField Elem] : MonadVerifyAdapter M Elem where
+instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCircuit M Elem ExtElem] [PrimeField Elem] [RootsOfUnity Elem] : MonadVerifyAdapter M Elem where
   get_po2
     := do let self <- get
           pure self.po2
@@ -90,6 +99,12 @@ instance [Monad M] [MonadStateOf (VerifyAdapter Elem) M] [MonadExceptOf Verifica
   get_domain
     := do let self <- get
           pure self.domain
+  get_back
+    := do let self <- get
+          pure self.back
+  get_gen
+    := do let self <- get
+          pure self.gen
   get_out
     := do let self <- get
           match self.out with

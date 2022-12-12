@@ -62,8 +62,7 @@ structure CheckVerifier (ExtElem: Type) where
 
 def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
-        let po2 <- MonadVerifyAdapter.get_po2
-        let back_one: Elem := RootsOfUnity.ROU_REV[po2]!
+        let back_one <- MonadVerifyAdapter.get_back
         let mut cur_pos := 0
         let mut eval_u: Array ExtElem := Array.mkEmpty (TapSet.tapSize circuit.taps)
         for reg in regs do
@@ -174,11 +173,9 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
 
 def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (merkle_verifiers: MerkleVerifiers) (check_verifier: CheckVerifier ExtElem): M Unit
   := do let circuit <- MonadCircuit.getCircuit
-        let po2 <- MonadVerifyAdapter.get_po2
-        let domain <- MonadVerifyAdapter.get_domain
         let size <- MonadVerifyAdapter.get_size
-        let back_one: Elem := RootsOfUnity.ROU_REV[po2]!
-        let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
+        let back_one <- MonadVerifyAdapter.get_back
+        let gen <- MonadVerifyAdapter.get_gen
         fri_verify Elem ExtElem size (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
