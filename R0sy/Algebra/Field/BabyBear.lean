@@ -162,7 +162,7 @@ example:
 
 example:
   let base: Nat -> Elem := Ring.ofNat
-  (- base 3) == base (BabyBear.P.rep - 3)
+  (- base 3) == base (P.rep - 3)
   := by rfl
 
 example:
