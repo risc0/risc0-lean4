@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Mem
 import RiscV.Monad
 import RiscV.Reg
 
@@ -10,6 +11,7 @@ namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
+open Mem
 open Monad
 open Reg
 
@@ -519,6 +521,16 @@ namespace InstructionSet
 
   def EncArgs.decode [InstructionSet Mnemonic] (m: Mnemonic) (x: InstructionSet.EncArgs m): InstructionSet.Args m
     := EncType.EncArgs.decode x
+
+  def step (Mnemonic: Type) [MonadMachine M] [InstructionSet Mnemonic]: M Unit
+    := do let pc <- RegFile.get_word .PC
+          let instr <- Mem.get_word { val := pc }
+          match deserialize_mnemonic Mnemonic instr with
+            | none => throw (.InvalidInstruction pc instr)
+            | some mnemonic
+                => do let enc_args := EncArgs.deserialize mnemonic instr
+                      let args := EncArgs.decode mnemonic enc_args
+                      InstructionSet.run mnemonic args
 end InstructionSet
 
 end RiscV.Instr.Types

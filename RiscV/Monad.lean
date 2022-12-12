@@ -51,4 +51,9 @@ class MonadMachine (M: Type -> Type)
 
 instance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Machine M] : MonadMachine M where
 
+def MonadMachine.run (machine: Machine) (f: {M: Type -> Type} -> [MonadMachine M] -> M X): Except RiscVException X × Machine
+  := Id.run do
+    let M := ExceptT RiscVException (StateT Machine Id)
+    StateT.run (ExceptT.run (@f M _)) machine
+
 end RiscV.Monad
