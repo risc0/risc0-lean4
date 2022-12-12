@@ -24,19 +24,25 @@ class Algebraic (Elem ExtElem: Type) where
   alg: Algebra Elem ExtElem
   ext: ExtField Elem ExtElem
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : PrimeField Elem := Algebraic.prime_field ExtElem
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : RootsOfUnity Elem := Algebraic.prime_rou ExtElem
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext_field Elem
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : RootsOfUnity ExtElem := Algebraic.ext_rou Elem
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : Algebra Elem ExtElem := Algebraic.alg
 
+@[always_inline]
 instance [Algebraic Elem ExtElem] : ExtField Elem ExtElem := Algebraic.ext
 
-
+@[always_inline]
 instance BabyBear.Algebraic : Algebraic BabyBear.Elem BabyBear.ExtElem where
   prime_field := BabyBear.Elem.PrimeField
   prime_rou := BabyBear.Elem.RootsOfUnity
@@ -45,6 +51,16 @@ instance BabyBear.Algebraic : Algebraic BabyBear.Elem BabyBear.ExtElem where
   alg := BabyBear.ElemExt.Elem.Algebra
   ext := BabyBear.ElemExt.Elem.ExtField
 
+@[always_inline]
+instance BabyBear2.Algebraic : Algebraic BabyBear2.Elem BabyBear2.ExtElem where
+  prime_field := BabyBear2.Elem.PrimeField
+  prime_rou := BabyBear2.Elem.RootsOfUnity
+  ext_field := BabyBear2.ExtElem.Field
+  ext_rou := BabyBear2.ExtElem.RootsOfUnity
+  alg := BabyBear2.ElemExt.Elem.Algebra
+  ext := BabyBear2.ElemExt.Elem.ExtField
+
+@[always_inline]
 instance Goldilocks.Algebraic : Algebraic Goldilocks.Elem Goldilocks.ExtElem where
   prime_field := Goldilocks.Elem.PrimeField
   prime_rou := Goldilocks.Elem.RootsOfUnity

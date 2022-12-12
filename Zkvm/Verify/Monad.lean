@@ -45,7 +45,6 @@ instance
   [MonadExceptOf VerificationError M]
   : MonadVerify M Elem ExtElem where
 
-
 instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadCircuit M Elem ExtElem where
   getCircuit
     := do let self <- get
@@ -82,17 +81,17 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf 
           set { self with adapter }
           pure result
 
-
 def VerifyContext.run [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (seal: Array UInt32)
   (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M Elem ExtElem] -> [Algebraic Elem ExtElem] -> M Unit)
-  : Id (Except VerificationError Unit)
-  := do let verify_context: VerifyContext Elem ExtElem := {
-          circuit,
-          method_id,
-          adapter := VerifyAdapter.new,
-          read_iop := ReadIop.new seal.toSubarray,
-        }
-        let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)
-        ExceptT.run (StateT.run' (@f M _ _ _) verify_context)
+  : Except VerificationError Unit
+  := Id.run do
+      let verify_context: VerifyContext Elem ExtElem := {
+        circuit,
+        method_id,
+        adapter := VerifyAdapter.new,
+        read_iop := ReadIop.new seal.toSubarray,
+      }
+      let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)
+      ExceptT.run (StateT.run' (@f M _ _ _) verify_context)
 
 end Zkvm.Verify.Monad
