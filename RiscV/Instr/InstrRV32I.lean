@@ -167,7 +167,7 @@ instance : InstructionSet RV32I where
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs1
               let pc <- RegFile.get_word .PC
-              if x < y then do  -- TODO: signed comparison!
+              if UInt32.lt_signed x y then do
                 let newPC := pc + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
@@ -175,7 +175,7 @@ instance : InstructionSet RV32I where
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs1
               let pc <- RegFile.get_word .PC
-              if x >= y then do -- TODO: signed comparison!
+              if UInt32.ge_signed x y then do
                 let newPC := pc + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
@@ -199,16 +199,12 @@ instance : InstructionSet RV32I where
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- Mem.get_byte addr
-              let lo: Bits 7 0 := { val := x.toNat.toUInt32 }
-              let hi: Bits 31 8 := Bits.ofUInt32 <| if UInt32.test_bit 7 lo.val then 0xffffffff else 0
-              RegFile.set_word args.rd (hi.toUInt32 ||| lo.toUInt32)
+              RegFile.set_word args.rd (UInt32.ofUInt8_signed x)
     | .LH, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- Mem.get_half addr
-              let lo: Bits 15 0 := { val := x.toNat.toUInt32 }
-              let hi: Bits 31 16 := Bits.ofUInt32 <| if UInt32.test_bit 15 lo.val then 0xffffffff else 0
-              RegFile.set_word args.rd (hi.toUInt32 ||| lo.toUInt32)
+              RegFile.set_word args.rd (UInt32.ofUInt16_signed x)
     | .LW, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
@@ -244,7 +240,7 @@ instance : InstructionSet RV32I where
               RegFile.set_word args.rd (x + args.imm)
     | .SLTI, args
         => do let x <- RegFile.get_word args.rs1
-              RegFile.set_word args.rd (if x < args.imm then 1 else 0)  -- TODO: signed compare!
+              RegFile.set_word args.rd (if UInt32.lt_signed x args.imm then 1 else 0)
     | .SLTIU, args
         => do let x <- RegFile.get_word args.rs1
               RegFile.set_word args.rd (if x < args.imm then 1 else 0)
@@ -268,9 +264,7 @@ instance : InstructionSet RV32I where
     | .SRAI, args
         => do let x <- RegFile.get_word args.rs1
               let shamt6 := (Reg.index args.rs2).toUInt32
-              let lo := x >>> shamt6
-              let hi := if UInt32.is_neg x then ((1 <<< shamt6) - 1) <<< (32 - shamt6) else 0
-              RegFile.set_word args.rd (hi ||| lo)
+              RegFile.set_word args.rd (UInt32.shr_signed x shamt6)
     | .ADD, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
@@ -286,7 +280,7 @@ instance : InstructionSet RV32I where
     | .SLT, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
-              RegFile.set_word args.rd (if x < y then 1 else 0) -- TODO: signed compare!
+              RegFile.set_word args.rd (if UInt32.lt_signed x y then 1 else 0)
     | .SLTU, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
@@ -302,9 +296,7 @@ instance : InstructionSet RV32I where
     | .SRA, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
-              let lo := x >>> y
-              let hi := if UInt32.is_neg x then ((1 <<< y) - 1) <<< (32 - y) else 0
-              RegFile.set_word args.rd (hi ||| lo)
+              RegFile.set_word args.rd (UInt32.shr_signed x y)
     | .OR, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
@@ -313,11 +305,8 @@ instance : InstructionSet RV32I where
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
               RegFile.set_word args.rd (x &&& y)
-    | .FENCE, args
-        => do pure ()
-    | .ECALL, args
-        => do pure ()
-    | .EBREAK, args
-        => do pure ()
+    | .FENCE, _args => pure ()
+    | .ECALL, _args => pure ()
+    | .EBREAK, _args => pure ()
 
 end RiscV.Instr.InstrRV32I
