@@ -7,7 +7,7 @@ import Zkvm
 
 open R0sy.Lean.ByteArray
 
-def Circuit: Type := Zkvm.ArithVM.Circuit.Circuit R0sy.Algebra.Field.BabyBear.Elem R0sy.Algebra.Field.BabyBear.ExtElem
+def Circuit: Type := Zkvm.ArithVM.Circuit.Circuit R0sy.Algebra.Field.BabyBear2.Elem R0sy.Algebra.Field.BabyBear2.ExtElem
 
 def read_file (filename : System.FilePath): IO (Array UInt32)
   := do let meta <- filename.metadata

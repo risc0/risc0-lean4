@@ -218,8 +218,7 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
 
-
-def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32)
+def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32): Except VerificationError Unit
   := Monad.VerifyContext.run circuit method_id seal (verify journal)
 
 end Zkvm.Verify
