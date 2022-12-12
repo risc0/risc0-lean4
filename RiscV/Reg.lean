@@ -10,6 +10,11 @@ inductive Reg where
   | X (reg: Fin X_REGISTER_COUNT)
   | PC
 
+instance : ToString Reg where
+  toString
+    | .X reg => s!"x{reg.val}"
+    | .PC => "PC"
+
 def Reg.ofNat (val: Nat): Reg
   := if isLt: val < X_REGISTER_COUNT
       then Reg.X { val, isLt }
@@ -26,6 +31,15 @@ def Reg.index (self: Reg): Nat
 
 structure RegFile where
   data: Array UInt32
+
+instance : ToString RegFile where
+  toString self
+    := Id.run do
+        let mut out := ""
+        for i in [0:self.data.size] do
+          let val := self.data[i]!
+          if val != 0 then out := s!"{out}{Reg.ofNat i}:{val}  "
+        pure out
 
 def RegFile.new: RegFile
   := {

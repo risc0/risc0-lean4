@@ -16,6 +16,11 @@ inductive RV32IM where
   | I (instr: RV32I)
   | M (instr: RV32M)
 
+instance : ToString RV32IM where
+  toString
+    | .I instr => ToString.toString instr
+    | .M instr => ToString.toString instr
+
 instance : InstructionSet RV32IM where
   all := (@InstructionSet.all RV32I _).map RV32IM.I ++ (@InstructionSet.all RV32M _).map RV32IM.M
   encode_mnemonic

@@ -35,6 +35,10 @@ funct7    rs2   rs1   funct3  rd    opcode    R-type
 inductive RV32M where
   | MUL | MULH | MULHSU | MULHU | DIV | DIVU | REM | REMU
 
+instance : ToString RV32M where
+  toString
+    | .MUL => "MUL" | .MULH => "MULH" | .MULHSU => "MULHSU" | .MULHU => "MULHU" | .DIV => "DIV" | .DIVU => "DIVU" | .REM => "REM" | .REMU => "REMU"
+
 instance : InstructionSet RV32M where
   all := #[
     .MUL, .MULH, .MULHSU, .MULHU, .DIV, .DIVU, .REM, .REMU

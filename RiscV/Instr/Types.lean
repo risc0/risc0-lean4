@@ -67,6 +67,9 @@ namespace R
     rs1: Reg
     rs2: Reg
 
+  instance : ToString Args where
+    toString args := s!"rd:{args.rd}  rs1:{args.rs1}  rs2:{args.rs2}"
+
   def EncArgs.decode (x: EncArgs): Args
     := {
       rd := Reg.ofUInt32 x.rd.val,
@@ -116,6 +119,9 @@ namespace I
     rd: Reg
     rs1: Reg
     imm: UInt32
+
+  instance : ToString Args where
+    toString args := s!"rd:{args.rd}  rs1:{args.rs1}  imm:{args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -175,6 +181,9 @@ namespace S
     rs1: Reg
     rs2: Reg
     imm: UInt32
+
+  instance : ToString Args where
+    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -240,6 +249,9 @@ namespace B
     rs2: Reg
     imm: UInt32
 
+  instance : ToString Args where
+    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{args.imm}"
+
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm12: Bits 12 12 := { val := x.imm12.val }
@@ -295,6 +307,9 @@ namespace U
     rd: Reg
     imm: UInt32
 
+  instance : ToString Args where
+    toString args := s!"rd:{args.rd}  imm:{args.imm}"
+
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm31_12: Bits 31 12 := { val := x.imm31_12.val }
@@ -347,6 +362,9 @@ namespace J
   structure Args where
     rd: Reg
     imm: UInt32
+
+  instance : ToString Args where
+    toString args := s!"rd:{args.rd}  imm:{args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -475,6 +493,17 @@ namespace EncType
         | J => J.Args
         | Const => Unit
 
+  instance Args.ToString : ToString (Args t) where
+    toString
+      := match t with
+          | R => fun (x: R.Args) => ToString.toString x
+          | I => fun (x: I.Args) => ToString.toString x
+          | S => fun (x: S.Args) => ToString.toString x
+          | B => fun (x: B.Args) => ToString.toString x
+          | U => fun (x: U.Args) => ToString.toString x
+          | J => fun (x: J.Args) => ToString.toString x
+          | Const => fun _ => ""
+
   def EncArgs.decode: {t: EncType} -> EncType.EncArgs t -> EncType.Args t
     | R, x => R.EncArgs.decode x
     | I, x => I.EncArgs.decode x
@@ -490,11 +519,13 @@ structure BoxedEncMnemonic where
   type: EncType
   mnemonic: EncType.EncMnemonic type
 
-
-class InstructionSet (Mnemonic: Type) where
-  all: Array Mnemonic
-  encode_mnemonic (m: Mnemonic): BoxedEncMnemonic
-  run [MonadMachine M] (m: Mnemonic) (args: EncType.Args (encode_mnemonic m).type): M Unit
+class InstructionSet (Mnemonic: Type)
+  extends
+    ToString Mnemonic
+  where
+    all: Array Mnemonic
+    encode_mnemonic (m: Mnemonic): BoxedEncMnemonic
+    run [MonadMachine M] (m: Mnemonic) (args: EncType.Args (encode_mnemonic m).type): M Unit
 
 namespace InstructionSet
   def EncMnemonic.serialize [InstructionSet Mnemonic] (m: Mnemonic): UInt32
@@ -519,8 +550,20 @@ namespace InstructionSet
   def Args [InstructionSet Mnemonic] (m: Mnemonic): Type
     := EncType.Args (InstructionSet.encode_mnemonic m).type
 
+  instance [H: InstructionSet Mnemonic] : ToString (@Args _ H m) where
+    toString x := EncType.Args.ToString.toString x
+
   def EncArgs.decode [InstructionSet Mnemonic] (m: Mnemonic) (x: InstructionSet.EncArgs m): InstructionSet.Args m
     := EncType.EncArgs.decode x
+
+  def decode_to_string (Mnemonic: Type) [InstructionSet Mnemonic] (instr: UInt32): Option String
+    := Id.run do
+          match deserialize_mnemonic Mnemonic instr with
+            | none => pure none
+            | some mnemonic
+                => do let enc_args := EncArgs.deserialize mnemonic instr
+                      let args := EncArgs.decode mnemonic enc_args
+                      pure (some s!"{mnemonic}  {args}")
 
   def step (Mnemonic: Type) [MonadMachine M] [InstructionSet Mnemonic]: M Unit
     := do let pc <- RegFile.get_word .PC
@@ -528,7 +571,8 @@ namespace InstructionSet
           match deserialize_mnemonic Mnemonic instr with
             | none => throw (.InvalidInstruction pc instr)
             | some mnemonic
-                => do let enc_args := EncArgs.deserialize mnemonic instr
+                => do RegFile.set_word .PC (pc + 4)
+                      let enc_args := EncArgs.deserialize mnemonic instr
                       let args := EncArgs.decode mnemonic enc_args
                       InstructionSet.run mnemonic args
 end InstructionSet

@@ -79,6 +79,14 @@ inductive RV32I where
   | SLLI  | SRLI  | SRAI  | ADD   | SUB   | SLL   | SLT   | SLTU
   | XOR   | SRL   | SRA   | OR    | AND   | FENCE | ECALL | EBREAK
 
+instance : ToString RV32I where
+  toString
+    | .LUI => "LUI"   | .AUIPC => "AUIPC" | .JAL => "JAL"   | .JALR => "JALR" | .BEQ => "BEQ"     | .BNE => "BNE"     | .BLT => "BLT"     | .BGE => "BGE"
+    | .BLTU => "BLTU" | .BGEU => "BGEU"   | .LB => "LB"     | .LH => "LH"     | .LW => "LW"       | .LBU => "LBU"     | .LHU => "LHU"     | .SB => "SB"
+    | .SH => "SH"     | .SW => "SW"       | .ADDI => "ADDI" | .SLTI => "SLTI" | .SLTIU => "SLTIU" | .XORI => "XORI"   | .ORI => "ORI"     | .ANDI => "ANDI"
+    | .SLLI => "SLLI" | .SRLI => "SRLI"   | .SRAI => "SRAI" | .ADD => "ADD"   | .SUB => "SUB"     | .SLL => "SLL"     | .SLT => "SLT"     | .SLTU => "SLTU"
+    | .XOR => "XOR"   | .SRL => "SRL"     | .SRA => "SRA"   | .OR => "OR"     | .AND => "AND"     | .FENCE => "FENCE" | .ECALL => "ECALL" | .EBREAK => "EBREAK"
+
 instance : InstructionSet RV32I where
   all := #[
     .LUI,   .AUIPC, .JAL,   .JALR,  .BEQ,   .BNE,   .BLT,   .BGE,
@@ -137,62 +145,62 @@ instance : InstructionSet RV32I where
               RegFile.set_word .PC (pc + args.imm)
     | .JAL, args
         => do let pc <- RegFile.get_word .PC
-              let newPC := pc + args.imm
+              let newPC := pc + args.imm - 4
               if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
               RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .JALR, args
         => do let pc <- RegFile.get_word .PC
-              let newPC := pc + args.imm
+              let newPC := pc + args.imm - 4
               if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
               RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .BEQ, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x == y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BNE, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x != y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLT, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if UInt32.lt_signed x y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGE, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if UInt32.ge_signed x y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLTU, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x < y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGEU, args
         => do let x <- RegFile.get_word args.rs1
-              let y <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x >= y then do
-                let newPC := pc + args.imm
+                let newPC := pc + args.imm - 4
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .LB, args
