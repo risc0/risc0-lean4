@@ -2,8 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import RiscV.Exception
+
 namespace RiscV.Mem
 
+open Exception
 
 structure Ptr where
   val: UInt32
@@ -37,30 +40,35 @@ def Block.set_word (self: Block) (addr: Ptr) (val: UInt32): Block
   }
 
 
-inductive MemError where
-  | OutOfBounds (addr: Ptr)
-
 structure Mem where
   blocks: Array Block
   deriving Inhabited
 
-def Mem.locate_block [Monad M] [MonadExceptOf MemError M] [MonadStateOf Mem M] (addr: Ptr): M Nat
+def Mem.locate_block [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Ptr): M Nat
   := do let self <- get
         for i in [0:self.blocks.size] do
           if self.blocks[i]!.contains addr then return i
-        throw (MemError.OutOfBounds addr)
+        throw (RiscVException.PtrOutOfBounds addr.val)
 
-def Mem.get_word [Monad M] [MonadExceptOf MemError M] [MonadStateOf Mem M] (addr: Ptr): M UInt32
+def Mem.get_word [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Ptr): M UInt32
   := do let self <- get
         let idx <- Mem.locate_block addr
         pure <| self.blocks[idx]!.get_word addr
 
-def Mem.set_word [Monad M] [MonadExceptOf MemError M] [MonadStateOf Mem M] (addr: Ptr) (val: UInt32): M Unit
+def Mem.set_word [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Ptr) (val: UInt32): M Unit
   := do let self <- get
         let idx <- Mem.locate_block addr
         set {
           self with
           blocks := Array.setD self.blocks idx (self.blocks[idx]!.set_word addr val)
         }
+
+def Mem.get_byte [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: UInt32): M UInt8
+  := do let word <- Mem.get_word { val := addr &&& 0xfffffffc }
+        pure <| (word >>> (8 * (addr % 4))).toNat.toUInt8
+
+def Mem.get_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: UInt32): M UInt16
+  := do let word <- Mem.get_word { val := addr &&& 0xfffffffc }
+        pure <| (word >>> (8 * (addr % 4))).toNat.toUInt16
 
 end RiscV.Mem

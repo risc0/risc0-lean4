@@ -9,10 +9,10 @@ import RiscV.Reg
 
 namespace RiscV.Instr.InstrRV32I
 
-open Types
 open Mem
 open Monad
 open Reg
+open Types
 
 /-
 Volume I: RISC-V Unprivileged ISA V20191213
@@ -133,13 +133,13 @@ instance : InstructionSet RV32I where
     | .JAL, args
         => do let pc <- RegFile.get_word .PC
               let newPC := pc + args.imm
-              -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
               RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .JALR, args
         => do let pc <- RegFile.get_word .PC
               let newPC := pc + args.imm
-              -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
               RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .BEQ, args
@@ -148,7 +148,7 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x == y then do
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BNE, args
         => do let x <- RegFile.get_word args.rs1
@@ -156,7 +156,7 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x != y then do
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLT, args
         => do let x <- RegFile.get_word args.rs1
@@ -164,7 +164,7 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x < y then do  -- TODO: signed comparison!
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGE, args
         => do let x <- RegFile.get_word args.rs1
@@ -172,7 +172,7 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x >= y then do -- TODO: signed comparison!
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLTU, args
         => do let x <- RegFile.get_word args.rs1
@@ -180,7 +180,7 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x < y then do
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGEU, args
         => do let x <- RegFile.get_word args.rs1
@@ -188,10 +188,12 @@ instance : InstructionSet RV32I where
               let pc <- RegFile.get_word .PC
               if x >= y then do
                 let newPC := pc + args.imm
-                -- TODO: instruction-address-misaligned exception if newPC % 4 != 0
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .LB, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              pure sorry
     | .LH, args
         => do pure ()
     | .LW, args

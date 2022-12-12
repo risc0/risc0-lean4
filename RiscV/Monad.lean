@@ -2,11 +2,13 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import RiscV.Exception
 import RiscV.Mem
 import RiscV.Reg
 
 namespace RiscV.Monad
 
+open Exception
 open Mem
 open Reg
 
@@ -43,9 +45,10 @@ instance [Monad M] [MonadStateOf Machine M] : MonadStateOf RegFile M where
 class MonadMachine (M: Type -> Type)
   extends
     Monad M,
+    MonadExceptOf RiscVException M,
     MonadStateOf Machine M
   where
 
-instance [Monad M] [MonadStateOf Machine M] : MonadMachine M where
+instance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Machine M] : MonadMachine M where
 
 end RiscV.Monad
