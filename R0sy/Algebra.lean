@@ -68,18 +68,19 @@ class PrimeField (F: Type)
   where
     toNat: F -> Nat
 
-class ExtField (F R: Type) where
-  EXT_DEG: Nat
-
 class RootsOfUnity (F: Type) where
   MAX_ROU_SIZE: Nat
   ROU_FWD: Array F
   ROU_REV: Array F
 
-class Algebra (F R: Type)
+class Algebra (F: Type) (R: Type)
+  extends
+    Ring R,
+    HMul R F R
   where
     ofBase: F -> R
     ofBasis: Nat -> F -> R
+    hMul := λ r f => (r * (ofBase f))
 
 class PolyRing (F R: Type)
   extends
@@ -90,6 +91,14 @@ class PolyRing (F R: Type)
     mono: Nat -> F -> R
     eval: R -> F -> F
     subst: R -> R -> R
+    ofArray: Array F -> R
+
+class ExtField (F R: Type) 
+  extends
+    Algebra F R
+  where
+    EXT_DEG: Nat
+    ofSubelems : Array F -> R
 
 class DivRemRing (R: Type)
   extends

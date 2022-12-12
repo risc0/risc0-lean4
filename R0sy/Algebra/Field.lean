@@ -169,6 +169,10 @@ def Elem.ofBase [PolyRing F R] (q: Irreducible F R) (n: F): Elem q := {
   rep := PolyRing.mono 0 n
 }
 
+def Elem.ofSubelems [PolyRing F R] (q: Irreducible F R) (x: Array F): Elem q := {
+  rep := PolyRing.ofArray x
+}
+
 def Elem.ofNat [Ring F] [PolyRing F R] (q: Irreducible F R) (n: Nat): Elem q := Elem.ofBase _ (Ring.ofNat n)
 
 instance [Ring F] [PolyRing F R] {q: Irreducible F R} : OfNat (Elem q) n where ofNat := Elem.ofNat _ n
@@ -297,7 +301,7 @@ instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irredu
 
 instance [Field F] [Ring R] [PolyRing F R] [DivRemRing R] [GcdRing R] {q: Irreducible F R} : ExtField F (Elem q) where
   EXT_DEG := PolyRing.deg F q.rep
-
+  ofSubelems x := Elem.ofSubelems q x
 
 end Ext
 

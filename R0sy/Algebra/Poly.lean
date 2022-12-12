@@ -268,12 +268,12 @@ instance [Field R] : GcdRing (Poly R) where gcd := Poly.gcd
 
 /- Algebra, Ring, PolyRing, and DivRemRing -/
 
+instance [Ring R] : Ring (Poly R) where
+  ofNat n := Poly.mono 0 (Ring.ofNat n)
+
 instance [Ring R] : Algebra R (Poly R) where
   ofBase f := Poly.mono 0 f
   ofBasis := Poly.mono
-
-instance [Ring R] : Ring (Poly R) where
-  ofNat n := Poly.mono 0 (Ring.ofNat n)
 
 instance [Ring R] : PolyRing R (Poly R) where
   coeff := Poly.coeff
@@ -281,6 +281,7 @@ instance [Ring R] : PolyRing R (Poly R) where
   mono := Poly.mono
   eval := Poly.eval
   subst := Poly.subst
+  ofArray := Poly.ofArray
 
 instance [Field R] : DivRemRing (Poly R) where
 
