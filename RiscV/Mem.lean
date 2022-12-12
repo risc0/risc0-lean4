@@ -67,8 +67,24 @@ def Mem.get_byte [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M]
   := do let word <- Mem.get_word { val := addr &&& 0xfffffffc }
         pure <| (word >>> (8 * (addr % 4))).toNat.toUInt8
 
+def Mem.set_byte [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: UInt32) (val: UInt8): M Unit
+  := do let base: Ptr := { val := addr &&& 0xfffffffc }
+        let word <- Mem.get_word base
+        let byte_offset := 8 * (addr % 4)
+        let val': UInt32 := val.toNat.toUInt32 <<< byte_offset
+        let mask: UInt32 := ~~~ (0xff <<< byte_offset)
+        Mem.set_word base ((word &&& mask) ||| val')
+
 def Mem.get_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: UInt32): M UInt16
   := do let word <- Mem.get_word { val := addr &&& 0xfffffffc }
         pure <| (word >>> (8 * (addr % 4))).toNat.toUInt16
+
+def Mem.set_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: UInt32) (val: UInt16): M Unit
+  := do let base: Ptr := { val := addr &&& 0xfffffffc }
+        let word <- Mem.get_word base
+        let byte_offset := 8 * (addr % 4)
+        let val': UInt32 := val.toNat.toUInt32 <<< byte_offset
+        let mask: UInt32 := ~~~ (0xffff <<< byte_offset)
+        Mem.set_word base ((word &&& mask) ||| val')
 
 end RiscV.Mem

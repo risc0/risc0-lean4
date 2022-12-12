@@ -2,13 +2,18 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy
 import RiscV.Instr.Types
+import RiscV.Int
 import RiscV.Mem
 import RiscV.Monad
 import RiscV.Reg
 
 namespace RiscV.Instr.InstrRV32I
 
+open R0sy.Data.Bits
+open R0sy.Lean.UInt32
+open Int
 open Mem
 open Monad
 open Reg
@@ -193,59 +198,121 @@ instance : InstructionSet RV32I where
     | .LB, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              pure sorry
+              let x <- Mem.get_byte addr
+              let lo: Bits 7 0 := { val := x.toNat.toUInt32 }
+              let hi: Bits 31 8 := Bits.ofUInt32 <| if UInt32.test_bit 7 lo.val then 0xffffffff else 0
+              RegFile.set_word args.rd (hi.toUInt32 ||| lo.toUInt32)
     | .LH, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- Mem.get_half addr
+              let lo: Bits 15 0 := { val := x.toNat.toUInt32 }
+              let hi: Bits 31 16 := Bits.ofUInt32 <| if UInt32.test_bit 15 lo.val then 0xffffffff else 0
+              RegFile.set_word args.rd (hi.toUInt32 ||| lo.toUInt32)
     | .LW, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- Mem.get_word { val := addr }
+              RegFile.set_word args.rd x
     | .LBU, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- Mem.get_byte addr
+              RegFile.set_word args.rd x.toNat.toUInt32
     | .LHU, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- Mem.get_half addr
+              RegFile.set_word args.rd x.toNat.toUInt32
     | .SB, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- RegFile.get_word args.rs2
+              Mem.set_byte addr x.toNat.toUInt8
     | .SH, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- RegFile.get_word args.rs2
+              Mem.set_half addr x.toNat.toUInt16
     | .SW, args
-        => do pure ()
+        => do let a <- RegFile.get_word args.rs1
+              let addr := a + args.imm
+              let x <- RegFile.get_word args.rs2
+              Mem.set_word { val := addr } x
     | .ADDI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (x + args.imm)
     | .SLTI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (if x < args.imm then 1 else 0)  -- TODO: signed compare!
     | .SLTIU, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (if x < args.imm then 1 else 0)
     | .XORI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (x ^^^ args.imm)
     | .ORI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (x ||| args.imm)
     | .ANDI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              RegFile.set_word args.rd (x &&& args.imm)
     | .SLLI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let shamt6 := (Reg.index args.rs2).toUInt32
+              RegFile.set_word args.rd (x <<< shamt6)
     | .SRLI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let shamt6 := (Reg.index args.rs2).toUInt32
+              RegFile.set_word args.rd (x >>> shamt6)
     | .SRAI, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let shamt6 := (Reg.index args.rs2).toUInt32
+              let lo := x >>> shamt6
+              let hi := if UInt32.is_neg x then ((1 <<< shamt6) - 1) <<< (32 - shamt6) else 0
+              RegFile.set_word args.rd (hi ||| lo)
     | .ADD, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x + y)
     | .SUB, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x - y)
     | .SLL, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x <<< y)
     | .SLT, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (if x < y then 1 else 0) -- TODO: signed compare!
     | .SLTU, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (if x < y then 1 else 0)
     | .XOR, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x ^^^ y)
     | .SRL, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x >>> y)
     | .SRA, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              let lo := x >>> y
+              let hi := if UInt32.is_neg x then ((1 <<< y) - 1) <<< (32 - y) else 0
+              RegFile.set_word args.rd (hi ||| lo)
     | .OR, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x ||| y)
     | .AND, args
-        => do pure ()
+        => do let x <- RegFile.get_word args.rs1
+              let y <- RegFile.get_word args.rs2
+              RegFile.set_word args.rd (x &&& y)
     | .FENCE, args
         => do pure ()
     | .ECALL, args
