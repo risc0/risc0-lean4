@@ -224,10 +224,4 @@ def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := {
   id
 }
 
-
-/- TapsProvider -/
-
-class TapsProvider (C: Type) where
-  taps: C -> TapSet
-
 end Zkvm.ArithVM.Taps

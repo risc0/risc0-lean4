@@ -140,5 +140,4 @@ def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf Ve
             if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
 
-
 end Zkvm.Verify.Fri
