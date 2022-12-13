@@ -191,9 +191,14 @@ instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
   ofBasis i x := { rep := Algebra.ofBasis i x }
 
+instance ExtElem.RootsOfUnity : RootsOfUnity ExtElem where
+  MAX_ROU_SIZE := Elem.RootsOfUnity.MAX_ROU_SIZE
+  ROU_FWD := Array.map Algebra.ofBase Elem.RootsOfUnity.ROU_FWD
+  ROU_REV := Array.map Algebra.ofBase Elem.RootsOfUnity.ROU_REV
+
 instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
   EXT_DEG := Poly.deg Q.rep
-
+  ofSubelems x := ExtElem.new x[0]! x[1]!
 
 /- Examples -/
 

@@ -4,6 +4,10 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 namespace R0sy.Lean.UInt32
 
+def UInt32.test_bit (bit: Nat) (x: UInt32): Bool
+  := (1 <<< bit).toUInt32 &&& x != 0
+
+
 /- Endian helpers -/
 
 def UInt32.swap_endian (x: UInt32): UInt32 :=

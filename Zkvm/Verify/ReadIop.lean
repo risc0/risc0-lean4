@@ -54,13 +54,11 @@ def ReadIop.readPodSlice [Monad M] [MonadStateOf ReadIop M] (F: Type) [SerialUIn
 def ReadIop.commit [Monad M] [MonadStateOf ReadIop M] (digest: Sha256.Digest): M Unit
   := Sha256.Rng.mix digest
 
-def ReadIop.verifyComplete [Monad M] [MonadStateOf ReadIop M]: M Unit
+def ReadIop.verifyComplete [Monad M] [MonadExcept VerificationError M] [MonadStateOf ReadIop M]: M Unit
   := do let self <- get
-        if 0 < self.proof.size
-          then panic s!"proof.size == {self.proof.size}"
-          else return ()
+        if 0 < self.proof.size then throw (VerificationError.ReadIopIncomplete self.proof.size)
 
-instance [Monad M] [MonadStateOf ReadIop M] : MonadReadIop M where
+instance [Monad M] [MonadExcept VerificationError M] [MonadStateOf ReadIop M] : MonadReadIop M where
   readU32s := ReadIop.readU32s
   readPodSlice X := ReadIop.readPodSlice X
   readFields F := ReadIop.readPodSlice F

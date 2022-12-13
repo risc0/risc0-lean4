@@ -65,7 +65,7 @@ def TapData.byteRead [Monad M] [MonadByteReader M]: M TapData
 /- TapIter -/
 
 structure TapIter where
-  iter_data: Subarray TapData
+  iter_data: Array TapData
   iter_cursor: Nat
   iter_end: Nat
 
@@ -73,7 +73,7 @@ structure TapIter where
 /- RegRef -/
 
 structure RegRef where
-  data: Subarray TapData
+  data: Array TapData
   cursor: Nat
 
 def RegRef.group (self: RegRef): RegisterGroup := self.data[self.cursor]!.group
@@ -96,7 +96,7 @@ def RegRef.into_iter (self: RegRef): TapIter := {
 /- RegIter -/
 
 structure RegIter where
-  iter_data: Subarray TapData
+  iter_data: Array TapData
   iter_cursor: Nat
   iter_end: Nat
 
@@ -117,8 +117,8 @@ instance : ForIn M RegIter RegRef where
 /- Combo -/
 
 structure ComboData where
-  taps: Subarray UInt16
-  offsets: Subarray UInt16
+  taps: Array UInt16
+  offsets: Array UInt16
 
 
 structure ComboIter where
@@ -130,6 +130,15 @@ structure ComboIter where
 structure ComboRef where
   data: ComboData
   id: Nat
+
+def ComboRef.self_offset (self: ComboRef): Nat
+  := self.data.offsets[self.id]!.toNat
+
+def ComboRef.next_offset (self: ComboRef): Nat
+  := self.data.offsets[self.id + 1]!.toNat
+
+def ComboRef.slice (self: ComboRef): Subarray UInt16
+  := self.data.taps.toSubarray self.self_offset self.next_offset
 
 
 /- TapSet -/
@@ -165,13 +174,13 @@ def TapSet.byteRead [Monad M] [MonadByteReader M]: M TapSet
 def TapSet.tapSize (self: TapSet): Nat := self.group_begin[REGISTER_GROUPS.size]!.toNat
 
 def TapSet.tapIter (self: TapSet): TapIter := {
-  iter_data := self.taps.toSubarray
+  iter_data := self.taps
   iter_cursor := 0
   iter_end := self.group_begin[REGISTER_GROUPS.size]!.toNat
 }
 
 def TapSet.regIter (self: TapSet): RegIter := {
-  iter_data := self.taps.toSubarray
+  iter_data := self.taps
   iter_cursor := 0
   iter_end := self.group_begin[REGISTER_GROUPS.size]!.toNat
 }
@@ -185,7 +194,7 @@ def TapSet.groupSize (self: TapSet) (group: RegisterGroup): Nat :=
 def TapSet.groupTapIter (self: TapSet) (group: RegisterGroup): TapIter :=
   let group_id := RegisterGroup.toNat group
   {
-    iter_data := self.taps.toSubarray
+    iter_data := self.taps
     iter_cursor := self.group_begin[group_id]!.toNat
     iter_end := self.group_begin[group_id + 1]!.toNat
   }
@@ -193,15 +202,15 @@ def TapSet.groupTapIter (self: TapSet) (group: RegisterGroup): TapIter :=
 def TapSet.groupRegIter (self: TapSet) (group: RegisterGroup): RegIter :=
   let group_id := RegisterGroup.toNat group
   {
-    iter_data := self.taps.toSubarray
+    iter_data := self.taps
     iter_cursor := self.group_begin[group_id]!.toNat
     iter_end := self.group_begin[group_id + 1]!.toNat
   }
 
 def TapSet.combosIter (self: TapSet): ComboIter := {
   iter_data := {
-    taps := self.combo_taps.toSubarray
-    offsets := self.combo_begin.toSubarray
+    taps := self.combo_taps
+    offsets := self.combo_begin
   }
   iter_id := 0
   iter_end := self.combos_count.toNat
@@ -209,16 +218,10 @@ def TapSet.combosIter (self: TapSet): ComboIter := {
 
 def TapSet.getCombo (self: TapSet) (id: Nat): ComboRef := {
   data := {
-    taps := self.combo_taps.toSubarray
-    offsets := self.combo_begin.toSubarray
+    taps := self.combo_taps
+    offsets := self.combo_begin
   }
   id
 }
-
-
-/- TapsProvider -/
-
-class TapsProvider (C: Type) where
-  taps: C -> TapSet
 
 end Zkvm.ArithVM.Taps

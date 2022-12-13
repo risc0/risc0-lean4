@@ -30,6 +30,8 @@ inductive VerificationError where
   | InvalidCheck (result check: String)
   | JournalSealRootMismatch (idx: Nat) (seal: UInt32) (journal: UInt32)
   | SealJournalLengthMismatch (seal_len: Nat) (journal_len: Nat)
+  | FriGoalMismatch (query_no: Nat) (goal actual: String)
+  | ReadIopIncomplete (words_remaining: Nat)
   deriving Repr
 
 instance : ToString VerificationError where
@@ -45,6 +47,8 @@ instance : ToString VerificationError where
         | VerificationError.InvalidCheck result check => s!"InvalidProof result:{result} check:{check}"
         | VerificationError.JournalSealRootMismatch idx seal journal => s!"JournalSealRootMismatch idx:{idx} seal:{seal} journal:{journal}"
         | VerificationError.SealJournalLengthMismatch seal_len journal_len => s!"SealJournalLengthMismatch seal_len:{seal_len} journal_len:{journal_len}"
+        | VerificationError.FriGoalMismatch query_no goal actual => s!"FriGoalMismatch query_no:{query_no} goal:{goal} actual:{actual}"
+        | VerificationError.ReadIopIncomplete words_remaining => s!"ReadIopIncomplete words_remaining:{words_remaining}"
 
 
 class MonadReadIop (M: Type -> Type) extends MonadRng M where
@@ -55,19 +59,8 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
   verifyComplete: M Unit
 
 
-class MonadVerifyAdapter (M: Type -> Type) (Elem: outParam Type) where
-  get_po2: M Nat
-  get_size: M Nat
-  get_domain: M Nat
-  get_out: M (Array Elem)
-  get_mix: M (Array Elem)
-  execute: M Unit
-  accumulate: M Unit
-  verifyOutput (journal: Array UInt32): M Unit
-
-
-class MonadCircuit (M: Type -> Type) (Elem ExtElem: outParam Type) where
-  getCircuit: M (Circuit Elem ExtElem)
+class MonadCircuit (M: Type -> Type) where
+  getCircuit: M Circuit
 
 
 class MonadMethodId (M: Type -> Type) where

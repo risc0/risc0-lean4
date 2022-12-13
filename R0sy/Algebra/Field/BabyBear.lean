@@ -135,8 +135,16 @@ instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := { rep := Algebra.ofBase c }
   ofBasis i x := { rep := Algebra.ofBasis i x }
 
+instance ExtElem.RootsOfUnity : RootsOfUnity ExtElem where
+  MAX_ROU_SIZE := Elem.RootsOfUnity.MAX_ROU_SIZE
+  ROU_FWD := Array.map Algebra.ofBase Elem.RootsOfUnity.ROU_FWD
+  ROU_REV := Array.map Algebra.ofBase Elem.RootsOfUnity.ROU_REV
+
 instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
   EXT_DEG := Poly.deg Q.rep
+  ofSubelems x := ExtElem.new x[0]! x[1]! x[2]! x[3]!
+-- XXX in actuality only 4-element arrays should ever be passed to this, 
+-- but more elegant would be to mod out by the irreducible polynomial
 
 
 /- Examples -/
@@ -154,7 +162,7 @@ example:
 
 example:
   let base: Nat -> Elem := Ring.ofNat
-  (- base 3) == base (BabyBear.P.rep - 3)
+  (- base 3) == base (P.rep - 3)
   := by rfl
 
 example:
