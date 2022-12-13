@@ -42,7 +42,7 @@ def evaluate [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Ele
           cur_pos := cur_pos + reg_size
         pure eval_u
 
-def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: TraceCommitments.TraceVerifier Elem): M (CheckVerifier ExtElem)
+def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (trace_commitments: TraceCommitments.TraceVerifier Elem): M (CheckVerifier ExtElem)
   := do let poly_mix: ExtElem <- Field.random
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
         let z: ExtElem <- Field.random
@@ -55,7 +55,7 @@ def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Hea
         -- Now convert to evaluated values
         let eval_u <- evaluate header (TapSet.regIter circuit.taps) z coeff_u
         -- Compute the core polynomial
-        let result := (circuit.poly_ext poly_mix eval_u #[header.journal, merkle_verifiers.mix]).tot
+        let result := (circuit.poly_ext poly_mix eval_u #[header.journal, trace_commitments.mix]).tot
         -- Generate the check polynomial
         let ext0: ExtElem := Algebra.ofBasis 0 (Ring.one : Elem)
         let ext1: ExtElem := Algebra.ofBasis 1 (Ring.one : Elem)

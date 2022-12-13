@@ -7,10 +7,10 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.Seal.CheckCommitments
+import Zkvm.Seal.Fri
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
 import Zkvm.Verify.Classes
-import Zkvm.Verify.Fri
 import Zkvm.Verify.Monad
 
 namespace Zkvm.Verify
@@ -20,12 +20,12 @@ open R0sy.Algebra.Poly
 open R0sy.Lean.Nat
 open ArithVM.Circuit
 open Classes
-open Fri
 open MethodId
 open Seal
 
+
 def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit) (check_verifier: CheckCommitments.CheckVerifier ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  (circuit: Circuit) (check_commitments: CheckCommitments.CheckVerifier ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         let mut cur_mix: ExtElem := Ring.one
@@ -33,32 +33,27 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
         for reg in circuit.taps.regIter do
           let idx := reg.combo_id
           tot := Array.setD tot idx (tot[idx]! + cur_mix * rows[reg.group.toNat]![reg.offset]!)
-          cur_mix := cur_mix * check_verifier.mix
+          cur_mix := cur_mix * check_commitments.mix
         -- Check group
         for i in [0:Circuit.check_size Elem ExtElem] do
           tot := Array.setD tot combos_count (tot[combos_count]! + cur_mix * check_row[i]!)
-          cur_mix := cur_mix * check_verifier.mix
+          cur_mix := cur_mix * check_commitments.mix
         -- Compute the return value
         let mut ret: ExtElem := Ring.zero
         for i in [0:combos_count] do
           let start := circuit.taps.combo_begin[i]!.toNat
           let stop := circuit.taps.combo_begin[i + 1]!.toNat
-          let poly: Poly ExtElem := Poly.ofSubarray (check_verifier.combo_u.toSubarray start stop)
+          let poly: Poly ExtElem := Poly.ofSubarray (check_commitments.combo_u.toSubarray start stop)
           let num := tot[i]! - Poly.eval poly x
           let mut divisor: ExtElem := Ring.one
           for back in (circuit.taps.getCombo i).slice do
             divisor := divisor * (x - z * back_one ^ back.toNat)
           ret := ret + num / divisor
-        let check_num := tot[combos_count]! - check_verifier.combo_u[circuit.taps.tot_combo_backs.toNat]!
+        let check_num := tot[combos_count]! - check_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
         let check_div := x - z ^ Constants.INV_RATE
         ret := ret + check_num / check_div
         pure ret
 
-
-def verify.enforce_max_cycles [Monad.MonadVerify M] (header: Header.Header Elem): M Unit
-  := if header.po2 > Constants.MAX_CYCLES_PO2
-      then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
-      else pure ()
 
 def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [Algebraic Elem ExtElem]: M Unit
   := do let circuit <- MonadCircuit.getCircuit
@@ -66,29 +61,28 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
         let header <- Header.read circuit
         Header.verify_journal header journal
         -- Enforce constraints on cycle count
-        verify.enforce_max_cycles header
-        -- Get the Merkle trees
-        let merkle_verifiers <- TraceCommitments.read_and_commit header
-        -- Begin the check process
-        let check_verifier <- CheckCommitments.read_and_commit header merkle_verifiers
+        if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
+        -- Read the commitments
+        let trace_commitments <- TraceCommitments.read_and_commit header
+        let check_commitments <- CheckCommitments.read_and_commit header trace_commitments
         -- FRI verify
-        let fri_verify_params <- FriVerifier.read_and_commit Elem ExtElem header.size
+        let fri_verify_params <- Seal.Fri.read_and_commit Elem ExtElem header.size
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
-        FriVerifier.verify fri_verify_params (fun idx
+        Seal.Fri.verify fri_verify_params (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
-                  <- merkle_verifiers.accum_merkle.verify idx,
-                  <- merkle_verifiers.code_merkle.verify idx,
-                  <- merkle_verifiers.data_merkle.verify idx
+                  <- trace_commitments.accum_merkle.verify idx,
+                  <- trace_commitments.code_merkle.verify idx,
+                  <- trace_commitments.data_merkle.verify idx
                 ]
-                let check_row: Array Elem <- check_verifier.check_merkle.verify idx
+                let check_row: Array Elem <- check_commitments.check_merkle.verify idx
                 verify.fri_eval_taps
                   circuit
-                  check_verifier
+                  check_commitments
                   check_row
                   header.back_one
                   (Algebra.ofBase x)
-                  check_verifier.z
+                  check_commitments.z
                   rows
         )
         -- Ensure proof buffer is empty
