@@ -60,7 +60,7 @@ structure VerifyRoundInfo (ExtElem: Type) where
 def VerifyRoundInfo.new (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field ExtElem] [ExtField Elem ExtElem]
   (in_domain: Nat) : M (VerifyRoundInfo ExtElem)
   := do let domain := in_domain / FRI_FOLD
-        let merkle <- MerkleTreeVerifier.read domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
+        let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
         let mix : ExtElem <- Field.random
         pure {
           domain,
@@ -102,44 +102,62 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
         pure ()
 
 
-def fri_verify (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]
-  (in_degree : Nat) (inner : Nat -> M ExtElem) : M Unit
-  := do let mut degree := in_degree
-        let orig_domain := INV_RATE * in_degree
-        let mut domain := orig_domain
-        -- Prep the folding verfiers
-        let rounds_capacity := ((Nat.log2_ceil ((in_degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
-        let mut rounds : Array (VerifyRoundInfo ExtElem) := Array.mkEmpty rounds_capacity
-        while degree > FRI_MIN_DEGREE do
-          let round <- VerifyRoundInfo.new Elem ExtElem domain
-          rounds := rounds.push round
-          domain := domain / FRI_FOLD
-          degree := degree / FRI_FOLD
-        let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
-        let final_digest := Hash.hash_pod (final_coeffs)
-        MonadReadIop.commit final_digest
-        -- // Get the generator for the final polynomial evaluations
-        let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
-        -- // Do queries
-        FriVerifyState.run do
-          let mut poly_buf: Array ExtElem := Array.mkEmpty degree
-          for query_no in [0:QUERIES] do
-            let rng: UInt32 <- MonadLift.monadLift (MonadRng.nextUInt32: M UInt32)
-            let pos_val := rng.toNat % orig_domain
-            FriVerifyState.set_pos pos_val
-            -- // Do the 'inner' verification for this index
-            inner pos_val >>= FriVerifyState.set_goal
-            -- // Verify the per-round proofs
-            for round in rounds do
-              VerifyRoundInfo.verify_query Elem ExtElem round
-            -- // Do final verification
-            let x : Elem := gen ^ (<- FriVerifyState.get_pos)
-            -- collect field elements into groups of size EXT_SIZE
-            let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
-            poly_buf := collate_final_coeffs.map ExtField.ofSubelems 
-            let goal <- FriVerifyState.get_goal
-            let actual : ExtElem := Poly.eval (Poly.ofArray poly_buf) (Algebra.ofBase x)
-            if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
-        return ()
+structure FriVerifier (Elem ExtElem: Type) where
+  orig_domain: Nat
+  domain: Nat
+  rounds: Array (VerifyRoundInfo ExtElem)
+  final_coeffs: Array Elem
+  poly: Poly ExtElem
+
+namespace FriVerifier
+  def read (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+    := do let mut degree := in_degree
+          let orig_domain := INV_RATE * in_degree
+          let mut domain := orig_domain
+          -- Prep the folding verfiers
+          let rounds_capacity := ((Nat.log2_ceil ((in_degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
+          let mut rounds := Array.mkEmpty rounds_capacity
+          while degree > FRI_MIN_DEGREE do
+            let round <- VerifyRoundInfo.new Elem ExtElem domain
+            rounds := rounds.push round
+            domain := domain / FRI_FOLD
+            degree := degree / FRI_FOLD
+          let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
+          let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
+          let poly: Poly ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
+          pure {
+            orig_domain,
+            domain,
+            rounds,
+            final_coeffs,
+            poly
+          }
+
+  def read_and_commit (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+    := do let fri_verify_params <- FriVerifier.read Elem ExtElem in_degree
+          let final_digest := Hash.hash_pod (fri_verify_params.final_coeffs)
+          MonadReadIop.commit final_digest
+          pure fri_verify_params
+
+  def verify [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
+    := do -- // Get the generator for the final polynomial evaluations
+          let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (fri_verify_params.domain)]!
+          -- // Do queries
+          FriVerifyState.run do
+            for query_no in [0:QUERIES] do
+              let rng: UInt32 <- MonadLift.monadLift (MonadRng.nextUInt32: M UInt32)
+              let pos_val := rng.toNat % fri_verify_params.orig_domain
+              FriVerifyState.set_pos pos_val
+              inner pos_val >>= FriVerifyState.set_goal
+              -- // Verify the per-round proofs
+              for round in fri_verify_params.rounds do
+                VerifyRoundInfo.verify_query Elem ExtElem round
+              -- // Do final verification
+              let x : Elem := gen ^ (<- FriVerifyState.get_pos)
+              let goal <- FriVerifyState.get_goal
+              let actual : ExtElem := Poly.eval fri_verify_params.poly (Algebra.ofBase x)
+              if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
+          return ()
+end FriVerifier
 
 end Zkvm.Verify.Fri

@@ -50,13 +50,13 @@ namespace MerkleVerifiers
             mix := mix.push x
           pure mix
 
-  def read [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M (MerkleVerifiers Elem)
+  def read_and_commit [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M (MerkleVerifiers Elem)
     := do let circuit <- MonadCircuit.getCircuit
-          let code_merkle <- MerkleTreeVerifier.read header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
+          let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
           MerkleVerifiers.check_code_root header code_merkle
-          let data_merkle <- MerkleTreeVerifier.read header.domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
+          let data_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
           let mix <- MerkleVerifiers.compute_mix circuit
-          let accum_merkle <- MerkleTreeVerifier.read header.domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES
+          let accum_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES
           pure {
             code_merkle,
             data_merkle,
@@ -87,10 +87,10 @@ namespace CheckVerifier
             cur_pos := cur_pos + reg_size
           pure eval_u
 
-  def read [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers Elem): M (CheckVerifier ExtElem)
+  def read_and_commit [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers Elem): M (CheckVerifier ExtElem)
     := do let circuit <- MonadCircuit.getCircuit
           let poly_mix: ExtElem <- Field.random
-          let check_merkle <- MerkleTreeVerifier.read header.domain circuit.check_size Constants.QUERIES
+          let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain circuit.check_size Constants.QUERIES
           let z: ExtElem <- Field.random
           -- Read the U coeffs + commit their hash
           let circuit <- MonadCircuit.getCircuit
@@ -181,10 +181,26 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
         pure ret
 
 
-def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers Elem) (check_verifier: CheckVerifier ExtElem): M Unit
-  := do let circuit <- MonadCircuit.getCircuit
+def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M Unit
+  := if header.po2 > Constants.MAX_CYCLES_PO2
+      then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
+      else pure ()
+
+def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
+  := do -- Read the header and verify the journal
+        let header <- MonadCircuit.getCircuit >>= Header.read
+        Header.verify_journal header journal
+        -- Enforce constraints on cycle count
+        verify.enforce_max_cycles header
+        -- Get the Merkle trees
+        let merkle_verifiers <- MerkleVerifiers.read_and_commit header
+        -- Begin the check process
+        let check_verifier <- CheckVerifier.read_and_commit header merkle_verifiers
+        -- FRI verify
+        let circuit <- MonadCircuit.getCircuit
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
-        fri_verify Elem ExtElem header.size (fun idx
+        let fri_verify_params <- FriVerifier.read_and_commit Elem ExtElem header.size
+        FriVerifier.verify fri_verify_params (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
                   <- merkle_verifiers.accum_merkle.verify idx,
@@ -201,25 +217,6 @@ def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (head
                   check_verifier.z
                   rows
         )
-
-
-def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M Unit
-  := if header.po2 > Constants.MAX_CYCLES_PO2
-      then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
-      else pure ()
-
-def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do -- Read the header and verify the journal
-        let header <- MonadCircuit.getCircuit >>= Header.read
-        Header.verify_journal header journal
-        -- Enforce constraints on cycle count
-        verify.enforce_max_cycles header
-        -- Get the Merkle trees
-        let merkle_verifiers <- MerkleVerifiers.read header
-        -- Begin the check process
-        let check_verifier <- CheckVerifier.read header merkle_verifiers
-        -- FRI verify
-        verify.fri header merkle_verifiers check_verifier
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
 

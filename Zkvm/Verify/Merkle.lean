@@ -86,17 +86,20 @@ partial def MerkleTreeVerifier.fillLowerRest (params: MerkleTreeParams) (out: Ar
         let out' := Array.set! out out_idx (Hash.hash_pair out[upper_rest_idx]! out[upper_rest_idx + 1]!)
         MerkleTreeVerifier.fillLowerRest params out' fr to (i - 1)
 
-def MerkleTreeVerifier.read [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
+def MerkleTreeVerifier.primitive_read [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
   := do let params := MerkleTreeParams.new row_size col_size queries
         let top <- MonadReadIop.readPodSlice Sha256.Digest params.top_size
         let mut rest := Array.mkArray (params.top_size - 1) Inhabited.default
         rest := MerkleTreeVerifier.fillUpperRest params top rest params.top_size (params.top_size / 2)
         rest := MerkleTreeVerifier.fillLowerRest params rest (params.top_size / 2) 1
-        let verifier: MerkleTreeVerifier := {
+        pure {
           params,
           top,
           rest
         }
+
+def MerkleTreeVerifier.read_and_commit [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
+  := do let verifier <- MerkleTreeVerifier.primitive_read row_size col_size queries
         MonadReadIop.commit (MerkleTreeVerifier.root verifier)
         pure verifier
 
