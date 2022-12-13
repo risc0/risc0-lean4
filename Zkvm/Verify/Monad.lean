@@ -22,35 +22,35 @@ open MethodId
 open ReadIop
 
 
-structure VerifyContext (Elem ExtElem: Type) where
-  circuit: Circuit Elem ExtElem
+structure VerifyContext where
+  circuit: Circuit
   method_id: MethodId
   read_iop: ReadIop
 
-class MonadVerify (M: Type -> Type) (Elem ExtElem: outParam Type)
+class MonadVerify (M: Type -> Type)
   extends
     Monad M,
-    MonadStateOf (VerifyContext Elem ExtElem) M,
+    MonadStateOf VerifyContext M,
     MonadExceptOf VerificationError M
   where
 
 instance
   [Monad M]
-  [MonadStateOf (VerifyContext Elem ExtElem) M]
+  [MonadStateOf VerifyContext M]
   [MonadExceptOf VerificationError M]
-  : MonadVerify M Elem ExtElem where
+  : MonadVerify M where
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadCircuit M Elem ExtElem where
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadCircuit M where
   getCircuit
     := do let self <- get
           pure self.circuit
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadMethodId M where
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadMethodId M where
   getMethodId
     := do let self <- get
           pure self.method_id
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf ReadIop M where
+instance [Monad M] [MonadStateOf VerifyContext M] : MonadStateOf ReadIop M where
   get
     := do let self <- get
           pure self.read_iop
@@ -63,16 +63,16 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf 
           set { self with read_iop }
           pure result
 
-def VerifyContext.run [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (seal: Array UInt32)
-  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M Elem ExtElem] -> [Algebraic Elem ExtElem] -> M Unit)
+def VerifyContext.run (Elem ExtElem: Type) [Algebraic Elem ExtElem] (circuit: Circuit) (method_id: MethodId) (seal: Array UInt32)
+  (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M] -> [Algebraic Elem ExtElem] -> M Unit)
   : Except VerificationError Unit
   := Id.run do
-      let verify_context: VerifyContext Elem ExtElem := {
+      let verify_context: VerifyContext := {
         circuit,
         method_id,
         read_iop := ReadIop.new seal.toSubarray,
       }
-      let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)
+      let M := StateT VerifyContext (ExceptT VerificationError Id)
       ExceptT.run (StateT.run' (@f M _ _ _) verify_context)
 
 end Zkvm.Verify.Monad

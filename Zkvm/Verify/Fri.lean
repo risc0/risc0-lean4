@@ -108,7 +108,7 @@ structure FriVerifier (Elem ExtElem: Type) where
   poly: Poly ExtElem
 
 namespace FriVerifier
-  def read_and_commit (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+  def read_and_commit (Elem ExtElem: Type) [MonadVerify M] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
     := do let mut degree := in_degree
           let orig_domain := INV_RATE * in_degree
           let mut domain := orig_domain
@@ -132,7 +132,7 @@ namespace FriVerifier
             poly
           }
 
-  def verify [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
+  def verify [MonadVerify M] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
     := do -- // Get the generator for the final polynomial evaluations
           let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (fri_verify_params.domain)]!
           -- // Do queries

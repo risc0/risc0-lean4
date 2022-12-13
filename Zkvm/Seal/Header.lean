@@ -24,7 +24,7 @@ structure Header (Elem: Type) where
   back_one: Elem
   journal: Array Elem
 
-def read [Monad M] [MonadReadIop M] [Field Elem] [RootsOfUnity Elem] (circuit: Circuit Elem ExtElem): M (Header Elem)
+def read [Monad M] [MonadReadIop M] [Field Elem] [RootsOfUnity Elem] (circuit: Circuit): M (Header Elem)
   := do let journal <- MonadReadIop.readFields Elem circuit.output_size
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
         let size := 1 <<< po2

@@ -59,8 +59,8 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
   verifyComplete: M Unit
 
 
-class MonadCircuit (M: Type -> Type) (Elem ExtElem: outParam Type) where
-  getCircuit: M (Circuit Elem ExtElem)
+class MonadCircuit (M: Type -> Type) where
+  getCircuit: M Circuit
 
 
 class MonadMethodId (M: Type -> Type) where

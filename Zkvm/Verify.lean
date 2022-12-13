@@ -36,21 +36,21 @@ structure MerkleVerifiers (Elem: Type) where
   mix: Array Elem
 
 namespace MerkleVerifiers
-  def check_code_root [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (code_merkle: MerkleTreeVerifier): M Unit
+  def check_code_root [Monad.MonadVerify M] [RootsOfUnity Elem] (header: Header.Header Elem) (code_merkle: MerkleTreeVerifier): M Unit
     := do let method_id <- MonadMethodId.getMethodId
           let which := header.po2 - Constants.MIN_CYCLES_PO2
           if which >= method_id.table.size then throw (VerificationError.MethodCycleError header.po2)
           if method_id.table[which]! != MerkleTreeVerifier.root code_merkle then throw VerificationError.MethodVerificationError
           pure ()
 
-  def compute_mix [Monad M] [MonadReadIop M] [Field Elem] (circuit: Circuit Elem ExtElem): M (Array Elem)
+  def compute_mix [Monad M] [MonadReadIop M] [Field Elem] (circuit: Circuit): M (Array Elem)
     := do let mut mix: Array Elem := Array.mkEmpty circuit.mix_size
           for _ in [0:circuit.mix_size] do
             let x: Elem <- Field.random
             mix := mix.push x
           pure mix
 
-  def read_and_commit [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M (MerkleVerifiers Elem)
+  def read_and_commit [Monad.MonadVerify M] [Field Elem] [RootsOfUnity Elem] (header: Header.Header Elem): M (MerkleVerifiers Elem)
     := do let circuit <- MonadCircuit.getCircuit
           let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
           MerkleVerifiers.check_code_root header code_merkle
@@ -73,7 +73,7 @@ structure CheckVerifier (ExtElem: Type) where
   combo_u: Array ExtElem
 
 namespace CheckVerifier
-  def evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
+  def evaluate [Monad.MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
     := do let circuit <- MonadCircuit.getCircuit
           let mut cur_pos := 0
           let mut eval_u: Array ExtElem := Array.mkEmpty (TapSet.tapSize circuit.taps)
@@ -87,15 +87,14 @@ namespace CheckVerifier
             cur_pos := cur_pos + reg_size
           pure eval_u
 
-  def read_and_commit [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers Elem): M (CheckVerifier ExtElem)
-    := do let circuit <- MonadCircuit.getCircuit
-          let poly_mix: ExtElem <- Field.random
-          let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain circuit.check_size Constants.QUERIES
+  def read_and_commit [Monad.MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers Elem): M (CheckVerifier ExtElem)
+    := do let poly_mix: ExtElem <- Field.random
+          let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
           let z: ExtElem <- Field.random
           -- Read the U coeffs + commit their hash
           let circuit <- MonadCircuit.getCircuit
           let num_taps := TapSet.tapSize circuit.taps
-          let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + circuit.check_size)
+          let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Circuit.check_size Elem ExtElem)
           let hash_u := Sha256.hash_pod coeff_u
           MonadReadIop.commit hash_u
           -- Now convert to evaluated values
@@ -135,7 +134,7 @@ namespace CheckVerifier
             cur_mix := cur_mix * mix
             cur_pos := cur_pos + reg_size
           -- Handle check group
-          for _ in [0:circuit.check_size] do
+          for _ in [0:Circuit.check_size Elem ExtElem] do
             let idx := circuit.taps.tot_combo_backs.toNat
             let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos]!
             combo_u := Array.set! combo_u idx val
@@ -151,7 +150,7 @@ end CheckVerifier
 
 
 def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit Elem ExtElem) (check_verifier: CheckVerifier ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  (circuit: Circuit) (check_verifier: CheckVerifier ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         let mut cur_mix: ExtElem := Ring.one
@@ -161,7 +160,7 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
           tot := Array.setD tot idx (tot[idx]! + cur_mix * rows[reg.group.toNat]![reg.offset]!)
           cur_mix := cur_mix * check_verifier.mix
         -- Check group
-        for i in [0:circuit.check_size] do
+        for i in [0:Circuit.check_size Elem ExtElem] do
           tot := Array.setD tot combos_count (tot[combos_count]! + cur_mix * check_row[i]!)
           cur_mix := cur_mix * check_verifier.mix
         -- Compute the return value
@@ -181,14 +180,15 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
         pure ret
 
 
-def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M Unit
+def verify.enforce_max_cycles [Monad.MonadVerify M] (header: Header.Header Elem): M Unit
   := if header.po2 > Constants.MAX_CYCLES_PO2
       then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
       else pure ()
 
-def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do -- Read the header and verify the journal
-        let header <- MonadCircuit.getCircuit >>= Header.read
+def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [Algebraic Elem ExtElem]: M Unit
+  := do let circuit <- MonadCircuit.getCircuit
+        -- Read the header and verify the journal
+        let header <- Header.read circuit
         Header.verify_journal header journal
         -- Enforce constraints on cycle count
         verify.enforce_max_cycles header
@@ -197,9 +197,8 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         -- Begin the check process
         let check_verifier <- CheckVerifier.read_and_commit header merkle_verifiers
         -- FRI verify
-        let circuit <- MonadCircuit.getCircuit
-        let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
         let fri_verify_params <- FriVerifier.read_and_commit Elem ExtElem header.size
+        let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
         FriVerifier.verify fri_verify_params (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
@@ -220,7 +219,7 @@ def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
 
-def run_verify [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (journal seal: Array UInt32): Except VerificationError Unit
-  := Monad.VerifyContext.run circuit method_id seal (verify journal)
+def run_verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] (circuit: Circuit) (method_id: MethodId) (journal seal: Array UInt32): Except VerificationError Unit
+  := Monad.VerifyContext.run Elem ExtElem circuit method_id seal (verify Elem ExtElem journal)
 
 end Zkvm.Verify
