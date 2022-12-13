@@ -63,63 +63,67 @@ structure MerkleTreeVerifier where
   top: Array Sha256.Digest
   rest: Array Sha256.Digest
 
-def MerkleTreeVerifier.root (self: MerkleTreeVerifier): Sha256.Digest
-  := if self.rest.size == 0
-      then self.top[MerkleTreeParams.idx_to_top self.params 1]!
-      else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
+namespace MerkleTreeVerifier
+  def root (self: MerkleTreeVerifier): Sha256.Digest
+    := if self.rest.size == 0
+        then self.top[MerkleTreeParams.idx_to_top self.params 1]!
+        else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
 
-partial def MerkleTreeVerifier.fillUpperRest (params: MerkleTreeParams) (top out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
-  := if i < to
-      then out
-      else
-        let top_idx := MerkleTreeParams.idx_to_top params (2 * i)
-        let out_idx := MerkleTreeParams.idx_to_rest params i
-        let out' := Array.set! out out_idx (Hash.hash_pair top[top_idx]! top[top_idx + 1]!)
-        MerkleTreeVerifier.fillUpperRest params top out' fr to (i - 1)
+  partial def fillUpperRest (params: MerkleTreeParams) (top out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
+    := if i < to
+        then out
+        else
+          let top_idx := MerkleTreeParams.idx_to_top params (2 * i)
+          let out_idx := MerkleTreeParams.idx_to_rest params i
+          let out' := Array.set! out out_idx (Hash.hash_pair top[top_idx]! top[top_idx + 1]!)
+          fillUpperRest params top out' fr to (i - 1)
 
-partial def MerkleTreeVerifier.fillLowerRest (params: MerkleTreeParams) (out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
-  := if i < to
-      then out
-      else
-        let upper_rest_idx := MerkleTreeParams.idx_to_rest params (2 * i)
-        let out_idx := MerkleTreeParams.idx_to_rest params i
-        let out' := Array.set! out out_idx (Hash.hash_pair out[upper_rest_idx]! out[upper_rest_idx + 1]!)
-        MerkleTreeVerifier.fillLowerRest params out' fr to (i - 1)
+  partial def fillLowerRest (params: MerkleTreeParams) (out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
+    := if i < to
+        then out
+        else
+          let upper_rest_idx := MerkleTreeParams.idx_to_rest params (2 * i)
+          let out_idx := MerkleTreeParams.idx_to_rest params i
+          let out' := Array.set! out out_idx (Hash.hash_pair out[upper_rest_idx]! out[upper_rest_idx + 1]!)
+          fillLowerRest params out' fr to (i - 1)
 
-def MerkleTreeVerifier.new [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
-  := do let params := MerkleTreeParams.new row_size col_size queries
-        let top <- MonadReadIop.readPodSlice Sha256.Digest params.top_size
-        let mut rest := Array.mkArray (params.top_size - 1) Inhabited.default
-        rest := MerkleTreeVerifier.fillUpperRest params top rest params.top_size (params.top_size / 2)
-        rest := MerkleTreeVerifier.fillLowerRest params rest (params.top_size / 2) 1
-        let verifier: MerkleTreeVerifier := {
-          params,
-          top,
-          rest
-        }
-        MonadReadIop.commit (MerkleTreeVerifier.root verifier)
-        pure verifier
 
-def MerkleTreeVerifier.verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
-  (self: MerkleTreeVerifier) (base_idx : Nat) : M (Array Elem)
-  := do let mut idx := base_idx
-        if idx >= self.params.row_size then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
-        let out <- MonadReadIop.readFields Elem self.params.col_size
-        let mut cur := Hash.hash_pod out
-        idx := idx + self.params.row_size
-        while idx >= 2 * self.params.top_size do
-          let low_bit := idx % 2
-          let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
-          let other := otherArray[0]!
-          idx := idx / 2
-          if low_bit == 1
-          then cur := Hash.hash_pair other cur
-          else cur := Hash.hash_pair cur other
-        let present_hash := 
-          if idx >= self.params.top_size 
-            then self.top[self.params.idx_to_top idx]!
-            else self.top[self.params.idx_to_rest idx]!
-        if present_hash != cur then throw VerificationError.InvalidProof
-        pure out
+  def read_and_commit [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
+    := do let params := MerkleTreeParams.new row_size col_size queries
+          let top <- MonadReadIop.readPodSlice Sha256.Digest params.top_size
+          let mut rest := Array.mkArray (params.top_size - 1) Inhabited.default
+          rest := fillUpperRest params top rest params.top_size (params.top_size / 2)
+          rest := fillLowerRest params rest (params.top_size / 2) 1
+          let verifier := {
+            params,
+            top,
+            rest
+          }
+          MonadReadIop.commit (root verifier)
+          pure verifier
+
+
+  def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
+    (self: MerkleTreeVerifier) (base_idx : Nat) : M (Array Elem)
+    := do let mut idx := base_idx
+          if idx >= self.params.row_size then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
+          let out <- MonadReadIop.readFields Elem self.params.col_size
+          let mut cur := Hash.hash_pod out
+          idx := idx + self.params.row_size
+          while idx >= 2 * self.params.top_size do
+            let low_bit := idx % 2
+            let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
+            let other := otherArray[0]!
+            idx := idx / 2
+            if low_bit == 1
+            then cur := Hash.hash_pair other cur
+            else cur := Hash.hash_pair cur other
+          let present_hash := 
+            if idx >= self.params.top_size 
+              then self.top[self.params.idx_to_top idx]!
+              else self.top[self.params.idx_to_rest idx]!
+          if present_hash != cur then throw VerificationError.InvalidProof
+          pure out
+end MerkleTreeVerifier
 
 end Zkvm.Verify.Merkle

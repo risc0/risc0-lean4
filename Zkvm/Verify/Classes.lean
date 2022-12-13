@@ -59,19 +59,8 @@ class MonadReadIop (M: Type -> Type) extends MonadRng M where
   verifyComplete: M Unit
 
 
-class MonadVerifyAdapter (M: Type -> Type) (Elem: outParam Type) where
-  get_po2: M Nat
-  get_size: M Nat
-  get_domain: M Nat
-  get_out: M (Array Elem)
-  get_mix: M (Array Elem)
-  execute: M Unit
-  accumulate: M Unit
-  verifyOutput (journal: Array UInt32): M Unit
-
-
-class MonadCircuit (M: Type -> Type) (Elem ExtElem: outParam Type) where
-  getCircuit: M (Circuit Elem ExtElem)
+class MonadCircuit (M: Type -> Type) where
+  getCircuit: M Circuit
 
 
 class MonadMethodId (M: Type -> Type) where
