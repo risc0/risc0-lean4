@@ -27,6 +27,14 @@ open Monad
 open Field
 
 
+-- Takes a array of `T`s of length (outersize * inner_size) 
+-- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
+-- Adjacent elems do not go in the same sublist
+def collate [Inhabited T] (arr : Array T) (outer_size inner_size : Nat) : (Array (Array T))
+  := ((List.range outer_size).map (λ i => ((List.range inner_size).map (λ j => arr[outer_size * j + i]!)).toArray)).toArray
+  -- (arr.toList.toChunks outer_size).transpose.toArray -- Uses Std
+
+
 structure FriVerifyState (ExtElem: Type) where
   pos: Nat
   goal: ExtElem
@@ -57,49 +65,44 @@ structure VerifyRoundInfo (ExtElem: Type) where
   merkle: MerkleTreeVerifier
   mix: ExtElem
 
-def VerifyRoundInfo.new (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field ExtElem] [ExtField Elem ExtElem]
-  (in_domain: Nat) : M (VerifyRoundInfo ExtElem)
-  := do let domain := in_domain / FRI_FOLD
-        let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
-        let mix : ExtElem <- Field.random
-        pure {
-          domain,
-          merkle,
-          mix
-        }
+namespace VerifyRoundInfo
+  def read_and_commit (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field ExtElem] [ExtField Elem ExtElem]
+    (in_domain: Nat) : M (VerifyRoundInfo ExtElem)
+    := do let domain := in_domain / FRI_FOLD
+          let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
+          let mix : ExtElem <- Field.random
+          pure {
+            domain,
+            merkle,
+            mix
+          }
 
-def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : ExtElem) : ExtElem
-  := Id.run do
-      let interpolate_io := interpolate_ntt io
-      let reverse_io := bit_reverse interpolate_io
-      pure <| Poly.eval (Poly.ofArray reverse_io) x
+  def fold_eval [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) (x : ExtElem) : ExtElem
+    := Id.run do
+        let interpolate_io := interpolate_ntt io
+        let reverse_io := bit_reverse interpolate_io
+        pure <| Poly.eval (Poly.ofArray reverse_io) x
 
--- Takes a array of `T`s of length (outersize * inner_size) 
--- and returns a list of outer_size lists of `T`s, each sublist having inner_size elements
--- Adjacent elems do not go in the same sublist
-def collate [Inhabited T] (arr : Array T) (outer_size inner_size : Nat) : (Array (Array T))
-  := ((List.range outer_size).map (λ i => ((List.range inner_size).map (λ j => arr[outer_size * j + i]!)).toArray)).toArray
-  -- (arr.toList.toChunks outer_size).transpose.toArray -- Uses Std
-
-def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (self: VerifyRoundInfo ExtElem) : StateT (FriVerifyState ExtElem) M Unit
-  := do let pos <- FriVerifyState.get_pos
-        let goal <- FriVerifyState.get_goal
-        --
-        let quot := pos / self.domain
-        let group := pos % self.domain
-        let data : Array Elem <- MonadLift.monadLift (self.merkle.verify group: M (Array Elem))
-        -- collect field elements into groups of size EXT_SIZE
-        let collate_data : Array (Array Elem) := collate data FRI_FOLD (ExtField.EXT_DEG Elem ExtElem)
-        let data_ext : Array ExtElem := collate_data.map ExtField.ofSubelems 
-        if data_ext[quot]! != goal then throw VerificationError.InvalidProof
-        let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
-        let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
-        -- Track the states of the mutable arguments
-        FriVerifyState.set_pos group
-        let new_goal := fold_eval data_ext (self.mix * inv_wk)
-        FriVerifyState.set_goal new_goal
-        pure ()
+  def verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
+    (self: VerifyRoundInfo ExtElem) : StateT (FriVerifyState ExtElem) M Unit
+    := do let pos <- FriVerifyState.get_pos
+          let goal <- FriVerifyState.get_goal
+          --
+          let quot := pos / self.domain
+          let group := pos % self.domain
+          let data : Array Elem <- MonadLift.monadLift (self.merkle.verify group: M (Array Elem))
+          -- collect field elements into groups of size EXT_SIZE
+          let collate_data : Array (Array Elem) := collate data FRI_FOLD (ExtField.EXT_DEG Elem ExtElem)
+          let data_ext : Array ExtElem := collate_data.map ExtField.ofSubelems 
+          if data_ext[quot]! != goal then throw VerificationError.InvalidProof
+          let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
+          let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
+          -- Track the states of the mutable arguments
+          FriVerifyState.set_pos group
+          let new_goal := fold_eval data_ext (self.mix * inv_wk)
+          FriVerifyState.set_goal new_goal
+          pure ()
+end VerifyRoundInfo
 
 
 structure FriVerifier (Elem ExtElem: Type) where
@@ -110,7 +113,7 @@ structure FriVerifier (Elem ExtElem: Type) where
   poly: Poly ExtElem
 
 namespace FriVerifier
-  def read (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+  def read_and_commit (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
     := do let mut degree := in_degree
           let orig_domain := INV_RATE * in_degree
           let mut domain := orig_domain
@@ -118,13 +121,14 @@ namespace FriVerifier
           let rounds_capacity := ((Nat.log2_ceil ((in_degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
           let mut rounds := Array.mkEmpty rounds_capacity
           while degree > FRI_MIN_DEGREE do
-            let round <- VerifyRoundInfo.new Elem ExtElem domain
+            let round <- VerifyRoundInfo.read_and_commit Elem ExtElem domain
             rounds := rounds.push round
             domain := domain / FRI_FOLD
             degree := degree / FRI_FOLD
           let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
           let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
           let poly: Poly ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
+          MonadReadIop.commit (Hash.hash_pod final_coeffs)
           pure {
             orig_domain,
             domain,
@@ -132,12 +136,6 @@ namespace FriVerifier
             final_coeffs,
             poly
           }
-
-  def read_and_commit (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
-    := do let fri_verify_params <- FriVerifier.read Elem ExtElem in_degree
-          let final_digest := Hash.hash_pod (fri_verify_params.final_coeffs)
-          MonadReadIop.commit final_digest
-          pure fri_verify_params
 
   def verify [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
     := do -- // Get the generator for the final polynomial evaluations
