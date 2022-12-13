@@ -5,7 +5,6 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
-import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Merkle
 import Zkvm.MethodId
@@ -15,7 +14,6 @@ namespace Zkvm.Verify.Monad
 
 open R0sy.Algebra
 open R0sy.Hash.Sha2
-open Adapter
 open ArithVM.Circuit
 open ArithVM.Taps
 open Classes
@@ -27,7 +25,6 @@ open ReadIop
 structure VerifyContext (Elem ExtElem: Type) where
   circuit: Circuit Elem ExtElem
   method_id: MethodId
-  adapter: VerifyAdapter Elem
   read_iop: ReadIop
 
 class MonadVerify (M: Type -> Type) (Elem ExtElem: outParam Type)
@@ -66,19 +63,6 @@ instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf 
           set { self with read_iop }
           pure result
 
-instance [Monad M] [MonadStateOf (VerifyContext Elem ExtElem) M] : MonadStateOf (VerifyAdapter Elem) M where
-  get
-    := do let self <- get
-          pure self.adapter
-  set adapter
-    := do let self <- get
-          set { self with adapter }
-  modifyGet f
-    := do let self <- get
-          let (result, adapter) := f self.adapter
-          set { self with adapter }
-          pure result
-
 def VerifyContext.run [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (method_id: MethodId) (seal: Array UInt32)
   (f: {M: Type -> Type} -> [Monad M] -> [MonadVerify M Elem ExtElem] -> [Algebraic Elem ExtElem] -> M Unit)
   : Except VerificationError Unit
@@ -86,7 +70,6 @@ def VerifyContext.run [Algebraic Elem ExtElem] (circuit: Circuit Elem ExtElem) (
       let verify_context: VerifyContext Elem ExtElem := {
         circuit,
         method_id,
-        adapter := VerifyAdapter.new,
         read_iop := ReadIop.new seal.toSubarray,
       }
       let M := StateT (VerifyContext Elem ExtElem) (ExceptT VerificationError Id)

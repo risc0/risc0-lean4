@@ -60,7 +60,7 @@ structure VerifyRoundInfo (ExtElem: Type) where
 def VerifyRoundInfo.new (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field ExtElem] [ExtField Elem ExtElem]
   (in_domain: Nat) : M (VerifyRoundInfo ExtElem)
   := do let domain := in_domain / FRI_FOLD
-        let merkle <- MerkleTreeVerifier.new domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
+        let merkle <- MerkleTreeVerifier.read domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
         let mix : ExtElem <- Field.random
         pure {
           domain,

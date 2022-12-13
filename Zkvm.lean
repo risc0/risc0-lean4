@@ -9,7 +9,6 @@ import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.Seal.Header
 import Zkvm.Verify
-import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Fri
 import Zkvm.Verify.Monad
