@@ -1,41 +1,35 @@
 /- Transcription of risczero-wip/blob/main/cirgen/compiler/IR/Ops.td -/
 
-import cirgen
-import cirgen.compiler
-import cirgen.compiler.IR
-import cirgen.compiler.IR.Types
+import Cirgen.Compiler.IR.Types
 
 /- ******************************** From Ops.td  ********************** -/
 section CirgenOp_Syntax
-
-variable (String:Type) /-used to name operations; could use builtin type,
-           or define inductive types for unary and binary operators-/
 
 variable (isz neg inv add sub mul bitAnd:String)
 
 /- In cirgen, there is a separate file Attrs.h that defines a class for this-/
 inductive PolynomialAttr where
-  poly: Array uint64 -> PolynomialAttr
+  | poly: Array uint64 -> PolynomialAttr
 
-variable (Val:Type)
+variable (Val: Type)
 /- Val stands for the field. Or maybe the extension field... -/
 
-variable (Buffer:Type) /-used in BackOp -- probably comes from Types.lean-/
+variable (Buffer: Type) /-used in BackOp -- probably comes from Types.lean-/
 
-variable (Constraint:Type) /-used in AndEqzOp, AndCondOp etc. Probably comes from Types.lean-/
+variable (Constraint: Type) /-used in AndEqzOp, AndCondOp etc. Probably comes from Types.lean-/
 
-def I32Attr:Type := int32 /-used in BackOp -- maybe just Z? -/
+def I32Attr: Type := Int /- TODO: int32 ; used in BackOp -- maybe just Z? -/
 
-def UI32Attr :Type := unit32 /-used in SliceOp-/
+def UI32Attr: Type := UInt32 /-used in SliceOp-/
 
 /-variable (StrAttr:Type)  used in ExternOp, LookupOp etc-/
-def StrAttr:Type := String
+def StrAttr: Type := String
 
-variable (ContainerType:Type) /-refine to Variant StructType | UnionType? used in LookupOp/ etc. See types.h etc-/
+variable (ContainerType: Type) /-refine to Variant StructType | UnionType? used in LookupOp/ etc. See types.h etc-/
 
-variable (ArrayType:Type) /-Maybe parametrize by Type of elements? Used in SubscriptOp-/
+variable (ArrayType: Type) /-Maybe parametrize by Type of elements? Used in SubscriptOp-/
 
-variable (Ref:Type)  /-member reference, eg in structs etc it seems; used in LoadOp and StoreOp-/
+variable (Ref: Type)  /-member reference, eg in structs etc it seems; used in LoadOp and StoreOp-/
 
 inductive CirgenOp where
 | ConstOp: Poly -> CirgenOp
@@ -67,12 +61,12 @@ inductive CirgenOp where
 variable (ConstOpBuilder: uint64 -> Poly)
 
 def IsZeroOp := CirgenOp.UnaryOp isz
-def NegOp := UnaryOp neg
-def InvOp := UnaryOp inv
+def NegOp := CirgenOp.UnaryOp neg
+def InvOp := CirgenOp.UnaryOp inv
 
-def AddOp := BinaryOp add
-def SubOp := BinaryOp sub
-def MulOp := BinaryOp mul
-def BitAndOp := BinaryOp bitAnd
+def AddOp := CirgenOp.BinaryOp add
+def SubOp := CirgenOp.BinaryOp sub
+def MulOp := CirgenOp.BinaryOp mul
+def BitAndOp := CirgenOp.BinaryOp bitAnd
 
 end CirgenOp_Syntax
