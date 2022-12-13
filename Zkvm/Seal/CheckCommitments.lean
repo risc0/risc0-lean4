@@ -55,7 +55,7 @@ def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Hea
         -- Now convert to evaluated values
         let eval_u <- evaluate header (TapSet.regIter circuit.taps) z coeff_u
         -- Compute the core polynomial
-        let result := (circuit.poly_ext poly_mix eval_u #[header.journal, trace_commitments.mix]).tot
+        let result := (circuit.poly_ext poly_mix eval_u #[header.output, trace_commitments.mix]).tot
         -- Generate the check polynomial
         let ext0: ExtElem := Algebra.ofBasis 0 (Ring.one : Elem)
         let ext1: ExtElem := Algebra.ofBasis 1 (Ring.one : Elem)
