@@ -27,14 +27,12 @@ structure Header (Elem: Type) where
 
 
 def read [Monad M] [MonadReadIop M] [PrimeField Elem] [RootsOfUnity Elem] (circuit: Circuit): M (Header Elem)
-  := do let deserialize [PrimeField Elem] (lo hi: Elem): UInt32 :=
-          let lo := PrimeField.toNat lo
-          let hi := PrimeField.toNat hi
-          UInt32.ofNat ((hi <<< 16) ||| lo)
-        let output <- MonadReadIop.readFields Elem circuit.output_size
+  := do let output <- MonadReadIop.readFields Elem circuit.output_size
         let mut deserialized_output := Array.mkEmpty (output.size / 2)
         for i in [0:output.size / 2] do
-          deserialized_output := deserialized_output.push (deserialize output[2 * i]! output[2 * i + 1]!)
+          let hi := PrimeField.toNat output[2 * i + 1]!
+          let lo := PrimeField.toNat output[2 * i]!
+          deserialized_output := deserialized_output.push ((hi <<< 16) ||| lo).toUInt32
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
         let size := 1 <<< po2
         let domain := Constants.INV_RATE * size
