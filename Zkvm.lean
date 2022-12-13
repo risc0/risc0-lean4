@@ -7,7 +7,9 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
 import Zkvm.Constants
 import Zkvm.MethodId
+import Zkvm.Seal.CheckCommitments
 import Zkvm.Seal.Header
+import Zkvm.Seal.TraceCommitments
 import Zkvm.Verify
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Fri
