@@ -4,9 +4,10 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import Zkvm.ArithVM.AST
 import Zkvm.ArithVM.Circuit
+import Zkvm.ArithVM.Taps
 import Zkvm.Constants
 import Zkvm.MethodId
-import Zkvm.ArithVM.Taps
+import Zkvm.Seal.Header
 import Zkvm.Verify
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes

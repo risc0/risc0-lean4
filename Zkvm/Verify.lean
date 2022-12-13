@@ -7,6 +7,7 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.ArithVM.Taps
+import Zkvm.Seal.Header
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Fri
 import Zkvm.Verify.Merkle
@@ -25,28 +26,27 @@ open Classes
 open Fri
 open Merkle
 open MethodId
+open Seal
 
 structure MerkleVerifiers where
   code_merkle: MerkleTreeVerifier
   data_merkle: MerkleTreeVerifier
   accum_merkle: MerkleTreeVerifier
 
-def MerkleVerifiers.check_code_root [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (code_merkle: MerkleTreeVerifier): M Unit
+def MerkleVerifiers.check_code_root [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (code_merkle: MerkleTreeVerifier): M Unit
   := do let method_id <- MonadMethodId.getMethodId
-        let po2 <- MonadVerifyAdapter.get_po2
-        let which := po2 - Constants.MIN_CYCLES_PO2
-        if which >= method_id.table.size then throw (VerificationError.MethodCycleError po2)
+        let which := header.po2 - Constants.MIN_CYCLES_PO2
+        if which >= method_id.table.size then throw (VerificationError.MethodCycleError header.po2)
         if method_id.table[which]! != MerkleTreeVerifier.root code_merkle then throw VerificationError.MethodVerificationError
         pure ()
 
-def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M MerkleVerifiers
+def MerkleVerifiers.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M MerkleVerifiers
   := do let circuit <- MonadCircuit.getCircuit
-        let domain <- MonadVerifyAdapter.get_domain
-        let code_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
-        MerkleVerifiers.check_code_root code_merkle
-        let data_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
+        let code_merkle <- MerkleTreeVerifier.new header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
+        MerkleVerifiers.check_code_root header code_merkle
+        let data_merkle <- MerkleTreeVerifier.new header.domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
         MonadVerifyAdapter.accumulate
-        let accum_merkle <- MerkleTreeVerifier.new domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES
+        let accum_merkle <- MerkleTreeVerifier.new header.domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES
         pure {
           code_merkle,
           data_merkle,
@@ -60,27 +60,24 @@ structure CheckVerifier (ExtElem: Type) where
   mix: ExtElem
   combo_u: Array ExtElem
 
-def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
+def CheckVerifier.evaluate [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (regs: RegIter) (z: ExtElem) (coeff_u: Array ExtElem): M (Array ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
-        let back_one <- MonadVerifyAdapter.get_back
         let mut cur_pos := 0
         let mut eval_u: Array ExtElem := Array.mkEmpty (TapSet.tapSize circuit.taps)
         for reg in regs do
           let reg_size := RegRef.size reg
           for i in [0:reg_size] do
-            let x := z * Algebra.ofBase (back_one ^ (RegRef.back reg i))
+            let x := z * Algebra.ofBase (header.back_one ^ (RegRef.back reg i))
             let poly: Poly ExtElem := Poly.ofSubarray (coeff_u.toSubarray cur_pos (cur_pos + reg_size))
             let fx := Poly.eval poly x
             eval_u := eval_u.push fx
           cur_pos := cur_pos + reg_size
         pure eval_u
 
-def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M (CheckVerifier ExtElem)
+def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M (CheckVerifier ExtElem)
   := do let circuit <- MonadCircuit.getCircuit
         let poly_mix: ExtElem <- Field.random
-        let check_merkle
-          <- do let domain <- MonadVerifyAdapter.get_domain
-                MerkleTreeVerifier.new domain circuit.check_size Constants.QUERIES
+        let check_merkle <- MerkleTreeVerifier.new header.domain circuit.check_size Constants.QUERIES
         let z: ExtElem <- Field.random
         -- Read the U coeffs + commit their hash
         let circuit <- MonadCircuit.getCircuit
@@ -89,11 +86,10 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
         let hash_u := Sha256.hash_pod coeff_u
         MonadReadIop.commit hash_u
         -- Now convert to evaluated values
-        let eval_u <- CheckVerifier.evaluate (TapSet.regIter circuit.taps) z coeff_u
+        let eval_u <- CheckVerifier.evaluate header (TapSet.regIter circuit.taps) z coeff_u
         -- Compute the core polynomial
-        let out <- MonadVerifyAdapter.get_out
         let mix <- MonadVerifyAdapter.get_mix
-        let result := (circuit.poly_ext poly_mix eval_u #[out, mix]).tot
+        let result := (circuit.poly_ext poly_mix eval_u #[header.journal, mix]).tot
         -- Generate the check polynomial
         let ext0: ExtElem := Algebra.ofBasis 0 (Ring.one : Elem)
         let ext1: ExtElem := Algebra.ofBasis 1 (Ring.one : Elem)
@@ -108,8 +104,7 @@ def CheckVerifier.new [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem
           check := check + ext1 * coeff_u[num_taps + rmi + 4]! * zpi
           check := check + ext2 * coeff_u[num_taps + rmi + 8]! * zpi
           check := check + ext3 * coeff_u[num_taps + rmi + 12]! * zpi
-        let size <- MonadVerifyAdapter.get_size
-        check := check * ((Ring.ofNat 3 * z) ^ size - Ring.one)
+        check := check * ((Ring.ofNat 3 * z) ^ header.size - Ring.one)
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
         -- Set the mix value
         let mix: ExtElem <- Field.random
@@ -171,12 +166,10 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
         ret := ret + check_num / check_div
         pure ret
 
-def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (merkle_verifiers: MerkleVerifiers) (check_verifier: CheckVerifier ExtElem): M Unit
+def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem) (merkle_verifiers: MerkleVerifiers) (check_verifier: CheckVerifier ExtElem): M Unit
   := do let circuit <- MonadCircuit.getCircuit
-        let size <- MonadVerifyAdapter.get_size
-        let back_one <- MonadVerifyAdapter.get_back
-        let gen <- MonadVerifyAdapter.get_gen
-        fri_verify Elem ExtElem size (fun idx
+        let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
+        fri_verify Elem ExtElem header.size (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
                   <- merkle_verifiers.accum_merkle.verify idx,
@@ -188,30 +181,29 @@ def verify.fri [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (merk
                   circuit
                   check_verifier
                   check_row
-                  back_one
+                  header.back_one
                   (Algebra.ofBase x)
                   check_verifier.z
                   rows
         )
 
-def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do let po2 <- MonadVerifyAdapter.get_po2
-        if po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles po2 Constants.MAX_CYCLES_PO2)
-        pure ()
+def verify.enforce_max_cycles [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem] (header: Header.Header Elem): M Unit
+  := if header.po2 > Constants.MAX_CYCLES_PO2
+      then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
+      else pure ()
 
 def verify (journal: Array UInt32) [Monad.MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]: M Unit
-  := do -- Initialize the adapter
-        MonadVerifyAdapter.execute
-        -- Check the journal
-        MonadVerifyAdapter.verifyOutput journal
+  := do -- Read the header and verify the journal
+        let header <- MonadCircuit.getCircuit >>= Header.read
+        Header.verify_journal header journal
         -- Enforce constraints on cycle count
-        verify.enforce_max_cycles
+        verify.enforce_max_cycles header
         -- Get the Merkle trees
-        let merkle_verifiers <- MerkleVerifiers.new
+        let merkle_verifiers <- MerkleVerifiers.new header
         -- Begin the check process
-        let check_verifier <- CheckVerifier.new
+        let check_verifier <- CheckVerifier.new header
         -- FRI verify
-        verify.fri merkle_verifiers check_verifier
+        verify.fri header merkle_verifiers check_verifier
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
 

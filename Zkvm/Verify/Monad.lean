@@ -7,7 +7,6 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
 import Zkvm.Verify.Adapter
 import Zkvm.Verify.Classes
-import Zkvm.Verify.Fri
 import Zkvm.Verify.Merkle
 import Zkvm.MethodId
 import Zkvm.Verify.ReadIop
@@ -20,7 +19,6 @@ open Adapter
 open ArithVM.Circuit
 open ArithVM.Taps
 open Classes
-open Fri
 open Merkle
 open MethodId
 open ReadIop

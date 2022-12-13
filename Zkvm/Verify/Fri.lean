@@ -8,6 +8,7 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Classes
 import Zkvm.Verify.Merkle
+import Zkvm.Verify.Monad
 
 namespace Zkvm.Verify.Fri
 
@@ -22,6 +23,7 @@ open ArithVM.Circuit
 open Classes
 open Constants
 open Merkle
+open Monad
 open Field
 
 
@@ -100,7 +102,7 @@ def VerifyRoundInfo.verify_query (Elem ExtElem: Type) [Monad M] [MonadReadIop M]
         pure ()
 
 
-def fri_verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
+def fri_verify (Elem ExtElem: Type) [MonadVerify M Elem ExtElem] [Algebraic Elem ExtElem]
   (in_degree : Nat) (inner : Nat -> M ExtElem) : M Unit
   := do let mut degree := in_degree
         let orig_domain := INV_RATE * in_degree
