@@ -66,9 +66,9 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
         let trace_commitments <- TraceCommitments.read_and_commit header
         let check_commitments <- CheckCommitments.read_and_commit header trace_commitments
         -- FRI verify
-        let fri_verify_params <- Seal.Fri.read_and_commit Elem ExtElem header.size
+        let fri_verify_params <- Fri.read_and_commit Elem ExtElem header.size
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
-        Seal.Fri.verify fri_verify_params (fun idx
+        Fri.verify fri_verify_params (fun idx
           => do let x := gen ^ idx
                 let rows: Array (Array Elem) := #[
                   <- trace_commitments.accum_merkle.verify idx,
