@@ -63,7 +63,7 @@ def verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] (circuit: Circuit) (met
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
         -- Read the commitments
         let trace_commitments <- TraceCommitments.read_and_commit circuit method_id header
-        let check_commitments <- CheckCommitments.read_and_commit circuit header trace_commitments
+        let check_commitments <- CheckCommitments.read_and_commit circuit header trace_commitments.mix
         -- FRI verify
         let combo_commitments <- CheckCommitments.compute_combos Elem ExtElem circuit check_commitments
         let fri_verify_params <- Fri.read_and_commit Elem ExtElem header.size

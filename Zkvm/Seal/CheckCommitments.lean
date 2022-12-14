@@ -61,13 +61,13 @@ structure CheckCommitments (ExtElem: Type) where
   z: ExtElem
   coeff_u: Array ExtElem
 
-def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (trace_commitments: TraceCommitments.TraceCommitments Elem): M (CheckCommitments ExtElem)
+def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (trace_commitments_mix: Array Elem): M (CheckCommitments ExtElem)
   := do let poly_mix: ExtElem <- Field.random
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
         let z: ExtElem <- Field.random
         let num_taps := TapSet.tapSize circuit.taps
         let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Circuit.check_size Elem ExtElem)
-        let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments.mix]
+        let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments_mix]
         let check := compute_check_u header num_taps z coeff_u
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
         MonadReadIop.commit (Sha256.hash_pod coeff_u)
