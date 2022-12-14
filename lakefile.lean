@@ -13,7 +13,7 @@ lean_lib Zkvm {
   -- add library configuration options here
 }
 
-lean_lib cirgen {
+lean_lib Cirgen {
   -- add library configuration options here
 }
 
