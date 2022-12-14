@@ -12,7 +12,6 @@ import Zkvm.Seal.Fri
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
 import Zkvm.Verify
-import Zkvm.Verify.Classes
-import Zkvm.Verify.Monad
+import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop

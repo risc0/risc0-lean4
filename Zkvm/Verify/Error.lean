@@ -2,22 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy
-import Zkvm.ArithVM.Circuit
-import Zkvm.Constants
-import Zkvm.MethodId
-import Zkvm.ArithVM.Taps
-
-namespace Zkvm.Verify.Classes
-
-open R0sy.Algebra
-open R0sy.Hash
-open R0sy.Hash.Sha2
-open R0sy.Serial
-open ArithVM.Circuit
-open ArithVM.Taps
-open MethodId
-
+namespace Zkvm.Verify.Error
 
 inductive VerificationError where
   | Sorry (msg: String)
@@ -50,20 +35,4 @@ instance : ToString VerificationError where
         | VerificationError.FriGoalMismatch query_no goal actual => s!"FriGoalMismatch query_no:{query_no} goal:{goal} actual:{actual}"
         | VerificationError.ReadIopIncomplete words_remaining => s!"ReadIopIncomplete words_remaining:{words_remaining}"
 
-
-class MonadReadIop (M: Type -> Type) extends MonadRng M where
-  readU32s: Nat -> M (Subarray UInt32)
-  readPodSlice (X: Type): [SerialUInt32 X] -> Nat -> M (Array X)
-  readFields (F: Type): [Field F] -> Nat -> M (Array F)
-  commit: Sha256.Digest -> M Unit
-  verifyComplete: M Unit
-
-
-class MonadCircuit (M: Type -> Type) where
-  getCircuit: M Circuit
-
-
-class MonadMethodId (M: Type -> Type) where
-  getMethodId: M MethodId
-
-end Zkvm.Verify.Classes
+end Zkvm.Verify.Error
