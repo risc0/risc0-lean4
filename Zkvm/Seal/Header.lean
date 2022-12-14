@@ -22,6 +22,7 @@ structure Header (Elem: Type) where
   po2: Nat
   size: Nat
   domain: Nat
+  fri_gen: Elem
   back_one: Elem
   output: Array Elem
   deserialized_output: Array UInt32
@@ -37,11 +38,13 @@ def read [Monad M] [MonadReadIop M] (circuit: Circuit): M (Header circuit.field.
         let po2 <- MonadReadIop.readU32s 1 >>= (fun x => pure <| x[0]!.toNat)
         let size := 1 <<< po2
         let domain := Constants.INV_RATE * size
+        let fri_gen := RootsOfUnity.ROU_FWD[Nat.log2_ceil (domain)]!
         let back_one := RootsOfUnity.ROU_REV[po2]!
         pure {
           po2,
           size,
           domain,
+          fri_gen,
           back_one,
           output,
           deserialized_output

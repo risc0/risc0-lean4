@@ -53,8 +53,8 @@ def read_and_commit
     [MonadReadIop M]
     [MonadExceptOf VerificationError M]
     (circuit: Circuit)
-    (method_id: MethodId)
     (header: Header.Header circuit.field.Elem)
+    (method_id: MethodId)
     : M (TraceCommitments circuit.field.Elem)
   := do let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
         check_code_root method_id header code_merkle
