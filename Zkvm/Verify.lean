@@ -28,27 +28,26 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
   (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (combo_commitments: CheckCommitments.Combos ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): M ExtElem
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
-        let mut cur_mix: ExtElem := Ring.one
         -- Tap group
+        let mut tap_cache_idx := 0
         for reg in circuit.taps.regIter do
           let idx := reg.combo_id
-          tot := Array.setD tot idx (tot[idx]! + cur_mix * rows[reg.group.toNat]![reg.offset]!)
-          cur_mix := cur_mix * combo_commitments.mix
+          let val := tot[idx]! + combo_commitments.tap_cache.tap_mix_pows[tap_cache_idx]! * rows[reg.group.toNat]![reg.offset]!
+          tot := Array.set! tot idx val
+          tap_cache_idx := tap_cache_idx + 1
         -- Check group
         for i in [0:Circuit.check_size Elem ExtElem] do
-          tot := Array.setD tot combos_count (tot[combos_count]! + cur_mix * check_row[i]!)
-          cur_mix := cur_mix * combo_commitments.mix
+          tot := Array.setD tot combos_count (tot[combos_count]! + combo_commitments.tap_cache.check_mix_pows[i]! * check_row[i]!)
         -- Compute the return value
         let mut ret: ExtElem := Ring.zero
         for i in [0:combos_count] do
           let start := circuit.taps.combo_begin[i]!.toNat
           let stop := circuit.taps.combo_begin[i + 1]!.toNat
           let poly: Poly ExtElem := Poly.ofSubarray (combo_commitments.combo_u.toSubarray start stop)
-          let num := tot[i]! - Poly.eval poly x
           let mut divisor: ExtElem := Ring.one
           for back in (circuit.taps.getCombo i).slice do
             divisor := divisor * (x - check_commitments.z * back_one ^ back.toNat)
-          ret := ret + num / divisor
+          ret := ret + (tot[i]! - Poly.eval poly x) / divisor
         let check_num := tot[combos_count]! - combo_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
         let check_div := x - check_commitments.z ^ Constants.INV_RATE
         ret := ret + check_num / check_div

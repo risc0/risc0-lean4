@@ -107,7 +107,7 @@ structure TapCache (ExtElem: Type) where
   tap_mix_pows: Array ExtElem
   check_mix_pows: Array ExtElem
 
-def Circuit.tap_cache [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self: Circuit) (mix: ExtElem): TapCache ExtElem
+def Circuit.tap_cache (Elem ExtElem: Type) [Field Elem] [Field ExtElem] [ExtField Elem ExtElem] (self: Circuit) (mix: ExtElem): TapCache ExtElem
   := Id.run do
       let mut cur_mix: ExtElem := Ring.one
       let mut tap_mix_pows := Array.mkEmpty self.taps.reg_count.toNat
