@@ -7,6 +7,7 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.Seal.CheckCommitments
+import Zkvm.Seal.ComboCommitments
 import Zkvm.Seal.Fri
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
@@ -25,7 +26,7 @@ open Seal
 
 
 def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): M ExtElem
+  (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (combo_commitments: ComboCommitments.ComboCommitments ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): M ExtElem
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         let mut cur_mix: ExtElem := Ring.one
@@ -33,23 +34,23 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
         for reg in circuit.taps.regIter do
           let idx := reg.combo_id
           tot := Array.setD tot idx (tot[idx]! + cur_mix * rows[reg.group.toNat]![reg.offset]!)
-          cur_mix := cur_mix * check_commitments.mix
+          cur_mix := cur_mix * combo_commitments.mix
         -- Check group
         for i in [0:Circuit.check_size Elem ExtElem] do
           tot := Array.setD tot combos_count (tot[combos_count]! + cur_mix * check_row[i]!)
-          cur_mix := cur_mix * check_commitments.mix
+          cur_mix := cur_mix * combo_commitments.mix
         -- Compute the return value
         let mut ret: ExtElem := Ring.zero
         for i in [0:combos_count] do
           let start := circuit.taps.combo_begin[i]!.toNat
           let stop := circuit.taps.combo_begin[i + 1]!.toNat
-          let poly: Poly ExtElem := Poly.ofSubarray (check_commitments.combo_u.toSubarray start stop)
+          let poly: Poly ExtElem := Poly.ofSubarray (combo_commitments.combo_u.toSubarray start stop)
           let num := tot[i]! - Poly.eval poly x
           let mut divisor: ExtElem := Ring.one
           for back in (circuit.taps.getCombo i).slice do
             divisor := divisor * (x - check_commitments.z * back_one ^ back.toNat)
           ret := ret + num / divisor
-        let check_num := tot[combos_count]! - check_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
+        let check_num := tot[combos_count]! - combo_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
         let check_div := x - check_commitments.z ^ Constants.INV_RATE
         ret := ret + check_num / check_div
         pure ret
@@ -65,6 +66,7 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
         -- Read the commitments
         let trace_commitments <- TraceCommitments.read_and_commit header
         let check_commitments <- CheckCommitments.read_and_commit header trace_commitments
+        let combo_commitments <- ComboCommitments.read_and_commit Elem ExtElem check_commitments
         -- FRI verify
         let fri_verify_params <- Fri.read_and_commit Elem ExtElem header.size
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
@@ -78,6 +80,7 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
                 verify.fri_eval_taps
                   circuit
                   check_commitments
+                  combo_commitments
                   rows
                   check_row
                   header.back_one

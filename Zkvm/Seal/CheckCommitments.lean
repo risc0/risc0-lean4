@@ -23,12 +23,6 @@ open Zkvm.Verify.Merkle
 open Zkvm.Verify.Monad
 
 
-structure CheckCommitments (ExtElem: Type) where
-  check_merkle: MerkleTreeVerifier
-  z: ExtElem
-  mix: ExtElem
-  combo_u: Array ExtElem
-
 def compute_u [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (z: ExtElem) (coeff_u: Array ExtElem) (mix: ExtElem) (args: Array (Array Elem)): ExtElem
   := Id.run do
         let mut cur_pos := 0
@@ -61,47 +55,26 @@ def compute_check_u [Algebraic Elem ExtElem] (header: Header.Header Elem) (num_t
           check := check + ext3 * coeff_u[num_taps + rmi + 12]! * zpi
         pure (check * ((Ring.ofNat 3 * z) ^ header.size - Ring.one))
 
+structure CheckCommitments (ExtElem: Type) where
+  check_merkle: MerkleTreeVerifier
+  z: ExtElem
+  coeff_u: Array ExtElem
+
 def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (trace_commitments: TraceCommitments.TraceCommitments Elem): M (CheckCommitments ExtElem)
   := do let poly_mix: ExtElem <- Field.random
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
         let z: ExtElem <- Field.random
-        -- Read the U coeffs + commit their hash
         let circuit <- MonadCircuit.getCircuit
         let num_taps := TapSet.tapSize circuit.taps
         let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Circuit.check_size Elem ExtElem)
-        MonadReadIop.commit (Sha256.hash_pod coeff_u)
-        -- Now convert to evaluated values
         let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments.mix]
         let check := compute_check_u header num_taps z coeff_u
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
-        -- Set the mix value
-        let mix: ExtElem <- Field.random
-        -- Construct combo_u
-        let mut combo_u: Array ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
-        -- TODO: reuse Circuit.tap_cache instead of computing tap_mix_pows and check_mix_pows
-        let mut cur_mix: ExtElem := Ring.one
-        let mut cur_pos := 0
-        -- Handle the tap group
-        for reg in (TapSet.regIter circuit.taps) do
-          let reg_size := RegRef.size reg
-          for i in [0:reg_size] do
-            let idx := circuit.taps.combo_begin[reg.combo_id]!.toNat + i
-            let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos + i]!
-            combo_u := Array.set! combo_u idx val
-          cur_mix := cur_mix * mix
-          cur_pos := cur_pos + reg_size
-        -- Handle check group
-        for _ in [0:Circuit.check_size Elem ExtElem] do
-          let idx := circuit.taps.tot_combo_backs.toNat
-          let val := combo_u[idx]! + cur_mix * coeff_u[cur_pos]!
-          combo_u := Array.set! combo_u idx val
-          cur_pos := cur_pos + 1
-          cur_mix := cur_mix * mix
+        MonadReadIop.commit (Sha256.hash_pod coeff_u)
         pure {
           check_merkle,
           z,
-          mix,
-          combo_u
+          coeff_u,
         }
 
 end Zkvm.Seal.CheckCommitments

@@ -8,6 +8,7 @@ import Zkvm.ArithVM.Taps
 import Zkvm.Constants
 import Zkvm.MethodId
 import Zkvm.Seal.CheckCommitments
+import Zkvm.Seal.ComboCommitments
 import Zkvm.Seal.Fri
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
