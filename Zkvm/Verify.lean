@@ -24,9 +24,9 @@ open MethodId
 open Seal
 
 
-def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (combo_commitments: CheckCommitments.Combos ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): M ExtElem
-  := do let combos_count := circuit.taps.combos_count.toNat
+def eval_taps [Algebraic Elem ExtElem] (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (combo_commitments: CheckCommitments.Combos ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): ExtElem
+  := Id.run do
+        let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         -- Tap group
         let mut tap_cache_idx := 0
@@ -75,7 +75,7 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
                   <- trace_commitments.data_merkle.verify idx
                 ]
                 let check_row: Array Elem <- check_commitments.check_merkle.verify idx
-                verify.fri_eval_taps
+                let result := eval_taps
                   circuit
                   check_commitments
                   combo_commitments
@@ -83,6 +83,7 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
                   check_row
                   header.back_one
                   (Algebra.ofBase (gen ^ idx))
+                pure result
         )
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
