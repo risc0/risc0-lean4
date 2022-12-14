@@ -19,7 +19,7 @@ open Zkvm.Verify.Classes
 open Zkvm.Verify.Merkle
 open Zkvm.Verify.Monad
 
-structure TraceVerifier (Elem: Type) where
+structure TraceCommitments (Elem: Type) where
   code_merkle: MerkleTreeVerifier
   data_merkle: MerkleTreeVerifier
   accum_merkle: MerkleTreeVerifier
@@ -39,7 +39,7 @@ def compute_mix [Monad M] [MonadReadIop M] [Field Elem] (circuit: Circuit): M (A
           mix := mix.push x
         pure mix
 
-def read_and_commit [MonadVerify M] [Field Elem] [RootsOfUnity Elem] (header: Header.Header Elem): M (TraceVerifier Elem)
+def read_and_commit [MonadVerify M] [Field Elem] [RootsOfUnity Elem] (header: Header.Header Elem): M (TraceCommitments Elem)
   := do let circuit <- MonadCircuit.getCircuit
         let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
         check_code_root header code_merkle

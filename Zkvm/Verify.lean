@@ -25,7 +25,7 @@ open Seal
 
 
 def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem]
-  (circuit: Circuit) (check_commitments: CheckCommitments.CheckVerifier ExtElem) (check_row: Array Elem) (back_one: Elem) (x z: ExtElem) (rows: Array (Array Elem)): M ExtElem
+  (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): M ExtElem
   := do let combos_count := circuit.taps.combos_count.toNat
         let mut tot: Array ExtElem := Array.mkArray (combos_count + 1) Ring.zero
         let mut cur_mix: ExtElem := Ring.one
@@ -47,10 +47,10 @@ def verify.fri_eval_taps [Monad M] [MonadExceptOf VerificationError M] [Algebrai
           let num := tot[i]! - Poly.eval poly x
           let mut divisor: ExtElem := Ring.one
           for back in (circuit.taps.getCombo i).slice do
-            divisor := divisor * (x - z * back_one ^ back.toNat)
+            divisor := divisor * (x - check_commitments.z * back_one ^ back.toNat)
           ret := ret + num / divisor
         let check_num := tot[combos_count]! - check_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
-        let check_div := x - z ^ Constants.INV_RATE
+        let check_div := x - check_commitments.z ^ Constants.INV_RATE
         ret := ret + check_num / check_div
         pure ret
 
@@ -69,8 +69,7 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
         let fri_verify_params <- Fri.read_and_commit Elem ExtElem header.size
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
         Fri.verify fri_verify_params (fun idx
-          => do let x := gen ^ idx
-                let rows: Array (Array Elem) := #[
+          => do let rows: Array (Array Elem) := #[
                   <- trace_commitments.accum_merkle.verify idx,
                   <- trace_commitments.code_merkle.verify idx,
                   <- trace_commitments.data_merkle.verify idx
@@ -79,11 +78,10 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
                 verify.fri_eval_taps
                   circuit
                   check_commitments
+                  rows
                   check_row
                   header.back_one
-                  (Algebra.ofBase x)
-                  check_commitments.z
-                  rows
+                  (Algebra.ofBase (gen ^ idx))
         )
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete

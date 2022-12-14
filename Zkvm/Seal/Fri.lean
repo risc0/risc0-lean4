@@ -35,31 +35,31 @@ def collate [Inhabited T] (arr : Array T) (outer_size inner_size : Nat) : (Array
   -- (arr.toList.toChunks outer_size).transpose.toArray -- Uses Std
 
 
-structure FriState (ExtElem: Type) where
+structure FriGoalState (ExtElem: Type) where
   pos: Nat
   goal: ExtElem
   deriving Inhabited
 
-namespace FriState
-  def run [Monad M] [Inhabited ExtElem] (f: StateT (FriState ExtElem) M X): M X
+namespace FriGoalState
+  def run [Monad M] [Inhabited ExtElem] (f: StateT (FriGoalState ExtElem) M X): M X
     := StateT.run' f Inhabited.default
 
-  def get_pos [Monad M]: StateT (FriState ExtElem) M Nat
+  def get_pos [Monad M]: StateT (FriGoalState ExtElem) M Nat
     := do let self <- get
           pure self.pos
 
-  def set_pos [Monad M] (pos: Nat): StateT (FriState ExtElem) M Unit
+  def set_pos [Monad M] (pos: Nat): StateT (FriGoalState ExtElem) M Unit
     := do let self <- get
           set { self with pos }
 
-  def get_goal [Monad M]: StateT (FriState ExtElem) M ExtElem
+  def get_goal [Monad M]: StateT (FriGoalState ExtElem) M ExtElem
     := do let self <- get
           pure self.goal
 
-  def set_goal [Monad M] (goal: ExtElem): StateT (FriState ExtElem) M Unit
+  def set_goal [Monad M] (goal: ExtElem): StateT (FriGoalState ExtElem) M Unit
     := do let self <- get
           set { self with goal }
-end FriState
+end FriGoalState
 
 
 structure FriRoundVerifier (ExtElem: Type) where
@@ -79,9 +79,9 @@ namespace FriRoundVerifier
             mix
           }
 
-  def verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (self: FriRoundVerifier ExtElem) : StateT (FriState ExtElem) M Unit
-    := do let pos <- FriState.get_pos
-          let goal <- FriState.get_goal
+  def verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (self: FriRoundVerifier ExtElem) : StateT (FriGoalState ExtElem) M Unit
+    := do let pos <- FriGoalState.get_pos
+          let goal <- FriGoalState.get_goal
           --
           let quot := pos / self.domain
           let group := pos % self.domain
@@ -93,9 +93,9 @@ namespace FriRoundVerifier
           let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
           let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
           -- Track the states of the mutable arguments
-          FriState.set_pos group
+          FriGoalState.set_pos group
           let new_goal := Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt data_ext))) (self.mix * inv_wk)
-          FriState.set_goal new_goal
+          FriGoalState.set_goal new_goal
           pure ()
 end FriRoundVerifier
 
@@ -135,18 +135,18 @@ def verify [MonadVerify M] [Algebraic Elem ExtElem] (fri_verify_params: FriVerif
   := do -- // Get the generator for the final polynomial evaluations
         let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (fri_verify_params.domain)]!
         -- // Do queries
-        FriState.run do
+        FriGoalState.run do
           for query_no in [0:QUERIES] do
             let rng: UInt32 <- MonadLift.monadLift (MonadRng.nextUInt32: M UInt32)
             let pos_val := rng.toNat % fri_verify_params.orig_domain
-            FriState.set_pos pos_val
-            inner pos_val >>= FriState.set_goal
+            FriGoalState.set_pos pos_val
+            inner pos_val >>= FriGoalState.set_goal
             -- // Verify the per-round proofs
             for round in fri_verify_params.rounds do
               FriRoundVerifier.verify Elem ExtElem round
             -- // Do final verification
-            let x : Elem := gen ^ (<- FriState.get_pos)
-            let goal <- FriState.get_goal
+            let x : Elem := gen ^ (<- FriGoalState.get_pos)
+            let goal <- FriGoalState.get_goal
             let actual : ExtElem := Poly.eval fri_verify_params.poly (Algebra.ofBase x)
             if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
