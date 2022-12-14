@@ -24,21 +24,34 @@ open Zkvm.Verify.Merkle
 open Zkvm.Verify.ReadIop
 
 
-def compute_u [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (z: ExtElem) (coeff_u: Array ExtElem) (mix: ExtElem) (args: Array (Array Elem)): ExtElem
+def compute_u
+    (circuit: Circuit)
+    (header: Header.Header circuit.field.Elem)
+    (z: circuit.field.ExtElem)
+    (coeff_u: Array circuit.field.ExtElem)
+    (mix: circuit.field.ExtElem)
+    (args: Array (Array circuit.field.Elem))
+    : circuit.field.ExtElem
   := Id.run do
         let mut cur_pos := 0
-        let mut eval_u: Array ExtElem := Array.mkEmpty (TapSet.tapSize circuit.taps)
+        let mut eval_u := Array.mkEmpty (TapSet.tapSize circuit.taps)
         for reg in TapSet.regIter circuit.taps do
           let reg_size := RegRef.size reg
           for i in [0:reg_size] do
             let x := z * Algebra.ofBase (header.back_one ^ (RegRef.back reg i))
-            let poly: Poly ExtElem := Poly.ofSubarray (coeff_u.toSubarray cur_pos (cur_pos + reg_size))
+            let poly: Poly circuit.field.ExtElem := Poly.ofSubarray (coeff_u.toSubarray cur_pos (cur_pos + reg_size))
             let fx := Poly.eval poly x
             eval_u := eval_u.push fx
           cur_pos := cur_pos + reg_size
         pure (circuit.poly_ext mix eval_u args).tot
 
-def compute_check_u [Algebraic Elem ExtElem] (header: Header.Header Elem) (num_taps: Nat) (z: ExtElem) (coeff_u: Array ExtElem): ExtElem
+def compute_check_u
+    [Algebraic Elem ExtElem]
+    (header: Header.Header Elem)
+    (num_taps: Nat)
+    (z: ExtElem)
+    (coeff_u: Array ExtElem)
+    : ExtElem
   := Id.run do
         -- Generate the check polynomial
         let ext0: ExtElem := Algebra.ofBasis 0 (Ring.one : Elem)
@@ -56,17 +69,25 @@ def compute_check_u [Algebraic Elem ExtElem] (header: Header.Header Elem) (num_t
           check := check + ext3 * coeff_u[num_taps + rmi + 12]! * zpi
         pure (check * ((Ring.ofNat 3 * z) ^ header.size - Ring.one))
 
+
 structure CheckCommitments (ExtElem: Type) where
   check_merkle: MerkleTreeVerifier
   z: ExtElem
   coeff_u: Array ExtElem
 
-def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (trace_commitments_mix: Array Elem): M (CheckCommitments ExtElem)
-  := do let poly_mix: ExtElem <- Field.random
-        let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
-        let z: ExtElem <- Field.random
+def read_and_commit
+    [Monad M]
+    [MonadReadIop M]
+    [MonadExceptOf VerificationError M]
+    (circuit: Circuit)
+    (header: Header.Header circuit.field.Elem)
+    (trace_commitments_mix: Array circuit.field.Elem)
+    : M (CheckCommitments circuit.field.ExtElem)
+  := do let poly_mix: circuit.field.ExtElem <- Field.random
+        let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain circuit.check_size Constants.QUERIES
+        let z: circuit.field.ExtElem <- Field.random
         let num_taps := TapSet.tapSize circuit.taps
-        let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Circuit.check_size Elem ExtElem)
+        let coeff_u <- MonadReadIop.readFields circuit.field.ExtElem (num_taps + circuit.check_size)
         let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments_mix]
         let check := compute_check_u header num_taps z coeff_u
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
@@ -77,14 +98,19 @@ def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError 
           coeff_u,
         }
 
+
 structure Combos (ExtElem: Type) where
   tap_cache: TapCache ExtElem
   combo_u: Array ExtElem
 
-def compute_combos (Elem ExtElem: Type) [Monad M] [MonadRng M] [Algebraic Elem ExtElem] (circuit: Circuit) (self: CheckCommitments.CheckCommitments ExtElem): M (Combos ExtElem)
-  := do let mix: ExtElem <- Field.random
-        let tap_cache := Circuit.tap_cache Elem ExtElem circuit mix
-        let mut combo_u: Array ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
+def compute_combos
+    (circuit: Circuit)
+    (self: CheckCommitments.CheckCommitments circuit.field.ExtElem)
+    (mix: circuit.field.ExtElem)
+    : Combos circuit.field.ExtElem
+  := Id.run do
+        let tap_cache := circuit.tap_cache mix
+        let mut combo_u: Array circuit.field.ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
         let mut cur_pos := 0
         -- Tap group
         let mut tap_cache_idx := 0
@@ -97,7 +123,7 @@ def compute_combos (Elem ExtElem: Type) [Monad M] [MonadRng M] [Algebraic Elem E
           tap_cache_idx := tap_cache_idx + 1
           cur_pos := cur_pos + reg_size
         -- Check group
-        for i in [0:Circuit.check_size Elem ExtElem] do
+        for i in [0:circuit.check_size] do
           let idx := circuit.taps.tot_combo_backs.toNat
           let val := combo_u[idx]! + tap_cache.check_mix_pows[i]! * self.coeff_u[cur_pos]!
           combo_u := Array.set! combo_u idx val
