@@ -16,51 +16,12 @@ import Zkvm.Verify.ReadIop
 namespace Zkvm.Verify
 
 open R0sy.Algebra
-open R0sy.Algebra.Poly
 open R0sy.Lean.Nat
 open Zkvm.ArithVM.Circuit
 open Zkvm.MethodId
 open Zkvm.Seal
 open Zkvm.Verify.Error
 open Zkvm.Verify.ReadIop
-
-
-def eval_taps
-    (circuit: Circuit)
-    (check_commitments: CheckCommitments.CheckCommitments circuit.field.ExtElem)
-    (combo_commitments: CheckCommitments.Combos circuit.field.ExtElem)
-    (rows: Array (Array circuit.field.Elem))
-    (check_row: Array circuit.field.Elem)
-    (back_one: circuit.field.Elem)
-    (x: circuit.field.ExtElem)
-    : circuit.field.ExtElem
-  := Id.run do
-        let combos_count := circuit.taps.combos_count.toNat
-        let mut tot := Array.mkArray (combos_count + 1) Ring.zero
-        -- Tap group
-        let mut tap_cache_idx := 0
-        for reg in circuit.taps.regIter do
-          let idx := reg.combo_id
-          let val := tot[idx]! + combo_commitments.tap_cache.tap_mix_pows[tap_cache_idx]! * rows[reg.group.toNat]![reg.offset]!
-          tot := Array.set! tot idx val
-          tap_cache_idx := tap_cache_idx + 1
-        -- Check group
-        for i in [0:circuit.check_size] do
-          tot := Array.setD tot combos_count (tot[combos_count]! + combo_commitments.tap_cache.check_mix_pows[i]! * check_row[i]!)
-        -- Compute the return value
-        let mut ret := Ring.zero
-        for i in [0:combos_count] do
-          let start := circuit.taps.combo_begin[i]!.toNat
-          let stop := circuit.taps.combo_begin[i + 1]!.toNat
-          let poly: Poly circuit.field.ExtElem := Poly.ofSubarray (combo_commitments.combo_u.toSubarray start stop)
-          let mut divisor := Ring.one
-          for back in (circuit.taps.getCombo i).slice do
-            divisor := divisor * (x - check_commitments.z * back_one ^ back.toNat)
-          ret := ret + (tot[i]! - Poly.eval poly x) / divisor
-        let check_num := tot[combos_count]! - combo_commitments.combo_u[circuit.taps.tot_combo_backs.toNat]!
-        let check_div := x - check_commitments.z ^ Constants.INV_RATE
-        ret := ret + check_num / check_div
-        pure ret
 
 
 def verify (circuit: Circuit) (method_id: MethodId) (journal: Array UInt32) {M: Type -> Type} [Monad M] [MonadExceptOf VerificationError M] [MonadReadIop M]: M Unit
@@ -70,13 +31,13 @@ def verify (circuit: Circuit) (method_id: MethodId) (journal: Array UInt32) {M: 
         -- Enforce constraints on cycle count
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
         -- Read the commitments
-        let trace_commitments <- TraceCommitments.read_and_commit circuit method_id header
+        let trace_commitments <- TraceCommitments.read_and_commit circuit header method_id
         let check_commitments <- CheckCommitments.read_and_commit circuit header trace_commitments.mix
         -- FRI verify
         let combo_mix: circuit.field.ExtElem <- Field.random
-        let combo_commitments := CheckCommitments.compute_combos circuit check_commitments combo_mix
+        let tap_cache := circuit.tap_cache combo_mix
+        let combo_u := check_commitments.compute_combos tap_cache
         let fri_verify_params <- Fri.read_and_commit circuit header.size
-        let gen: circuit.field.Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
         Fri.verify fri_verify_params (fun idx
           => do let rows: Array (Array circuit.field.Elem) := #[
                   <- trace_commitments.accum_merkle.verify idx,
@@ -84,15 +45,13 @@ def verify (circuit: Circuit) (method_id: MethodId) (journal: Array UInt32) {M: 
                   <- trace_commitments.data_merkle.verify idx
                 ]
                 let check_row: Array circuit.field.Elem <- check_commitments.check_merkle.verify idx
-                let result := eval_taps
-                  circuit
-                  check_commitments
-                  combo_commitments
-                  rows
-                  check_row
-                  header.back_one
-                  (Algebra.ofBase (gen ^ idx))
-                pure result
+                pure <| tap_cache.eval_taps
+                          combo_u
+                          header.back_one
+                          check_commitments.z
+                          rows
+                          check_row
+                          (Algebra.ofBase (header.fri_gen ^ idx))
         )
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete

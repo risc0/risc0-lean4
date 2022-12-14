@@ -99,38 +99,30 @@ def read_and_commit
         }
 
 
-structure Combos (ExtElem: Type) where
-  tap_cache: TapCache ExtElem
-  combo_u: Array ExtElem
-
-def compute_combos
-    (circuit: Circuit)
-    (self: CheckCommitments.CheckCommitments circuit.field.ExtElem)
-    (mix: circuit.field.ExtElem)
-    : Combos circuit.field.ExtElem
+def CheckCommitments.compute_combos
+    [Field ExtElem]
+    (self: CheckCommitments.CheckCommitments ExtElem)
+    (tap_cache: TapCache ExtElem)
+    : Array ExtElem
   := Id.run do
-        let tap_cache := circuit.tap_cache mix
-        let mut combo_u: Array circuit.field.ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
+        let mut combo_u: Array ExtElem := Array.mkArray (tap_cache.taps.tot_combo_backs.toNat + 1) Ring.zero
         let mut cur_pos := 0
         -- Tap group
         let mut tap_cache_idx := 0
-        for reg in TapSet.regIter circuit.taps do
+        for reg in TapSet.regIter tap_cache.taps do
           let reg_size := RegRef.size reg
           for i in [0:reg_size] do
-            let idx := circuit.taps.combo_begin[reg.combo_id]!.toNat + i
+            let idx := tap_cache.taps.combo_begin[reg.combo_id]!.toNat + i
             let val := combo_u[idx]! + tap_cache.tap_mix_pows[tap_cache_idx]! * self.coeff_u[cur_pos + i]!
             combo_u := Array.set! combo_u idx val
           tap_cache_idx := tap_cache_idx + 1
           cur_pos := cur_pos + reg_size
         -- Check group
-        for i in [0:circuit.check_size] do
-          let idx := circuit.taps.tot_combo_backs.toNat
+        for i in [0:tap_cache.check_size] do
+          let idx := tap_cache.taps.tot_combo_backs.toNat
           let val := combo_u[idx]! + tap_cache.check_mix_pows[i]! * self.coeff_u[cur_pos]!
           combo_u := Array.set! combo_u idx val
           cur_pos := cur_pos + 1
-        pure {
-          tap_cache,
-          combo_u
-        }
+        pure combo_u
 
 end Zkvm.Seal.CheckCommitments
