@@ -6,9 +6,9 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
-import Zkvm.Verify.Classes
+import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
-import Zkvm.Verify.Monad
+import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.Fri
 
@@ -19,12 +19,11 @@ open R0sy.Lean.Subarray
 open R0sy.Lean.Nat
 open R0sy.Hash.Sha2
 open R0sy.Hash
-open ArithVM.Circuit
-open Constants
-open Field
-open Verify.Classes
-open Verify.Merkle
-open Verify.Monad
+open Zkvm.ArithVM.Circuit
+open Zkvm.Constants
+open Zkvm.Verify.Error
+open Zkvm.Verify.Merkle
+open Zkvm.Verify.ReadIop
 
 
 -- Takes a array of `T`s of length (outersize * inner_size) 
@@ -107,7 +106,7 @@ structure FriVerifier (Elem ExtElem: Type) where
   final_coeffs: Array Elem
   poly: Poly ExtElem
 
-def read_and_commit (Elem ExtElem: Type) [MonadVerify M] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+def read_and_commit (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
   := do let mut degree := in_degree
         let orig_domain := INV_RATE * in_degree
         let mut domain := orig_domain
@@ -131,7 +130,7 @@ def read_and_commit (Elem ExtElem: Type) [MonadVerify M] [Algebraic Elem ExtElem
           poly
         }
 
-def verify [MonadVerify M] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
+def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
   := do -- // Get the generator for the final polynomial evaluations
         let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (fri_verify_params.domain)]!
         -- // Do queries

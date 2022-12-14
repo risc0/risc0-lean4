@@ -7,20 +7,21 @@ import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
-import Zkvm.Verify.Classes
+import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
-import Zkvm.Verify.Monad
+import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.CheckCommitments
 
 open R0sy.Algebra
 open R0sy.Algebra.Poly
+open R0sy.Hash
 open R0sy.Hash.Sha2
 open Zkvm.ArithVM.Circuit
 open Zkvm.ArithVM.Taps
-open Zkvm.Verify.Classes
+open Zkvm.Verify.Error
 open Zkvm.Verify.Merkle
-open Zkvm.Verify.Monad
+open Zkvm.Verify.ReadIop
 
 
 def compute_u [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (z: ExtElem) (coeff_u: Array ExtElem) (mix: ExtElem) (args: Array (Array Elem)): ExtElem
@@ -60,11 +61,10 @@ structure CheckCommitments (ExtElem: Type) where
   z: ExtElem
   coeff_u: Array ExtElem
 
-def read_and_commit [MonadVerify M] [Algebraic Elem ExtElem] (header: Header.Header Elem) (trace_commitments: TraceCommitments.TraceCommitments Elem): M (CheckCommitments ExtElem)
+def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (circuit: Circuit) (header: Header.Header Elem) (trace_commitments: TraceCommitments.TraceCommitments Elem): M (CheckCommitments ExtElem)
   := do let poly_mix: ExtElem <- Field.random
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain (Circuit.check_size Elem ExtElem) Constants.QUERIES
         let z: ExtElem <- Field.random
-        let circuit <- MonadCircuit.getCircuit
         let num_taps := TapSet.tapSize circuit.taps
         let coeff_u <- MonadReadIop.readFields ExtElem (num_taps + Circuit.check_size Elem ExtElem)
         let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments.mix]
@@ -81,9 +81,8 @@ structure Combos (ExtElem: Type) where
   tap_cache: TapCache ExtElem
   combo_u: Array ExtElem
 
-def compute_combos (Elem ExtElem: Type) [MonadVerify M] [Algebraic Elem ExtElem] (self: CheckCommitments.CheckCommitments ExtElem): M (Combos ExtElem)
-  := do let circuit <- MonadCircuit.getCircuit
-        let mix: ExtElem <- Field.random
+def compute_combos (Elem ExtElem: Type) [Monad M] [MonadRng M] [Algebraic Elem ExtElem] (circuit: Circuit) (self: CheckCommitments.CheckCommitments ExtElem): M (Combos ExtElem)
+  := do let mix: ExtElem <- Field.random
         let tap_cache := Circuit.tap_cache Elem ExtElem circuit mix
         let mut combo_u: Array ExtElem := Array.mkArray (circuit.taps.tot_combo_backs.toNat + 1) Ring.zero
         let mut cur_pos := 0

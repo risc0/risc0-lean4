@@ -5,19 +5,22 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 import R0sy
 import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
+import Zkvm.MethodId
 import Zkvm.Seal.Header
-import Zkvm.Verify.Classes
+import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
-import Zkvm.Verify.Monad
+import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.TraceCommitments
 
 open R0sy.Algebra
 open Zkvm.ArithVM.Circuit
 open Zkvm.ArithVM.Taps
-open Zkvm.Verify.Classes
+open Zkvm.MethodId
+open Zkvm.Verify.Error
 open Zkvm.Verify.Merkle
-open Zkvm.Verify.Monad
+open Zkvm.Verify.ReadIop
+
 
 structure TraceCommitments (Elem: Type) where
   code_merkle: MerkleTreeVerifier
@@ -25,9 +28,8 @@ structure TraceCommitments (Elem: Type) where
   accum_merkle: MerkleTreeVerifier
   mix: Array Elem
 
-def check_code_root [MonadVerify M] [RootsOfUnity Elem] (header: Header.Header Elem) (code_merkle: MerkleTreeVerifier): M Unit
-  := do let method_id <- MonadMethodId.getMethodId
-        let which := header.po2 - Constants.MIN_CYCLES_PO2
+def check_code_root [Monad M] [MonadExceptOf VerificationError M] [RootsOfUnity Elem] (method_id: MethodId) (header: Header.Header Elem) (code_merkle: MerkleTreeVerifier): M Unit
+  := do let which := header.po2 - Constants.MIN_CYCLES_PO2
         if which >= method_id.table.size then throw (VerificationError.MethodCycleError header.po2)
         if method_id.table[which]! != MerkleTreeVerifier.root code_merkle then throw VerificationError.MethodVerificationError
         pure ()
@@ -39,10 +41,9 @@ def compute_mix [Monad M] [MonadReadIop M] [Field Elem] (circuit: Circuit): M (A
           mix := mix.push x
         pure mix
 
-def read_and_commit [MonadVerify M] [Field Elem] [RootsOfUnity Elem] (header: Header.Header Elem): M (TraceCommitments Elem)
-  := do let circuit <- MonadCircuit.getCircuit
-        let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
-        check_code_root header code_merkle
+def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Field Elem] [RootsOfUnity Elem] (circuit: Circuit) (method_id: MethodId) (header: Header.Header Elem): M (TraceCommitments Elem)
+  := do let code_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Code) Constants.QUERIES
+        check_code_root method_id header code_merkle
         let data_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Data) Constants.QUERIES
         let mix <- compute_mix circuit
         let accum_merkle <- MerkleTreeVerifier.read_and_commit header.domain (TapSet.groupSize circuit.taps RegisterGroup.Accum) Constants.QUERIES

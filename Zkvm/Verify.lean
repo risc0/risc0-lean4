@@ -10,18 +10,19 @@ import Zkvm.Seal.CheckCommitments
 import Zkvm.Seal.Fri
 import Zkvm.Seal.Header
 import Zkvm.Seal.TraceCommitments
-import Zkvm.Verify.Classes
-import Zkvm.Verify.Monad
+import Zkvm.Verify.Error
+import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify
 
 open R0sy.Algebra
 open R0sy.Algebra.Poly
 open R0sy.Lean.Nat
-open ArithVM.Circuit
-open Classes
-open MethodId
-open Seal
+open Zkvm.ArithVM.Circuit
+open Zkvm.MethodId
+open Zkvm.Seal
+open Zkvm.Verify.Error
+open Zkvm.Verify.ReadIop
 
 
 def eval_taps [Algebraic Elem ExtElem] (circuit: Circuit) (check_commitments: CheckCommitments.CheckCommitments ExtElem) (combo_commitments: CheckCommitments.Combos ExtElem) (rows: Array (Array Elem)) (check_row: Array Elem) (back_one: Elem) (x: ExtElem): ExtElem
@@ -54,18 +55,17 @@ def eval_taps [Algebraic Elem ExtElem] (circuit: Circuit) (check_commitments: Ch
         pure ret
 
 
-def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [Algebraic Elem ExtElem]: M Unit
-  := do let circuit <- MonadCircuit.getCircuit
-        -- Read the header and verify the journal
+def verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] (circuit: Circuit) (method_id: MethodId) (journal: Array UInt32) {M: Type -> Type} [Monad M] [MonadExceptOf VerificationError M] [MonadReadIop M]: M Unit
+  := do -- Read the header and verify the journal
         let header <- Header.read circuit
         Header.verify_journal header journal
         -- Enforce constraints on cycle count
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
         -- Read the commitments
-        let trace_commitments <- TraceCommitments.read_and_commit header
-        let check_commitments <- CheckCommitments.read_and_commit header trace_commitments
+        let trace_commitments <- TraceCommitments.read_and_commit circuit method_id header
+        let check_commitments <- CheckCommitments.read_and_commit circuit header trace_commitments
         -- FRI verify
-        let combo_commitments <- CheckCommitments.compute_combos Elem ExtElem check_commitments
+        let combo_commitments <- CheckCommitments.compute_combos Elem ExtElem circuit check_commitments
         let fri_verify_params <- Fri.read_and_commit Elem ExtElem header.size
         let gen: Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (header.domain)]!
         Fri.verify fri_verify_params (fun idx
@@ -87,8 +87,5 @@ def verify (Elem ExtElem: Type) (journal: Array UInt32) [Monad.MonadVerify M] [A
         )
         -- Ensure proof buffer is empty
         MonadReadIop.verifyComplete
-
-def run_verify (Elem ExtElem: Type) [Algebraic Elem ExtElem] (circuit: Circuit) (method_id: MethodId) (journal seal: Array UInt32): Except VerificationError Unit
-  := Monad.VerifyContext.run Elem ExtElem circuit method_id seal (verify Elem ExtElem journal)
 
 end Zkvm.Verify

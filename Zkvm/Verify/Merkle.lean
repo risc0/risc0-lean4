@@ -3,14 +3,17 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import Zkvm.Verify.Classes
+import Zkvm.Verify.Error
+import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify.Merkle
 
 open R0sy.Hash
 open R0sy.Hash.Sha2
 open R0sy.Lean.Nat
-open Classes
+open Zkvm.Verify.Error
+open Zkvm.Verify.ReadIop
+
 
 structure MerkleTreeParams where
   row_size: Nat
