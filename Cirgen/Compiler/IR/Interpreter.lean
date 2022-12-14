@@ -33,12 +33,12 @@ partial def size_t_one:size_t := sorry
 
 def MLIR_Value := Unit
 
-[inst MLIR_Value_dec: DecidableEq MLIR_Value]
+variable [MLIR_Value_dec: DecidableEq MLIR_Value]
 
 def Polynomial := Array UInt64 /-size = 4 not modeled. Alternative: use uint64 quadruple -/
 /- def PolynomialRef := Polynomial;Rust: Ref to an array of unit64, so unify with Polynomial-/
 
-variable (mkNewPoly: Z -> Z -> Polynomial) /-eg newPoly (1,size) -/
+variable (mkNewPoly: size_t -> size_t -> Polynomial) /-eg newPoly (1,size) -/
 
 /- Can/should we unify this with Types.Buffer? -/
 def InterpreterBuffer := Array Polynomial /- Rust: Vector of unspecified size-/
@@ -54,43 +54,38 @@ def dummyHandler:ExternHandler := sorry
  /- needed in lieu of nullptr in constructor of interpreter
   TODO: see whether we can eliminate this-/
 
-#check Map MLIR_Value InterpreterBuffer
-
-def bufsType [MLIR_Value_dec: DecidableEq MLIR_Value]:Type:= Map MLIR_Value InterpreterBuffer MLIR_Value_dec
-
 structure InterpreterRep where
   cycle: size_t/- := size_t_zero-/
   handler: ExternHandler /- := dummyHandler-/
-  vals: Map MLIR_Value Polynomial MLIR_Value_dec /- MLIR_Value_dec := emptyMap-/
-  bufs: Map MLIR_Value  MLIR_Value_dec InterpreterBuffer /-MLIR_Value_dec := emptyMap-/
-#check InterpreterRep
+  vals: Map MLIR_Value Polynomial /- MLIR_Value_dec := emptyMap-/
+  bufs: Map MLIR_Value InterpreterBuffer /-MLIR_Value_dec := emptyMap-/
 
-def setCycle [DecidableEq MLIR_Value] (I:InterpreterRep MLIR_Value Polynomial) (c:size_t)
-    :InterpreterRep MLIR_Value Polynomial := 
+def setCycle [DecidableEq MLIR_Value] (I:InterpreterRep /-MLIR_Value Polynomial-/) (c:size_t)
+    :InterpreterRep /-MLIR_Value Polynomial-/ := 
    /- { I with cycle := c }-/
    InterpreterRep.mk c I.handler I.vals I.bufs
 
-def getCycle (I:InterpreterRep MLIR_Value MLIR_Value_dec): size_t := I.cycle
+def getCycle (I:InterpreterRep /-MLIR_Value MLIR_Value_dec-/): size_t := I.cycle
 
-def setExternHandler (I:InterpreterRep MLIR_Value MLIR_Value_dec) (h:ExternHandler):InterpreterRep MLIR_Value MLIR_Value_dec := 
+def setExternHandler (I:InterpreterRep) (h:ExternHandler):InterpreterRep := 
    { I with handler := h }
 
-def getExternHandler (I:InterpreterRep MLIR_Value MLIR_Value_dec ): ExternHandler := I.handler
+def getExternHandler (I:InterpreterRep ): ExternHandler := I.handler
 
-def setVal (I:InterpreterRep MLIR_Value MLIR_Value_dec) (v:MLIR_Value)(poly:Polynomial):InterpreterRep MLIR_Value MLIR_Value_dec := 
+def setVal (I:InterpreterRep) (v:MLIR_Value)(poly:Polynomial):InterpreterRep := 
    { I with vals := upd _ _ I.vals v poly } /-Rus refers to poly.begin() and poly.end() which I ssustes yields the array describing the coeffs-/
 
-def getVal (I:InterpreterRep MLIR_Value MLIR_Value_dec) (v: MLIR_Value):Option Polynomial := I.vals v
+def getVal (I:InterpreterRep) (v: MLIR_Value):Option Polynomial := I.vals v
 
-def setBuf (I:InterpreterRep MLIR_Value MLIR_Value_dec) (InterpreterInterpreterBuffer: MLIR_Value)(v:InterpreterBuffer):InterpreterRep MLIR_Value MLIR_Value_dec := 
-   { I with bufs := upd _ _ I.bufs InterpreterBuffer v }
+def setBuf (I:InterpreterRep) (B: MLIR_Value)(v:InterpreterBuffer):InterpreterRep  := 
+   { I with bufs := upd _ _ I.bufs B v }
 
-/- maye use monad?-/
-def makeBuf (I:InterpreterRep MLIR_Value MLIR_Value_dec) (InterpreterBuffer: MLIR_Value MLIR_Value_dec)
-           (size:size_t)(kind:InterpreterBufferKind): (InterpreterRep MLIR_Value MLIR_Value_dec) * InterpreterBuffer :=
-           let newPoly := mkNewPoly(1, size) 
-           ({ I with bufs := upd _ _ I.bufs InterpreterBuffer newPoly }, b)
+/- maye use monad?
+def makeBuf (I:InterpreterRep) (B: MLIR_Value)
+           (size:size_t)(kind:BufferKind): (InterpreterRep) * InterpreterBuffer :=
+           let newPoly := mkNewPoly size_t_one size
+           ({ I with bufs := upd _ _ I.bufs B newPoly }, b)
 
-def getBuf (I:InterpreterRep MLIR_Value MLIR_Value_dec)(InterpreterBuffer: MLIR_Value MLIR_Value_dec): MLIR_Value := I.bufs InterpreterBuffer
+def getBuf (I:InterpreterRep)(B: MLIR_Value): Option MLIR_Value := I.bufs B-/
 
 end interpreter
