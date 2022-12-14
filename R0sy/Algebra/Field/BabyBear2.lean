@@ -270,7 +270,7 @@ instance ExtElem.Field : Field ExtElem where
 
 /- The extension is an algebra over the base -/
 @[always_inline]
-instance ElemExt.Elem.Algebra : Algebra Elem ExtElem where
+instance ExtElem.Elem.Algebra : Algebra Elem ExtElem where
   ofBase c := prim_ext_of_base c
   ofBasis i x
     := match i with
@@ -287,7 +287,7 @@ instance ExtElem.RootsOfUnity : RootsOfUnity ExtElem where
   ROU_REV := Array.map Algebra.ofBase Elem.RootsOfUnity.ROU_REV
 
 @[always_inline]
-instance ElemExt.Elem.ExtField : ExtField Elem ExtElem where
+instance ExtElem.Elem.ExtField : ExtField Elem ExtElem where
   EXT_DEG := 4
   ofSubelems x := ExtElem.new x[0]! x[1]! x[2]! x[3]!
 

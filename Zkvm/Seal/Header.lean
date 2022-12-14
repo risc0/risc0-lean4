@@ -27,8 +27,8 @@ structure Header (Elem: Type) where
   deserialized_output: Array UInt32
 
 
-def read [Monad M] [MonadReadIop M] [PrimeField Elem] [RootsOfUnity Elem] (circuit: Circuit): M (Header Elem)
-  := do let output <- MonadReadIop.readFields Elem circuit.output_size
+def read [Monad M] [MonadReadIop M] (circuit: Circuit): M (Header circuit.field.Elem)
+  := do let output <- MonadReadIop.readFields circuit.field.Elem circuit.output_size
         let mut deserialized_output := Array.mkEmpty (output.size / 2)
         for i in [0:output.size / 2] do
           let hi := PrimeField.toNat output[2 * i + 1]!

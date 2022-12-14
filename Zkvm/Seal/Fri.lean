@@ -67,11 +67,10 @@ structure FriRoundVerifier (ExtElem: Type) where
   mix: ExtElem
 
 namespace FriRoundVerifier
-  def read_and_commit (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Field ExtElem] [ExtField Elem ExtElem]
-    (in_domain: Nat) : M (FriRoundVerifier ExtElem)
+  def read_and_commit [Monad M] [MonadReadIop M] (circuit: Circuit) (in_domain: Nat) : M (FriRoundVerifier circuit.field.ExtElem)
     := do let domain := in_domain / FRI_FOLD
-          let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG Elem ExtElem) QUERIES
-          let mix : ExtElem <- Field.random
+          let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem) QUERIES
+          let mix : circuit.field.ExtElem <- Field.random
           pure {
             domain,
             merkle,
@@ -106,7 +105,7 @@ structure FriVerifier (Elem ExtElem: Type) where
   final_coeffs: Array Elem
   poly: Poly ExtElem
 
-def read_and_commit (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (in_degree : Nat): M (FriVerifier Elem ExtElem)
+def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] (circuit: Circuit) (in_degree : Nat): M (FriVerifier circuit.field.Elem circuit.field.ExtElem)
   := do let mut degree := in_degree
         let orig_domain := INV_RATE * in_degree
         let mut domain := orig_domain
@@ -114,13 +113,13 @@ def read_and_commit (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExcept
         let rounds_capacity := ((Nat.log2_ceil ((in_degree + FRI_FOLD - 1) / FRI_FOLD)) + FRI_FOLD_PO2 - 1) / FRI_FOLD_PO2 -- this is just for performance in the rust
         let mut rounds := Array.mkEmpty rounds_capacity
         while degree > FRI_MIN_DEGREE do
-          let round <- FriRoundVerifier.read_and_commit Elem ExtElem domain
+          let round <- FriRoundVerifier.read_and_commit circuit domain
           rounds := rounds.push round
           domain := domain / FRI_FOLD
           degree := degree / FRI_FOLD
-        let final_coeffs : Array Elem <- MonadReadIop.readFields Elem (ExtField.EXT_DEG Elem ExtElem * degree)
-        let collate_final_coeffs : Array (Array Elem) := collate final_coeffs degree (ExtField.EXT_DEG Elem ExtElem)
-        let poly: Poly ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
+        let final_coeffs <- MonadReadIop.readFields circuit.field.Elem (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem * degree)
+        let collate_final_coeffs := collate final_coeffs degree (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem)
+        let poly: Poly circuit.field.ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
         MonadReadIop.commit (Hash.hash_pod final_coeffs)
         pure {
           orig_domain,
