@@ -144,22 +144,22 @@ def ISA: ISA where
               RegFile.set_word .PC (pc + args.imm)
     | .JAL, args
         => do let pc <- RegFile.get_word .PC
-              let newPC := pc + args.imm - 4
+              RegFile.set_word args.rd pc
+              let newPC := pc - 4 + args.imm
               if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
-              RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .JALR, args
         => do let pc <- RegFile.get_word .PC
-              let newPC := pc + args.imm - 4
+              RegFile.set_word args.rd pc
+              let newPC := pc - 4 + args.imm
               if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
-              RegFile.set_word args.rd (pc + 4)
               RegFile.set_word .PC newPC
     | .BEQ, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x == y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BNE, args
@@ -167,7 +167,7 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x != y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLT, args
@@ -175,7 +175,7 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if UInt32.lt_signed x y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGE, args
@@ -183,7 +183,7 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if UInt32.ge_signed x y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BLTU, args
@@ -191,7 +191,7 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x < y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .BGEU, args
@@ -199,7 +199,7 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               let pc <- RegFile.get_word .PC
               if x >= y then do
-                let newPC := pc + args.imm - 4
+                let newPC := pc - 4 + args.imm
                 if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
                 RegFile.set_word .PC newPC
     | .LB, args
