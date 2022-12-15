@@ -22,20 +22,25 @@ structure FieldInfo where
   name : String /- Types.h: mlir::StringAttr-/
   type : MLIRType /--/ Types.h: MLIR type-/
   storage: StorageKind := StorageKind.Normal
-deriving DecidableEq 
+/- deriving DecidableEq -/
 
-/-- TODO: FieldInfoEq should be eliminated once the DecidableEq above succeeds-/
+/- TODO: FieldInfoEq should be eliminated once the DecidableEq above succeeds
 def FieldInfoEq (i j:FieldInfo):Bool :=
-  (i.name == j.name) ∧ (i.type==j.type) ∧ (i.storage == j.storage)
+  (i.name == j.name) ∧ (i.type==j.type) ∧ (i.storage == j.storage) 
+Update: since Types.cpp define equality function == we should probably use that one here -/
+def FieldInfoEq (i j:FieldInfo):Bool :=
+  (i.name == j.name) ∧ (i.type==j.type) 
 
-def HashCode := UInt32 /-TODO: replace with correct digest type from SHA etc-/
+def FieldInfoDecEq (a b : FieldInfo) : Decidable (Eq a b) := sorry
 
-def hash_value (i:FieldInfo): HashCode := 
-  match i.storage with | _ => UInt32.ofNatCore 0 (by decide) /-TODO: fill some definition. Match statement is used since Lean requires the argument i to be used SOMEHWERE-/
+instance : DecidableEq FieldInfo := FieldInfoDecEq
+
+def HashCode := Unit /-TODO: replace with correct digest type from SHA, ie Digest-/
+
+def hash_value (i:FieldInfo): HashCode := sorry
+/-  match i.storage with | _ => UInt32.ofNatCore 0 (by decide) TODO: fill some definition. Match statement is used since Lean requires the argument i to be used SOMEHWERE -/
 
 end Types_dot_h
-
-/-Types.cpp seems to be mostly about parsing-/
 
 /- From Enums.td, which also defines I32 representations and mnemonics for the three constructors -/
 inductive BufferKind where | Constant | Mutable | Global
@@ -51,10 +56,15 @@ inductive CirgenType where
  Maybe we need to wrap an inductive around all these types in the end to be
  able to refer to them collectively, though. Let's see.-/
 
+def MLIR_Value := Unit /-  TODO: replace with meaningful def; maybe Val (below)?  -/
+
+/-[instance] DecidableEq 
+ axiom MLIR_Value_dec: DecidableEq MLIR_Value := sorry -/
+
 /- Values come from the ExtensionField -/
 structure Val where
   fieldP: uint64 
-  fieldK: unsigned
+  fieldK: UInt32
 
 structure Constraint where
   bogus: Unit /-TODO: what should go here?-/
@@ -62,7 +72,7 @@ structure Constraint where
 /- TODO: maybe replace ValueType with type of Field?-/
 structure Buffer (ValueType:Type) where
   element: ValueType
-  size: unsigned
+  size: UInt32
   kind: BufferKind
 
 structure StructType where
@@ -75,7 +85,7 @@ structure UnionType where
 
 structure ArrayType where
   element: MLIRType
-  size: unsigned /-TODO: Maybe use UInt32 here, or just Z?-/
+  size: UInt32
 
 inductive ContainerType where
 | inl: StructType -> ContainerType
@@ -88,6 +98,11 @@ inductive MemberType where
 | isStruct: StructType -> MemberType
 | isUnion: UnionType -> MemberType
 | isArray: ArrayType -> MemberType
-| isRef: RefType -> MemberType
+| isRef: RefType -> MemberType /- TODO Is RefType the same as Ref? -/
+
+def Digest:= Unit /- TODO: fill in from elsewhere as Types.td does not have more detailed info; presumably
+    we should use Sha2.Digest from R0Sy.Hash.Sha2 at least for now? -/
+
+def IOP:= Unit /- TODO: fill in from elsewhere as Types.td does not have more detailed info -/
 
 end Types_dot_td
