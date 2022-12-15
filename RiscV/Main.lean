@@ -29,17 +29,16 @@ def fib: RiscV.Monad.Machine
   }
 
 def main : IO Unit
-  := do let result <- RiscV.Monad.MonadMachine.run fib do
+  := do let (result, machine) <- RiscV.Monad.MonadMachine.run fib do
           for _ in [0:50] do
             let machine <- get
             let pc <- RiscV.Mach.Reg.RegFile.get_word .PC
             let instr <- tryCatch (RiscV.Mach.Mem.Mem.get_word { val := pc }) (fun _ => pure 0)
             monadLift <| IO.println s!"Register File: {machine.reg_file}"
             monadLift <| IO.println s!"Next:  pc:{pc}  instr:{RiscV.RV32IM.ISA.decode_to_string instr}"
-            RiscV.RV32IM.ISA.step
             monadLift <| IO.println s!""
+            RiscV.RV32IM.ISA.step
         match result with
-          | Except.ok (_, machine)
-              => do IO.println "done!"
-                    IO.println s!"Final register file: {machine.reg_file}"
-          | Except.error exception => IO.println s!"{exception}"
+          | Except.ok _ => IO.println "Ended normally"
+          | Except.error exception => IO.println s!"Ended with exception: {exception}"
+        IO.println s!"Final register file: {machine.reg_file}"

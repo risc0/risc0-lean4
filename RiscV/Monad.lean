@@ -58,14 +58,14 @@ class MonadMachine (M: Type -> Type)
 namespace MonadMachine
   instance CanonicalInstance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Machine M] : MonadMachine M where
 
-  instance LiftInstance [Monad M] : MonadLift M (StateT Machine (ExceptT RiscVException M)) where
-    monadLift f := StateT.lift (ExceptT.lift f)
+  instance LiftInstance [Monad M] : MonadLift M (ExceptT RiscVException (StateT Machine M)) where
+    monadLift f := ExceptT.lift (StateT.lift f)
 
-  def run [Monad M] (machine: Machine) (f: {M': Type -> Type} -> [MonadMachine M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException (X × Machine))
-    := ExceptT.run (StateT.run f machine)
+  def run [Monad M] (machine: Machine) (f: {M': Type -> Type} -> [MonadMachine M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X × Machine)
+    := StateT.run (ExceptT.run f) machine
 
   def run' [Monad M] (machine: Machine) (f: {M': Type -> Type} -> [MonadMachine M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X)
-    := ExceptT.run (StateT.run' f machine)
+    := StateT.run' (ExceptT.run f) machine
 end MonadMachine
 
 
