@@ -4,12 +4,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import RiscV.Instr.InstrRV32I
 import RiscV.Instr.InstrRV32M
+import RiscV.Instr.Sets
 import RiscV.Instr.Types
 
 namespace RiscV.Instr.RV32IM
 
 open InstrRV32I
 open InstrRV32M
+open Sets
 open Types
 
 inductive RV32IM where

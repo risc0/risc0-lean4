@@ -3,21 +3,23 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Instr.Sets
 import RiscV.Instr.Types
-import RiscV.Int
-import RiscV.Mem
+import RiscV.Mach.Int
+import RiscV.Mach.Mem
+import RiscV.Mach.Reg
 import RiscV.Monad
-import RiscV.Reg
 
 namespace RiscV.Instr.InstrRV32I
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
-open Int
-open Mem
-open Monad
-open Reg
-open Types
+open RiscV.Instr.Sets
+open RiscV.Instr.Types
+open RiscV.Mach.Int
+open RiscV.Mach.Mem
+open RiscV.Mach.Reg
+open RiscV.Monad
 
 /-
 Volume I: RISC-V Unprivileged ISA V20191213

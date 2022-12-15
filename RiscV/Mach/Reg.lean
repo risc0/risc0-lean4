@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace RiscV.Reg
+namespace RiscV.Mach.Reg
 
 def X_REGISTER_COUNT: Nat := 32
 
@@ -58,4 +58,4 @@ def RegFile.set_word [Monad M] [MonadStateOf RegFile M] (reg: Reg) (val: UInt32)
         }
 
 
-end RiscV.Reg
+end RiscV.Mach.Reg

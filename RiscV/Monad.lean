@@ -2,15 +2,15 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import RiscV.Exception
-import RiscV.Mem
-import RiscV.Reg
+import RiscV.Mach.Exception
+import RiscV.Mach.Mem
+import RiscV.Mach.Reg
 
 namespace RiscV.Monad
 
-open Exception
-open Mem
-open Reg
+open RiscV.Mach.Exception
+open RiscV.Mach.Mem
+open RiscV.Mach.Reg
 
 structure Machine where
   mem: Mem

@@ -19,7 +19,7 @@ def fib: Array UInt32 := #[
 
 def main : IO Unit
   := do let mut machine: RiscV.Monad.Machine := {
-          reg_file := RiscV.Reg.RegFile.new
+          reg_file := RiscV.Mach.Reg.RegFile.new
           mem := {
             blocks := #[
               {
@@ -29,12 +29,12 @@ def main : IO Unit
             ]
           }
         }
-        let step {M: Type -> Type} [RiscV.Monad.MonadMachine M]: M Unit := RiscV.Instr.Types.InstructionSet.step RiscV.Instr.RV32IM.RV32IM
-        let decode_to_string := RiscV.Instr.Types.InstructionSet.decode_to_string RiscV.Instr.RV32IM.RV32IM
+        let step {M: Type -> Type} [RiscV.Monad.MonadMachine M]: M Unit := RiscV.Instr.Sets.InstructionSet.step RiscV.Instr.RV32IM.RV32IM
+        let decode_to_string := RiscV.Instr.Sets.InstructionSet.decode_to_string RiscV.Instr.RV32IM.RV32IM
         for _ in [0:50] do
           let result <- RiscV.Monad.MonadMachine.run' machine do
-            let pc <- RiscV.Reg.RegFile.get_word .PC
-            let instr <- tryCatch (RiscV.Mem.Mem.get_word { val := pc }) (fun _ => pure 0)
+            let pc <- RiscV.Mach.Reg.RegFile.get_word .PC
+            let instr <- tryCatch (RiscV.Mach.Mem.Mem.get_word { val := pc }) (fun _ => pure 0)
             pure (pc, decode_to_string instr)
           match result with
             | Except.ok (pc, some instr)

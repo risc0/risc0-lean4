@@ -2,7 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-namespace RiscV.Exception
+namespace RiscV.Mach.Exception
 
 inductive RiscVException where
   | PtrOutOfBounds (addr: UInt32)
@@ -15,4 +15,4 @@ instance : ToString RiscVException where
   | .InstructionAddressMisaligned addr => s!"InstructionAddressMisaligned addr:{addr}"
   | .InvalidInstruction addr instr => s!"InvalidInstruction addr:{addr} instr:{instr}"
 
-end RiscV.Exception
+end RiscV.Mach.Exception
