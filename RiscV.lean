@@ -2,12 +2,12 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import RiscV.Exception
-import RiscV.Instr.InstrRV32I
-import RiscV.Instr.InstrRV32M
-import RiscV.Instr.RV32IM
+import RiscV.Instr.RV32I
+import RiscV.Instr.RV32M
 import RiscV.Instr.Types
-import RiscV.Int
-import RiscV.Mem
+import RiscV.Mach.Exception
+import RiscV.Mach.Int
+import RiscV.Mach.Mem
+import RiscV.Mach.Reg
 import RiscV.Monad
-import RiscV.Reg
+import RiscV.RV32IM

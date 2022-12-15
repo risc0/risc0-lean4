@@ -2,11 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import RiscV.Exception
+import RiscV.Mach.Exception
 
-namespace RiscV.Mem
+namespace RiscV.Mach.Mem
 
-open Exception
+open RiscV.Mach.Exception
 
 structure Ptr where
   val: UInt32
@@ -87,4 +87,4 @@ def Mem.set_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M]
         let mask: UInt32 := ~~~ (0xffff <<< byte_offset)
         Mem.set_word base ((word &&& mask) ||| val')
 
-end RiscV.Mem
+end RiscV.Mach.Mem

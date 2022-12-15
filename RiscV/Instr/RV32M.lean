@@ -4,17 +4,17 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy
 import RiscV.Instr.Types
-import RiscV.Int
+import RiscV.Mach.Int
+import RiscV.Mach.Reg
 import RiscV.Monad
-import RiscV.Reg
 
-namespace RiscV.Instr.InstrRV32M
+namespace RiscV.Instr.RV32M
 
 open R0sy.Lean.UInt64
-open Int
-open Monad
-open Reg
-open Types
+open RiscV.Instr.Types
+open RiscV.Mach.Int
+open RiscV.Mach.Reg
+open RiscV.Monad
 
 /-
 Volume I: RISC-V Unprivileged ISA V20191213
@@ -32,27 +32,26 @@ funct7    rs2   rs1   funct3  rd    opcode    R-type
 0000001   rs2   rs1   111     rd    0110011   REMU
 -/
 
-inductive RV32M where
+inductive Instr where
   | MUL | MULH | MULHSU | MULHU | DIV | DIVU | REM | REMU
 
-instance : ToString RV32M where
-  toString
-    | .MUL => "MUL" | .MULH => "MULH" | .MULHSU => "MULHSU" | .MULHU => "MULHU" | .DIV => "DIV" | .DIVU => "DIVU" | .REM => "REM" | .REMU => "REMU"
-
-instance : InstructionSet RV32M where
+def ISA: ISA where
+  Mnemonic := Instr
   all := #[
     .MUL, .MULH, .MULHSU, .MULHU, .DIV, .DIVU, .REM, .REMU
   ]
-  encode_mnemonic (m: RV32M)
+  toString
+    | .MUL => "MUL" | .MULH => "MULH" | .MULHSU => "MULHSU" | .MULHU => "MULHU" | .DIV => "DIV" | .DIVU => "DIVU" | .REM => "REM" | .REMU => "REMU"
+  encode_mnemonic (m: Instr)
     := match m with
-        | .MUL =>    { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b000   0b0110011 }
-        | .MULH =>   { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b001   0b0110011 }
-        | .MULHSU => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b010   0b0110011 }
-        | .MULHU =>  { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b011   0b0110011 }
-        | .DIV =>    { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b100   0b0110011 }
-        | .DIVU =>   { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b101   0b0110011 }
-        | .REM =>    { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b110   0b0110011 }
-        | .REMU =>   { type := .R,  mnemonic := R.EncMnemonic.new   0b0000001   0b111   0b0110011 }
+        | .MUL =>    .R <|  R.EncMnemonic.new   0b0000001   0b000   0b0110011
+        | .MULH =>   .R <|  R.EncMnemonic.new   0b0000001   0b001   0b0110011
+        | .MULHSU => .R <|  R.EncMnemonic.new   0b0000001   0b010   0b0110011
+        | .MULHU =>  .R <|  R.EncMnemonic.new   0b0000001   0b011   0b0110011
+        | .DIV =>    .R <|  R.EncMnemonic.new   0b0000001   0b100   0b0110011
+        | .DIVU =>   .R <|  R.EncMnemonic.new   0b0000001   0b101   0b0110011
+        | .REM =>    .R <|  R.EncMnemonic.new   0b0000001   0b110   0b0110011
+        | .REMU =>   .R <|  R.EncMnemonic.new   0b0000001   0b111   0b0110011
   run
     | .MUL, args
         => do let x <- RegFile.get_word args.rs1
@@ -110,4 +109,4 @@ instance : InstructionSet RV32M where
                 else x % y
               RegFile.set_word args.rd r
 
-end RiscV.Instr.InstrRV32M
+end RiscV.Instr.RV32M

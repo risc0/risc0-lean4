@@ -4,7 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import R0sy
 
-namespace RiscV.Int
+namespace RiscV.Mach.Int
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
@@ -55,4 +55,4 @@ def UInt32.shr_signed (x y: UInt32): UInt32
       let hi := if UInt32.is_neg x then ((1 <<< y) - 1) <<< (32 - y) else 0
       pure (hi ||| lo)
 
-end RiscV.Int
+end RiscV.Mach.Int
