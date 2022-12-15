@@ -29,19 +29,17 @@ def main : IO Unit
             ]
           }
         }
-        let step {M: Type -> Type} [RiscV.Monad.MonadMachine M]: M Unit := RiscV.Instr.Sets.InstructionSet.step RiscV.Instr.RV32IM.RV32IM
-        let decode_to_string := RiscV.Instr.Sets.InstructionSet.decode_to_string RiscV.Instr.RV32IM.RV32IM
         for _ in [0:50] do
           let result <- RiscV.Monad.MonadMachine.run' machine do
             let pc <- RiscV.Mach.Reg.RegFile.get_word .PC
             let instr <- tryCatch (RiscV.Mach.Mem.Mem.get_word { val := pc }) (fun _ => pure 0)
-            pure (pc, decode_to_string instr)
+            pure (pc, RiscV.RV32IM.ISA.decode_to_string instr)
           match result with
             | Except.ok (pc, some instr)
                 => do IO.println s!"Register File: {machine.reg_file}"
                       IO.println s!"Next:  pc:{pc}  instr:{instr}"
             | _ => pure ()
-          let result <- RiscV.Monad.MonadMachine.run machine step
+          let result <- RiscV.Monad.MonadMachine.run machine RiscV.RV32IM.ISA.step
           match result with
             | Except.ok ((), machine')
                 => do machine := machine'

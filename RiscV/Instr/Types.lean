@@ -3,17 +3,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import RiscV.Mach.Mem
 import RiscV.Mach.Reg
-import RiscV.Monad
 
 namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
-open RiscV.Mach.Mem
 open RiscV.Mach.Reg
-open RiscV.Monad
 
 
 namespace Masks
@@ -414,104 +410,84 @@ namespace Const
 end Const
 
 
-inductive EncType where
-  | R
-  | I
-  | S
-  | B
-  | U
-  | J
-  | Const
+inductive EncMnemonic where
+  | R (enc: R.EncMnemonic)
+  | I (enc: I.EncMnemonic)
+  | S (enc: S.EncMnemonic)
+  | B (enc: B.EncMnemonic)
+  | U (enc: U.EncMnemonic)
+  | J (enc: J.EncMnemonic)
+  | Const (enc: Const.EncMnemonic)
 
-namespace EncType
-  def EncMnemonic (t: EncType): Type
+namespace EncMnemonic
+  def mask_mnemonic (t: EncMnemonic): UInt32
     := match t with
-        | R => R.EncMnemonic
-        | I => I.EncMnemonic
-        | S => S.EncMnemonic
-        | B => B.EncMnemonic
-        | U => U.EncMnemonic
-        | J => J.EncMnemonic
-        | Const => Const.EncMnemonic
+        | .R _ => R.EncMnemonic.mask
+        | .I _ => I.EncMnemonic.mask
+        | .S _ => S.EncMnemonic.mask
+        | .B _ => B.EncMnemonic.mask
+        | .U _ => U.EncMnemonic.mask
+        | .J _ => J.EncMnemonic.mask
+        | .Const _ => Const.EncMnemonic.mask
 
-  def EncMnemonic.mask (t: EncType): UInt32
+  def serialize_mnemonic (t: EncMnemonic): UInt32
     := match t with
-        | R => R.EncMnemonic.mask
-        | I => I.EncMnemonic.mask
-        | S => S.EncMnemonic.mask
-        | B => B.EncMnemonic.mask
-        | U => U.EncMnemonic.mask
-        | J => J.EncMnemonic.mask
-        | Const => Const.EncMnemonic.mask
+        | .R code => R.EncMnemonic.serialize code
+        | .I code => I.EncMnemonic.serialize code
+        | .S code => S.EncMnemonic.serialize code
+        | .B code => B.EncMnemonic.serialize code
+        | .U code => U.EncMnemonic.serialize code
+        | .J code => J.EncMnemonic.serialize code
+        | .Const code => Const.EncMnemonic.serialize code
 
-  def EncMnemonic.deserialize {t: EncType} (x: UInt32): EncType.EncMnemonic t
+  def EncArgs (t: EncMnemonic): Type
     := match t with
-        | R => R.EncMnemonic.deserialize x
-        | I => I.EncMnemonic.deserialize x
-        | S => S.EncMnemonic.deserialize x
-        | B => B.EncMnemonic.deserialize x
-        | U => U.EncMnemonic.deserialize x
-        | J => J.EncMnemonic.deserialize x
-        | Const => Const.EncMnemonic.deserialize x
+        | .R _ => R.EncArgs
+        | .I _ => I.EncArgs
+        | .S _ => S.EncArgs
+        | .B _ => B.EncArgs
+        | .U _ => U.EncArgs
+        | .J _ => J.EncArgs
+        | .Const _ => Unit
 
-  def EncMnemonic.serialize {t: EncType} (code: EncType.EncMnemonic t): UInt32
+  def deserialize_args: (t: EncMnemonic) -> UInt32 -> EncMnemonic.EncArgs t
+    | .R _, x => R.EncArgs.deserialize x
+    | .I _, x => I.EncArgs.deserialize x
+    | .S _, x => S.EncArgs.deserialize x
+    | .B _, x => B.EncArgs.deserialize x
+    | .U _, x => U.EncArgs.deserialize x
+    | .J _, x => J.EncArgs.deserialize x
+    | .Const _, _ => ()
+
+  def Args (t: EncMnemonic): Type
     := match t with
-        | R => R.EncMnemonic.serialize code
-        | I => I.EncMnemonic.serialize code
-        | S => S.EncMnemonic.serialize code
-        | B => B.EncMnemonic.serialize code
-        | U => U.EncMnemonic.serialize code
-        | J => J.EncMnemonic.serialize code
-        | Const => Const.EncMnemonic.serialize code
-
-  def EncArgs (t: EncType): Type
-    := match t with
-        | R => R.EncArgs
-        | I => I.EncArgs
-        | S => S.EncArgs
-        | B => B.EncArgs
-        | U => U.EncArgs
-        | J => J.EncArgs
-        | Const => Unit
-
-  def EncArgs.deserialize: {t: EncType} -> UInt32 -> EncType.EncArgs t
-    | R, x => R.EncArgs.deserialize x
-    | I, x => I.EncArgs.deserialize x
-    | S, x => S.EncArgs.deserialize x
-    | B, x => B.EncArgs.deserialize x
-    | U, x => U.EncArgs.deserialize x
-    | J, x => J.EncArgs.deserialize x
-    | Const, _ => ()
-
-  def Args (t: EncType): Type
-    := match t with
-        | R => R.Args
-        | I => I.Args
-        | S => S.Args
-        | B => B.Args
-        | U => U.Args
-        | J => J.Args
-        | Const => Unit
+        | .R _ => R.Args
+        | .I _ => I.Args
+        | .S _ => S.Args
+        | .B _ => B.Args
+        | .U _ => U.Args
+        | .J _ => J.Args
+        | .Const _ => Unit
 
   instance Args.ToString : ToString (Args t) where
     toString
       := match t with
-          | R => fun (x: R.Args) => ToString.toString x
-          | I => fun (x: I.Args) => ToString.toString x
-          | S => fun (x: S.Args) => ToString.toString x
-          | B => fun (x: B.Args) => ToString.toString x
-          | U => fun (x: U.Args) => ToString.toString x
-          | J => fun (x: J.Args) => ToString.toString x
-          | Const => fun _ => ""
+          | .R _ => fun (x: R.Args) => ToString.toString x
+          | .I _ => fun (x: I.Args) => ToString.toString x
+          | .S _ => fun (x: S.Args) => ToString.toString x
+          | .B _ => fun (x: B.Args) => ToString.toString x
+          | .U _ => fun (x: U.Args) => ToString.toString x
+          | .J _ => fun (x: J.Args) => ToString.toString x
+          | .Const _ => fun _ => ""
 
-  def EncArgs.decode: {t: EncType} -> EncType.EncArgs t -> EncType.Args t
-    | R, x => R.EncArgs.decode x
-    | I, x => I.EncArgs.decode x
-    | S, x => S.EncArgs.decode x
-    | B, x => B.EncArgs.decode x
-    | U, x => U.EncArgs.decode x
-    | J, x => J.EncArgs.decode x
-    | Const, _ => ()
-end EncType
+  def decode_args: {t: EncMnemonic} -> EncArgs t -> Args t
+    | .R _, x => R.EncArgs.decode x
+    | .I _, x => I.EncArgs.decode x
+    | .S _, x => S.EncArgs.decode x
+    | .B _, x => B.EncArgs.decode x
+    | .U _, x => U.EncArgs.decode x
+    | .J _, x => J.EncArgs.decode x
+    | .Const _, _ => ()
+end EncMnemonic
 
 end RiscV.Instr.Types

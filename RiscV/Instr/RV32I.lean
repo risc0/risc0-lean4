@@ -3,18 +3,16 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
-import RiscV.Instr.Sets
 import RiscV.Instr.Types
 import RiscV.Mach.Int
 import RiscV.Mach.Mem
 import RiscV.Mach.Reg
 import RiscV.Monad
 
-namespace RiscV.Instr.InstrRV32I
+namespace RiscV.Instr.RV32I
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
-open RiscV.Instr.Sets
 open RiscV.Instr.Types
 open RiscV.Mach.Int
 open RiscV.Mach.Mem
@@ -74,22 +72,15 @@ fm    pred     succ   rs1   000             rd    0001111   FENCE
 000000000001    00000       000          00000    1110011   EBREAK
 -/
 
-inductive RV32I where
+inductive Instr where
   | LUI   | AUIPC | JAL   | JALR  | BEQ   | BNE   | BLT   | BGE
   | BLTU  | BGEU  | LB    | LH    | LW    | LBU   | LHU   | SB
   | SH    | SW    | ADDI  | SLTI  | SLTIU | XORI  | ORI   | ANDI
   | SLLI  | SRLI  | SRAI  | ADD   | SUB   | SLL   | SLT   | SLTU
   | XOR   | SRL   | SRA   | OR    | AND   | FENCE | ECALL | EBREAK
 
-instance : ToString RV32I where
-  toString
-    | .LUI => "LUI"   | .AUIPC => "AUIPC" | .JAL => "JAL"   | .JALR => "JALR" | .BEQ => "BEQ"     | .BNE => "BNE"     | .BLT => "BLT"     | .BGE => "BGE"
-    | .BLTU => "BLTU" | .BGEU => "BGEU"   | .LB => "LB"     | .LH => "LH"     | .LW => "LW"       | .LBU => "LBU"     | .LHU => "LHU"     | .SB => "SB"
-    | .SH => "SH"     | .SW => "SW"       | .ADDI => "ADDI" | .SLTI => "SLTI" | .SLTIU => "SLTIU" | .XORI => "XORI"   | .ORI => "ORI"     | .ANDI => "ANDI"
-    | .SLLI => "SLLI" | .SRLI => "SRLI"   | .SRAI => "SRAI" | .ADD => "ADD"   | .SUB => "SUB"     | .SLL => "SLL"     | .SLT => "SLT"     | .SLTU => "SLTU"
-    | .XOR => "XOR"   | .SRL => "SRL"     | .SRA => "SRA"   | .OR => "OR"     | .AND => "AND"     | .FENCE => "FENCE" | .ECALL => "ECALL" | .EBREAK => "EBREAK"
-
-instance : InstructionSet RV32I where
+def ISA: ISA where
+  Mnemonic := Instr
   all := #[
     .LUI,   .AUIPC, .JAL,   .JALR,  .BEQ,   .BNE,   .BLT,   .BGE,
     .BLTU,  .BGEU,  .LB,    .LH,    .LW,    .LBU,   .LHU,   .SB,
@@ -97,48 +88,54 @@ instance : InstructionSet RV32I where
     .SLLI,  .SRLI,  .SRAI,  .ADD,   .SUB,   .SLL,   .SLT,   .SLTU,
     .XOR,   .SRL,   .SRA,   .OR,    .AND,   .FENCE, .ECALL, .EBREAK
   ]
-  encode_mnemonic (m: RV32I)
+  toString
+    | .LUI => "LUI"   | .AUIPC => "AUIPC" | .JAL => "JAL"   | .JALR => "JALR" | .BEQ => "BEQ"     | .BNE => "BNE"     | .BLT => "BLT"     | .BGE => "BGE"
+    | .BLTU => "BLTU" | .BGEU => "BGEU"   | .LB => "LB"     | .LH => "LH"     | .LW => "LW"       | .LBU => "LBU"     | .LHU => "LHU"     | .SB => "SB"
+    | .SH => "SH"     | .SW => "SW"       | .ADDI => "ADDI" | .SLTI => "SLTI" | .SLTIU => "SLTIU" | .XORI => "XORI"   | .ORI => "ORI"     | .ANDI => "ANDI"
+    | .SLLI => "SLLI" | .SRLI => "SRLI"   | .SRAI => "SRAI" | .ADD => "ADD"   | .SUB => "SUB"     | .SLL => "SLL"     | .SLT => "SLT"     | .SLTU => "SLTU"
+    | .XOR => "XOR"   | .SRL => "SRL"     | .SRA => "SRA"   | .OR => "OR"     | .AND => "AND"     | .FENCE => "FENCE" | .ECALL => "ECALL" | .EBREAK => "EBREAK"
+  encode_mnemonic (m: Instr)
     := match m with
-        | .LUI    => { type := .U,  mnemonic := U.EncMnemonic.new                       0b0110111 }
-        | .AUIPC  => { type := .U,  mnemonic := U.EncMnemonic.new                       0b0010111 }
-        | .JAL    => { type := .J,  mnemonic := J.EncMnemonic.new                       0b1101111 }
-        | .JALR   => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b1100111 }
-        | .BEQ    => { type := .B,  mnemonic := B.EncMnemonic.new               0b000   0b1100011 }
-        | .BNE    => { type := .B,  mnemonic := B.EncMnemonic.new               0b001   0b1100011 }
-        | .BLT    => { type := .B,  mnemonic := B.EncMnemonic.new               0b100   0b1100011 }
-        | .BGE    => { type := .B,  mnemonic := B.EncMnemonic.new               0b101   0b1100011 }
-        | .BLTU   => { type := .B,  mnemonic := B.EncMnemonic.new               0b110   0b1100011 }
-        | .BGEU   => { type := .B,  mnemonic := B.EncMnemonic.new               0b111   0b1100011 }
-        | .LB     => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0000011 }
-        | .LH     => { type := .I,  mnemonic := I.EncMnemonic.new               0b001   0b0000011 }
-        | .LW     => { type := .I,  mnemonic := I.EncMnemonic.new               0b010   0b0000011 }
-        | .LBU    => { type := .I,  mnemonic := I.EncMnemonic.new               0b100   0b0000011 }
-        | .LHU    => { type := .I,  mnemonic := I.EncMnemonic.new               0b101   0b0000011 }
-        | .SB     => { type := .S,  mnemonic := S.EncMnemonic.new               0b000   0b0100011 }
-        | .SH     => { type := .S,  mnemonic := S.EncMnemonic.new               0b001   0b0100011 }
-        | .SW     => { type := .S,  mnemonic := S.EncMnemonic.new               0b010   0b0100011 }
-        | .ADDI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0010011 }
-        | .SLTI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b010   0b0010011 }
-        | .SLTIU  => { type := .I,  mnemonic := I.EncMnemonic.new               0b011   0b0010011 }
-        | .XORI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b100   0b0010011 }
-        | .ORI    => { type := .I,  mnemonic := I.EncMnemonic.new               0b110   0b0010011 }
-        | .ANDI   => { type := .I,  mnemonic := I.EncMnemonic.new               0b111   0b0010011 }
-        | .SLLI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b001   0b0010011 }
-        | .SRLI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b101   0b0010011 }
-        | .SRAI   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b101   0b0010011 }
-        | .ADD    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b000   0b0110011 }
-        | .SUB    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b000   0b0110011 }
-        | .SLL    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b001   0b0110011 }
-        | .SLT    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b010   0b0110011 }
-        | .SLTU   => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b011   0b0110011 }
-        | .XOR    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b100   0b0110011 }
-        | .SRL    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b101   0b0110011 }
-        | .SRA    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0100000   0b101   0b0110011 }
-        | .OR     => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b110   0b0110011 }
-        | .AND    => { type := .R,  mnemonic := R.EncMnemonic.new   0b0000000   0b111   0b0110011 }
-        | .FENCE  => { type := .I,  mnemonic := I.EncMnemonic.new               0b000   0b0001111 }
-        | .ECALL  => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011 }
-        | .EBREAK => { type := .Const,  mnemonic := Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011 }
+        | .LUI    => .U <|  U.EncMnemonic.new                       0b0110111
+        | .AUIPC  => .U <|  U.EncMnemonic.new                       0b0010111
+        | .JAL    => .J <|  J.EncMnemonic.new                       0b1101111
+        | .JALR   => .I <|  I.EncMnemonic.new               0b000   0b1100111
+        | .BEQ    => .B <|  B.EncMnemonic.new               0b000   0b1100011
+        | .BNE    => .B <|  B.EncMnemonic.new               0b001   0b1100011
+        | .BLT    => .B <|  B.EncMnemonic.new               0b100   0b1100011
+        | .BGE    => .B <|  B.EncMnemonic.new               0b101   0b1100011
+        | .BLTU   => .B <|  B.EncMnemonic.new               0b110   0b1100011
+        | .BGEU   => .B <|  B.EncMnemonic.new               0b111   0b1100011
+        | .LB     => .I <|  I.EncMnemonic.new               0b000   0b0000011
+        | .LH     => .I <|  I.EncMnemonic.new               0b001   0b0000011
+        | .LW     => .I <|  I.EncMnemonic.new               0b010   0b0000011
+        | .LBU    => .I <|  I.EncMnemonic.new               0b100   0b0000011
+        | .LHU    => .I <|  I.EncMnemonic.new               0b101   0b0000011
+        | .SB     => .S <|  S.EncMnemonic.new               0b000   0b0100011
+        | .SH     => .S <|  S.EncMnemonic.new               0b001   0b0100011
+        | .SW     => .S <|  S.EncMnemonic.new               0b010   0b0100011
+        | .ADDI   => .I <|  I.EncMnemonic.new               0b000   0b0010011
+        | .SLTI   => .I <|  I.EncMnemonic.new               0b010   0b0010011
+        | .SLTIU  => .I <|  I.EncMnemonic.new               0b011   0b0010011
+        | .XORI   => .I <|  I.EncMnemonic.new               0b100   0b0010011
+        | .ORI    => .I <|  I.EncMnemonic.new               0b110   0b0010011
+        | .ANDI   => .I <|  I.EncMnemonic.new               0b111   0b0010011
+        | .SLLI   => .R <|  R.EncMnemonic.new   0b0000000   0b001   0b0010011
+        | .SRLI   => .R <|  R.EncMnemonic.new   0b0000000   0b101   0b0010011
+        | .SRAI   => .R <|  R.EncMnemonic.new   0b0100000   0b101   0b0010011
+        | .ADD    => .R <|  R.EncMnemonic.new   0b0000000   0b000   0b0110011
+        | .SUB    => .R <|  R.EncMnemonic.new   0b0100000   0b000   0b0110011
+        | .SLL    => .R <|  R.EncMnemonic.new   0b0000000   0b001   0b0110011
+        | .SLT    => .R <|  R.EncMnemonic.new   0b0000000   0b010   0b0110011
+        | .SLTU   => .R <|  R.EncMnemonic.new   0b0000000   0b011   0b0110011
+        | .XOR    => .R <|  R.EncMnemonic.new   0b0000000   0b100   0b0110011
+        | .SRL    => .R <|  R.EncMnemonic.new   0b0000000   0b101   0b0110011
+        | .SRA    => .R <|  R.EncMnemonic.new   0b0100000   0b101   0b0110011
+        | .OR     => .R <|  R.EncMnemonic.new   0b0000000   0b110   0b0110011
+        | .AND    => .R <|  R.EncMnemonic.new   0b0000000   0b111   0b0110011
+        | .FENCE  => .I <|  I.EncMnemonic.new               0b000   0b0001111
+        | .ECALL  => .Const <|  Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011
+        | .EBREAK => .Const <|  Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011
   run
     | .LUI, args
         => RegFile.set_word args.rd args.imm
@@ -319,4 +316,4 @@ instance : InstructionSet RV32I where
     | .ECALL, _args => pure ()
     | .EBREAK, _args => pure ()
 
-end RiscV.Instr.InstrRV32I
+end RiscV.Instr.RV32I
