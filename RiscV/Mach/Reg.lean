@@ -51,7 +51,8 @@ def RegFile.get_word [Monad M] [MonadStateOf RegFile M] (reg: Reg): M UInt32
         pure <| self.data[reg.index]!
 
 def RegFile.set_word [Monad M] [MonadStateOf RegFile M] (reg: Reg) (val: UInt32): M Unit
-  := do let self <- get
+  := do if reg.index == 0 then return ()
+        let self <- get
         set {
           self with
           data := Array.setD self.data reg.index val
