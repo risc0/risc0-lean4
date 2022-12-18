@@ -136,7 +136,7 @@ def ISA: ISA where
         | .FENCE  => .I <|  I.EncMnemonic.new               0b000   0b0001111
         | .ECALL  => .Const <|  Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011
         | .EBREAK => .Const <|  Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011
-  run
+  run _variant
     | .LUI, args
         => RegFile.set_word args.rd args.imm
     | .AUIPC, args
