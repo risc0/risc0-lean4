@@ -6,6 +6,11 @@ package «risc0-lean4» {
 }
 
 @[default_target]
+lean_lib Elf {
+  -- add library configuration options here
+}
+
+@[default_target]
 lean_lib R0sy {
   -- add library configuration options here
 }
