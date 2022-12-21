@@ -10,7 +10,7 @@ namespace Elf.Section
 open R0sy.ByteDeserial
 open Elf.Types
 
-structure SHeader (ptrSize: PtrSize) (endianness: Endianness) where
+structure SHeader (ptrSize: PtrSize) where
   sh_name: UInt32
   sh_type: UInt32
   sh_flags: Ptr ptrSize
@@ -23,7 +23,7 @@ structure SHeader (ptrSize: PtrSize) (endianness: Endianness) where
   sh_entsize: Ptr ptrSize
 
 namespace SHeader
-  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (SHeader ptrSize endianness)
+  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (SHeader ptrSize)
     := do let sh_name <- parseUInt32 endianness
           let sh_type <- parseUInt32 endianness
           let sh_flags <- parsePtr ptrSize endianness
@@ -48,12 +48,12 @@ namespace SHeader
           }
 end SHeader
 
-structure Section (ptrSize: PtrSize) (endianness: Endianness) where
-  header: SHeader ptrSize endianness
+structure Section (ptrSize: PtrSize) where
+  header: SHeader ptrSize
   file_data: Subarray UInt8
 
 namespace Section
-  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (Section ptrSize endianness)
+  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (Section ptrSize)
     := do let header <- SHeader.parse ptrSize endianness
           let start := header.sh_offset.toNat
           let stop := start + header.sh_size.toNat

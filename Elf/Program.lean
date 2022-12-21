@@ -10,7 +10,7 @@ namespace Elf.Program
 open R0sy.ByteDeserial
 open Elf.Types
 
-structure PHeader (ptrSize: PtrSize) (endianness: Endianness) where
+structure PHeader (ptrSize: PtrSize) where
   p_type: UInt32
   p_flags: UInt32
   p_offset: Ptr ptrSize
@@ -21,7 +21,7 @@ structure PHeader (ptrSize: PtrSize) (endianness: Endianness) where
   p_align: Ptr ptrSize
 
 namespace PHeader
-  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (PHeader ptrSize endianness)
+  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (PHeader ptrSize)
     := do let mut p_flags := 0
           let p_type <- parseUInt32 endianness
           if ptrSize == .Ptr64 then p_flags <- parseUInt32 endianness
@@ -44,12 +44,12 @@ namespace PHeader
           }
 end PHeader
 
-structure Program (ptrSize: PtrSize) (endianness: Endianness) where
-  header: PHeader ptrSize endianness
+structure Program (ptrSize: PtrSize) where
+  header: PHeader ptrSize
   file_data: Subarray UInt8
 
 namespace Program
-  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (Program ptrSize endianness)
+  def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (Program ptrSize)
     := do let header <- PHeader.parse ptrSize endianness
           let start := header.p_offset.toNat
           let stop := start + header.p_filesz.toNat

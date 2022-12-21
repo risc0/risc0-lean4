@@ -11,6 +11,11 @@ lean_lib Elf {
 }
 
 @[default_target]
+lean_exe «elf-dump-lean4» {
+  root := `Elf.Main
+}
+
+@[default_target]
 lean_lib R0sy {
   -- add library configuration options here
 }
