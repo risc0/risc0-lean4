@@ -28,13 +28,15 @@ namespace EIdent
             match ei_class_raw with
             | 1 => pure .Ptr32
             | 2 => pure .Ptr64
-            | _ => throw .InvalidData
+            | _ => do panic! s!"ei_class_raw: {ei_class_raw}"
+                      throw .InvalidData
           let ei_data_raw <- MonadByteReader.readUInt8
           let ei_data <-
             match ei_data_raw with
             | 1 => pure .Little
             | 2 => pure .Big
-            | _ => throw ByteReaderError.InvalidData
+            | _ => do panic! s!"ei_data_raw: {ei_data_raw}"
+                      throw .InvalidData
           let ei_version <- MonadByteReader.readUInt8
           let ei_osabi <- MonadByteReader.readUInt8
           let ei_abiversion <- MonadByteReader.readUInt8

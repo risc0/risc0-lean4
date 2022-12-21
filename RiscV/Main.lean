@@ -30,7 +30,16 @@ def fib: Machine .RV32IMle
       }
 
 def main : IO Unit
-  := do let (result, machine) <- fib.run do
+  := do let filename := "rust/output/hw.bin"
+        let result <- Elf.ofFile filename
+        let elf
+          <- match result with
+              | Except.ok elf => pure elf
+              | Except.error error
+                  => do IO.println s!"ERROR: {error}"
+                        return ()
+        let initialMachine := RiscV.Elf.loadElf elf
+        let (result, machine) <- initialMachine.run do
           let variant <- MonadMachine.getVariant
           for _ in [0:50] do
             /- Print some info about the machine state -/

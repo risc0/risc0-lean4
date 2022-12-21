@@ -10,8 +10,38 @@ namespace Elf.Program
 open R0sy.ByteDeserial
 open Elf.Types
 
+inductive SegmentType where
+  | PT_NULL
+  | PT_LOAD
+  | PT_DYNAMIC
+  | PT_INTERP
+  | PT_NOTE
+  | PT_SHLIB
+  | PT_PHDR
+  | PT_TLS
+  | PT_RESERVED_OS (p_type: UInt32)
+  | PT_RESERVED_PROC (p_type: UInt32)
+  deriving BEq
+
+
+def SegmentType.ofUInt32 [Monad M] [MonadByteReader M] (val: UInt32): M SegmentType
+  := match val with
+      | 0x00000000 => pure PT_NULL
+      | 0x00000001 => pure PT_LOAD
+      | 0x00000002 => pure PT_DYNAMIC
+      | 0x00000003 => pure PT_INTERP
+      | 0x00000004 => pure PT_NOTE
+      | 0x00000005 => pure PT_SHLIB
+      | 0x00000006 => pure PT_PHDR
+      | 0x00000007 => pure PT_TLS
+      | _ =>
+          if 0x60000000 <= val && val <= 0x6FFFFFFF then pure (.PT_RESERVED_OS val)
+          else if 0x70000000 <= val && val <= 0x7FFFFFFF then pure (.PT_RESERVED_PROC val)
+          else do panic! s!"p_type: {val}"
+                  throw .InvalidData
+
 structure PHeader (ptrSize: PtrSize) where
-  p_type: UInt32
+  p_type: SegmentType
   p_flags: UInt32
   p_offset: Ptr ptrSize
   p_vaddr: Ptr ptrSize
@@ -23,7 +53,7 @@ structure PHeader (ptrSize: PtrSize) where
 namespace PHeader
   def parse [Monad M] [MonadByteReader M] (ptrSize: PtrSize) (endianness: Endianness): M (PHeader ptrSize)
     := do let mut p_flags := 0
-          let p_type <- parseUInt32 endianness
+          let p_type <- parseUInt32 endianness >>= SegmentType.ofUInt32
           if ptrSize == .Ptr64 then p_flags <- parseUInt32 endianness
           let p_offset <- parsePtr ptrSize endianness
           let p_vaddr <- parsePtr ptrSize endianness
