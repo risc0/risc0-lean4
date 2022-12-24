@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import Elf
+import RiscV.Config
 import RiscV.Mach.Mem
 import RiscV.Mach.Reg
 import RiscV.Monad
@@ -11,9 +12,20 @@ namespace RiscV.Elf
 
 open R0sy.Lean.ByteArray
 open Elf
+open RiscV.Config
 open RiscV.Mach.Mem
 open RiscV.Mach.Reg
 open RiscV.Monad
+
+def xlenOfElf (elf: Elf): Xlen
+  := match elf.e_header.e_ident.ei_class with
+      | .Ptr32 => .Xlen32
+      | .Ptr64 => .Xlen64
+
+def endianOfElf (elf: Elf): Endian
+  := match elf.e_header.e_ident.ei_data with
+      | .Big => .Big
+      | .Little => .Little
 
 def loadElf (elf: Elf): MachineState
   := Id.run do
@@ -27,13 +39,9 @@ def loadElf (elf: Elf): MachineState
               base := segment.header.p_vaddr.toNat,
               data
             }
-        let endian
-          := match elf.e_header.e_ident.ei_data with
-              | .Big => .Big
-              | .Little => .Little
         pure {
           reg_file := RegFile.newWithPc elf.e_header.e_entry.toNat.toUInt32
-          mem := { endian, blocks }
+          mem := { endian := endianOfElf elf, blocks }
         }
 
 def loadElfInfo (mach: MachineState) (elf: Elf): MachineState
@@ -42,7 +50,7 @@ def loadElfInfo (mach: MachineState) (elf: Elf): MachineState
         {
           reg_file := mach'.reg_file,
           mem := {
-            endian := .Little,
+            mach.mem with
             blocks := mach'.mem.blocks ++ mach.mem.blocks
           }
         }
