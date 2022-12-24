@@ -29,36 +29,9 @@ namespace RV32IM
     encode_mnemonic
       | .I instr => RV32I.ISA.encode_mnemonic instr
       | .M instr => RV32M.ISA.encode_mnemonic instr
-    run variant
-      | .I instr => RV32I.ISA.run variant instr
-      | .M instr => RV32M.ISA.run variant instr
+    run
+      | .I instr => RV32I.ISA.run instr
+      | .M instr => RV32M.ISA.run instr
 end RV32IM
 
 end RiscV.ISA
-
-
-namespace RiscV.Monad
-
-open RiscV.Mach.Mem
-open RiscV.Mach.Reg
-
-namespace Variant
-  def isa (variant: Variant): ISA
-    := match variant with
-        | .RV32IMle => RiscV.ISA.RV32IM.ISA
-end Variant
-
-namespace MonadMachine
-  def step [MonadMachine variant M]: M Unit
-    := do let isa := variant.isa
-          let pc <- RegFile.get_word .PC
-          let instr <- Mem.get_word .Little pc.toNat
-          match isa.deserialize_mnemonic instr with
-            | none => throw (.InvalidInstruction pc.toNat instr.toNat)
-            | some mnemonic
-                => do RegFile.set_word .PC (pc + 4)
-                      let enc_args := isa.deserialize_args mnemonic instr
-                      let args := isa.decode_args mnemonic enc_args
-                      isa.run variant mnemonic args
-end MonadMachine
-end RiscV.Monad

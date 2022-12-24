@@ -15,84 +15,70 @@ open RiscV.Mach.Mem
 open RiscV.Mach.Reg
 
 
-inductive Variant where
-  | RV32IMle
-
-structure Machine (variant: Variant) where
+structure MachineState where
   mem: Mem
   reg_file: RegFile
 
-namespace Machine
-  def new_RV32IMle (pc: UInt32) (mem: Mem): Machine .RV32IMle
-    := Id.run do
-        let (_, reg_file) <- StateT.run (RegFile.set_word .PC pc) RegFile.new
-        pure {
-          mem,
-          reg_file
-        }
-
-  instance [Monad M] [MonadStateOf (Machine variant) M] : MonadStateOf Mem M where
+namespace MachineState
+  instance [Monad M] [MonadStateOf MachineState M] : MonadStateOf Mem M where
     get
       := do let self <- get
             pure self.mem
     set mem
       := do let self <- get
-            set ({ self with mem }: Machine variant)
+            set { self with mem }
     modifyGet f
       := do let self <- get
             let (out, mem) := f self.mem
-            set ({ self with mem }: Machine variant)
+            set { self with mem }
             pure out
 
-  instance [Monad M] [MonadStateOf (Machine variant) M] : MonadStateOf RegFile M where
+  instance [Monad M] [MonadStateOf MachineState M] : MonadStateOf RegFile M where
     get
       := do let self <- get
             pure self.reg_file
     set reg_file
       := do let self <- get
-            set ({ self with reg_file }: Machine variant)
+            set { self with reg_file }
     modifyGet f
       := do let self <- get
             let (out, reg_file) := f self.reg_file
-            set ({ self with reg_file }: Machine variant)
+            set { self with reg_file }
             pure out
-end Machine
+end MachineState
 
 
-class MonadMachine (variant: outParam Variant) (M: Type -> Type)
+class MonadMachine (M: Type -> Type)
   extends
     Monad M,
     MonadExceptOf RiscVException M,
-    MonadStateOf (Machine variant) M
+    MonadStateOf MachineState M
   where
 
 namespace MonadMachine
-  def getVariant [MonadMachine variant M]: M Variant
-    := pure variant
-
-  def getMachine [MonadMachine variant M]: M (Machine variant)
+  def getMachine [MonadMachine M]: M MachineState
     := MonadStateOf.get
 
-  def getReg [MonadMachine variant M] (reg: Reg): M UInt32
+  def getReg [MonadMachine M] (reg: Reg): M UInt32
     := RegFile.get_word reg
 
-  def fetchWord [MonadMachine variant M] (addr: UInt32): M UInt32
-    := Mem.get_word .Little addr.toNat
+  def fetchWord [MonadMachine M] (addr: UInt32): M UInt32
+    := Mem.get_word addr.toNat
 
-  instance CanonicalInstance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf (Machine variant) M] : MonadMachine variant M where
+  instance CanonicalInstance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf MachineState M] : MonadMachine M where
 
-  instance LiftInstance [Monad M] : MonadLift M (ExceptT RiscVException (StateT (Machine variant) M)) where
+  instance LiftInstance [Monad M] : MonadLift M (ExceptT RiscVException (StateT Machine M)) where
     monadLift f := ExceptT.lift (StateT.lift f)
 end MonadMachine
 
 
-namespace Machine
-  def run [Monad M] (machine: Machine variant) (f: {M': Type -> Type} -> [MonadMachine variant M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X × Machine variant)
+namespace MachineState
+  def run [Monad M] (machine: MachineState) (f: {M': Type -> Type} -> [MonadMachine M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X × MachineState)
     := StateT.run (ExceptT.run f) machine
 
-  def run' [Monad M] (machine: Machine variant) (f: {M': Type -> Type} -> [MonadMachine variant M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X)
+  def run' [Monad M] (machine: MachineState) (f: {M': Type -> Type} -> [MonadMachine M'] -> [MonadLift M M'] -> M' X): M (Except RiscVException X)
     := StateT.run' (ExceptT.run f) machine
-end Machine
+end MachineState
 
 
 structure ISA where
@@ -100,7 +86,7 @@ structure ISA where
   all: Array Mnemonic
   toString: Mnemonic -> String
   encode_mnemonic (m: Mnemonic): EncMnemonic
-  run (variant: Variant) [MonadMachine variant M] (m: Mnemonic) (args: EncMnemonic.Args (encode_mnemonic m)): M Unit
+  run [MonadMachine M] (m: Mnemonic) (args: EncMnemonic.Args (encode_mnemonic m)): M Unit
 
 namespace ISA
   def serialize_mnemonic (isa: ISA) (m: isa.Mnemonic): UInt32
@@ -140,5 +126,18 @@ namespace ISA
                       let args := isa.decode_args mnemonic enc_args
                       pure (some s!"{isa.toString mnemonic}  {args}")
 end ISA
+
+namespace MonadMachine
+  def step [MonadMachine M] (isa: ISA): M Unit
+    := do let pc <- RegFile.get_word .PC
+          let instr <- Mem.get_word pc.toNat
+          match isa.deserialize_mnemonic instr with
+            | none => throw (.InvalidInstruction pc.toNat instr.toNat)
+            | some mnemonic
+                => do RegFile.set_word .PC (pc + 4)
+                      let enc_args := isa.deserialize_args mnemonic instr
+                      let args := isa.decode_args mnemonic enc_args
+                      isa.run mnemonic args
+end MonadMachine
 
 end RiscV.Monad

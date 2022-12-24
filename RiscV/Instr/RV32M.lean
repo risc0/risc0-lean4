@@ -52,7 +52,7 @@ def ISA: ISA where
         | .DIVU =>   .R <|  R.EncMnemonic.new   0b0000001   0b101   0b0110011
         | .REM =>    .R <|  R.EncMnemonic.new   0b0000001   0b110   0b0110011
         | .REMU =>   .R <|  R.EncMnemonic.new   0b0000001   0b111   0b0110011
-  run _variant
+  run
     | .MUL, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2
