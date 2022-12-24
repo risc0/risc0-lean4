@@ -2,7 +2,11 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy
+
 namespace RiscV.Mach.Reg
+
+open R0sy.Data.Hex
 
 def X_REGISTER_COUNT: Nat := 32
 
@@ -38,7 +42,7 @@ instance : ToString RegFile where
         let mut out := ""
         for i in [0:self.data.size] do
           let val := self.data[i]!
-          if val != 0 then out := s!"{out}{Reg.ofNat i}:{val}  "
+          if val != 0 then out := s!"{out}{Reg.ofNat i}:{UInt32.toHex val}  "
         pure out
 
 def RegFile.new: RegFile

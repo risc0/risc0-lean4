@@ -4,7 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import RiscV.Config
 
-namespace RiscV.XlenInt
+namespace RiscV.Mach.XlenInt
 
 open RiscV.Config
 
@@ -39,6 +39,7 @@ namespace XlenInt
     | .Xlen32, (val: UInt32) => val.toNat
     | .Xlen64, (val: UInt64) => val.toNat
 
+  instance : Inhabited (XlenInt xlen) where default := ofNat xlen 0
 
   def zero {xlen: Xlen}: XlenInt xlen
     := ofNat xlen 0
@@ -118,4 +119,4 @@ namespace XlenInt
     := (shr_unsigned val sh).or (if val.isNeg then ofNat xlen <| ((1 <<< sh) - 1) <<< (xlen.bits - sh) else zero)
 end XlenInt
 
-end RiscV.XlenInt
+end RiscV.Mach.XlenInt

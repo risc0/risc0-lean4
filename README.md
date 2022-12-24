@@ -22,16 +22,24 @@ Now you can perform the build:
 risc0-lean4$ lake build
 ```
 
-## Running the ZKVM verifier
+## Running the tools
+
+### ZKVM verifier
 
 ```console
 risc0-lean4$ ./build/bin/zkvm-verify-lean4
 ```
 
-## Running the RV32IM emulator
+### ZKVM emulator
 
 ```console
-risc0-lean4$ ./build/bin/rv32im-lean4
+risc0-lean4$ ./build/bin/zkvm-emu-lean4
+```
+
+### Elf dumper
+
+```console
+risc0-lean4$ ./build/bin/elf-dump-lean4
 ```
 
 ## Building the docs

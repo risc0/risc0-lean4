@@ -52,9 +52,9 @@ namespace MonadMachine
   def step [MonadMachine variant M]: M Unit
     := do let isa := variant.isa
           let pc <- RegFile.get_word .PC
-          let instr <- Mem.get_word { val := pc }
+          let instr <- Mem.get_word .Little pc.toNat
           match isa.deserialize_mnemonic instr with
-            | none => throw (.InvalidInstruction pc instr)
+            | none => throw (.InvalidInstruction pc.toNat instr.toNat)
             | some mnemonic
                 => do RegFile.set_word .PC (pc + 4)
                       let enc_args := isa.deserialize_args mnemonic instr

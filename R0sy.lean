@@ -11,6 +11,7 @@ import R0sy.Algebra.Ntt
 import R0sy.Algebra.Poly
 import R0sy.ByteDeserial
 import R0sy.Data.Bits
+import R0sy.Data.Hex
 import R0sy.Lean.ByteArray
 import R0sy.Lean.Nat
 import R0sy.Lean.Subarray
