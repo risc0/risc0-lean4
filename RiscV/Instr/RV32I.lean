@@ -141,7 +141,7 @@ def ISA: ISA where
         => RegFile.set_word args.rd args.imm
     | .AUIPC, args
         => do let pc <- RegFile.get_word .PC
-              RegFile.set_word .PC (pc + args.imm)
+              RegFile.set_word args.rd (pc - 4 + args.imm)
     | .JAL, args
         => do let pc <- RegFile.get_word .PC
               RegFile.set_word args.rd pc
