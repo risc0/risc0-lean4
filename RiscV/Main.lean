@@ -8,6 +8,7 @@ open RiscV.Monad
 
 def main : IO Unit
   := do let filename := "rust/output/hw.bin"
+        IO.println s!"Loading {filename}"
         let result <- Elf.ofFile filename
         let elf
           <- match result with
@@ -15,6 +16,7 @@ def main : IO Unit
               | Except.error error
                   => do IO.println s!"ERROR: {error}"
                         return ()
+        IO.println s!"Creating initial machine state"
         let initialMachine := RiscV.Elf.loadElf elf
         for block in initialMachine.mem.blocks do
           IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.toUInt32} - {R0sy.Data.Hex.UInt32.toHex block.end.toUInt32}"

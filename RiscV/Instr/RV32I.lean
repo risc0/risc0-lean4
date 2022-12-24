@@ -151,7 +151,8 @@ def ISA: ISA where
     | .JALR, args
         => do let pc <- RegFile.get_word .PC
               RegFile.set_word args.rd pc
-              let newPC := pc - 4 + args.imm
+              let base <- RegFile.get_word args.rs1
+              let newPC := (base + args.imm) &&& 0xfffffffe
               if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
               RegFile.set_word .PC newPC
     | .BEQ, args
