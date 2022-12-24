@@ -146,13 +146,13 @@ def ISA: ISA where
         => do let pc <- RegFile.get_word .PC
               RegFile.set_word args.rd pc
               let newPC := pc - 4 + args.imm
-              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
               RegFile.set_word .PC newPC
     | .JALR, args
         => do let pc <- RegFile.get_word .PC
               RegFile.set_word args.rd pc
               let newPC := pc - 4 + args.imm
-              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+              if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
               RegFile.set_word .PC newPC
     | .BEQ, args
         => do let x <- RegFile.get_word args.rs1
@@ -160,7 +160,7 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if x == y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .BNE, args
         => do let x <- RegFile.get_word args.rs1
@@ -168,7 +168,7 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if x != y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .BLT, args
         => do let x <- RegFile.get_word args.rs1
@@ -176,7 +176,7 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if UInt32.lt_signed x y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .BGE, args
         => do let x <- RegFile.get_word args.rs1
@@ -184,7 +184,7 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if UInt32.ge_signed x y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .BLTU, args
         => do let x <- RegFile.get_word args.rs1
@@ -192,7 +192,7 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if x < y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .BGEU, args
         => do let x <- RegFile.get_word args.rs1
@@ -200,48 +200,48 @@ def ISA: ISA where
               let pc <- RegFile.get_word .PC
               if x >= y then do
                 let newPC := pc - 4 + args.imm
-                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC)
+                if newPC % 4 != 0 then throw (.InstructionAddressMisaligned newPC.toNat)
                 RegFile.set_word .PC newPC
     | .LB, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_byte addr
+              let x <- Mem.get_byte addr.toNat
               RegFile.set_word args.rd (UInt32.ofUInt8_signed x)
     | .LH, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_half addr
+              let x <- Mem.get_half .Little addr.toNat
               RegFile.set_word args.rd (UInt32.ofUInt16_signed x)
     | .LW, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_word { val := addr }
+              let x <- Mem.get_word .Little addr.toNat
               RegFile.set_word args.rd x
     | .LBU, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_byte addr
-              RegFile.set_word args.rd x.toNat.toUInt32
+              let x <- Mem.get_byte addr.toNat
+              RegFile.set_word args.rd x.toUInt32
     | .LHU, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_half addr
-              RegFile.set_word args.rd x.toNat.toUInt32
+              let x <- Mem.get_half .Little addr.toNat
+              RegFile.set_word args.rd x.toUInt32
     | .SB, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- RegFile.get_word args.rs2
-              Mem.set_byte addr x.toNat.toUInt8
+              Mem.set_byte addr.toNat x.toNat.toUInt8
     | .SH, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- RegFile.get_word args.rs2
-              Mem.set_half addr x.toNat.toUInt16
+              Mem.set_half .Little addr.toNat x.toNat.toUInt16
     | .SW, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- RegFile.get_word args.rs2
-              Mem.set_word { val := addr } x
+              Mem.set_word .Little addr.toNat x
     | .ADDI, args
         => do let x <- RegFile.get_word args.rs1
               RegFile.set_word args.rd (x + args.imm)

@@ -77,7 +77,7 @@ namespace MonadMachine
     := RegFile.get_word reg
 
   def fetchWord [MonadMachine variant M] (addr: UInt32): M UInt32
-    := Mem.get_word { val := addr }
+    := Mem.get_word .Little addr.toNat
 
   instance CanonicalInstance [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf (Machine variant) M] : MonadMachine variant M where
 

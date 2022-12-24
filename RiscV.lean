@@ -12,5 +12,5 @@ import RiscV.Mach.Exception
 import RiscV.Mach.Int
 import RiscV.Mach.Mem
 import RiscV.Mach.Reg
+import RiscV.Mach.XlenInt
 import RiscV.Monad
-import RiscV.XlenInt

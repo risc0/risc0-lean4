@@ -6,29 +6,6 @@ import RiscV
 
 open RiscV.Monad
 
-def fib: Machine .RV32IMle
-  := Machine.new_RV32IMle
-      0x00000000
-      {
-        blocks := #[
-          {
-            base := { val := 0x00000000 },
-            data := #[
-              0x00500993,   /- ADDI  rd:19  rs1:0   imm:5   -/
-              0x00000a13,   /- ADDI  rd:20  rs1:0   imm:0   -/
-              0x00100913,   /- ADDI  rd:18  rs1:0   imm:1   -/
-              0x00000493,   /- ADDI  rd:9   rs1:0   imm:0   -/
-              0x0140006f,   /- JAL   rd:0           imm:20  -/
-              0x012a0ab3,   /- ADD   rd:21  rs1:20  rs2:18  -/
-              0x00090a13,   /- ADDI  rd:20  rs1:18  imm:0   -/
-              0x000a8913,   /- ADDI  rd:18  rs1:21  imm:0   -/
-              0x00148493,   /- ADDI  rd:9   rs1:9   imm:1   -/
-              0xff34c8e3    /- BLT   rs1:9  rs2:19  imm:-16 -/
-            ]
-          }
-        ]
-      }
-
 def main : IO Unit
   := do let filename := "rust/output/hw.bin"
         let result <- Elf.ofFile filename
@@ -40,7 +17,7 @@ def main : IO Unit
                         return ()
         let initialMachine := RiscV.Elf.loadElf elf
         for block in initialMachine.mem.blocks do
-          IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.val} - {R0sy.Data.Hex.UInt32.toHex block.end.val}"
+          IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.toUInt32} - {R0sy.Data.Hex.UInt32.toHex block.end.toUInt32}"
         let (result, machine) <- initialMachine.run do
           let variant <- MonadMachine.getVariant
           for _ in [0:50] do

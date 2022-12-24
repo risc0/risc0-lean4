@@ -20,9 +20,9 @@ def loadElf (elf: Elf): Machine .RV32IMle
           if segment.header.p_type == .PT_LOAD then do
             let zerosRequired := segment.header.p_memsz.toNat - segment.header.p_filesz.toNat
             let zeros: Array UInt8 := Array.mkArray zerosRequired 0
-            let data := ByteArray.to_le32 { data := segment.file_data.toArray ++ zeros }
+            let data := segment.file_data.toArray ++ zeros
             blocks := blocks.push {
-              base := { val := segment.header.p_vaddr.toNat.toUInt32 },
+              base := segment.header.p_vaddr.toNat,
               data
             }
         let pc := elf.e_header.e_entry.toNat.toUInt32
