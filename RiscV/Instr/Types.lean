@@ -8,6 +8,7 @@ import RiscV.Mach.Reg
 namespace RiscV.Instr.Types
 
 open R0sy.Data.Bits
+open R0sy.Data.Hex
 open R0sy.Lean.UInt32
 open RiscV.Mach.Reg
 
@@ -117,7 +118,7 @@ namespace I
     imm: UInt32
 
   instance : ToString Args where
-    toString args := s!"rd:{args.rd}  rs1:{args.rs1}  imm:{args.imm}"
+    toString args := s!"rd:{args.rd}  rs1:{args.rs1}  imm:{UInt32.toHex args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -179,7 +180,7 @@ namespace S
     imm: UInt32
 
   instance : ToString Args where
-    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{args.imm}"
+    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{UInt32.toHex args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -246,7 +247,7 @@ namespace B
     imm: UInt32
 
   instance : ToString Args where
-    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{args.imm}"
+    toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{UInt32.toHex args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
@@ -304,13 +305,12 @@ namespace U
     imm: UInt32
 
   instance : ToString Args where
-    toString args := s!"rd:{args.rd}  imm:{args.imm}"
+    toString args := s!"rd:{args.rd}  imm:{UInt32.toHex args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm31_12: Bits 31 12 := { val := x.imm31_12.val }
-        let imm11_13: Bits 11 0 := { val := 0 }
-        let imm := imm31_12.toUInt32 ||| imm11_13.toUInt32
+        let imm := imm31_12.toUInt32
         pure {
           rd := Reg.ofUInt32 x.rd.val,
           imm
@@ -360,7 +360,7 @@ namespace J
     imm: UInt32
 
   instance : ToString Args where
-    toString args := s!"rd:{args.rd}  imm:{args.imm}"
+    toString args := s!"rd:{args.rd}  imm:{UInt32.toHex args.imm}"
 
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do

@@ -39,6 +39,8 @@ def main : IO Unit
                   => do IO.println s!"ERROR: {error}"
                         return ()
         let initialMachine := RiscV.Elf.loadElf elf
+        for block in initialMachine.mem.blocks do
+          IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.val} - {R0sy.Data.Hex.UInt32.toHex block.end.val}"
         let (result, machine) <- initialMachine.run do
           let variant <- MonadMachine.getVariant
           for _ in [0:50] do
@@ -47,7 +49,7 @@ def main : IO Unit
             let pc <- MonadMachine.getReg .PC
             let instr <- tryCatch (MonadMachine.fetchWord pc) (fun _ => pure 0)
             monadLift <| IO.println s!"Register File: {machine.reg_file}"
-            monadLift <| IO.println s!"Next:  pc:{pc}  instr:{variant.isa.decode_to_string instr}"
+            monadLift <| IO.println s!"Next instr: {R0sy.Data.Hex.UInt32.toHex instr}  {variant.isa.decode_to_string instr}"
             monadLift <| IO.println s!""
             /- Run the next instruction -/
             MonadMachine.step
