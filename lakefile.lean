@@ -26,11 +26,6 @@ lean_lib RiscV {
 }
 
 @[default_target]
-lean_exe «rv32im-lean4» {
-  root := `RiscV.Main
-}
-
-@[default_target]
 lean_lib Zkvm {
   -- add library configuration options here
 }
