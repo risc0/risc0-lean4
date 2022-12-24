@@ -37,7 +37,7 @@ lean_lib Zkvm {
 
 @[default_target]
 lean_exe «zkvm-verify-lean4» {
-  root := `Zkvm.Main
+  root := `Zkvm.MainVerify
 }
 
 meta if get_config? doc = some "on" then -- do not download and build doc-gen4 by default
