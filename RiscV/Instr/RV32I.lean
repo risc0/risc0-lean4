@@ -316,7 +316,9 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               RegFile.set_word args.rd (x &&& y)
     | .FENCE, _args => pure ()
-    | .ECALL, _args => pure ()
+    | .ECALL, _args
+        => do let pc <- RegFile.get_word .PC
+              throw (.ECall pc.toNat)
     | .EBREAK, _args => pure ()
 
 end RiscV.Instr.RV32I

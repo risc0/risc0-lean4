@@ -28,7 +28,7 @@ def main : IO Unit
           IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.toUInt32} - {R0sy.Data.Hex.UInt32.toHex block.limit.toUInt32}"
         let isa := RiscV.ISA.RV32IM.ISA
         let debug: Bool := false
-        let maxClock := 1024
+        let maxClock := 16 <<< 20
         let (result, machine) <- initialMachine.run do
           for clock in [0:maxClock] do
             if debug
@@ -38,7 +38,7 @@ def main : IO Unit
                       monadLift <| IO.println s!"Register File: {machine.reg_file}"
                       monadLift <| IO.println s!"Next instr: {R0sy.Data.Hex.UInt32.toHex instr}  {isa.decode_to_string instr}"
                       monadLift <| IO.println s!""
-            if clock % 32 == 0 then IO.println s!"... clock {clock}"
+            if clock % (64 <<< 10) == 0 then IO.println s!"... clock {clock}"
             /- Run the next instruction -/
             isa.step
         match result with
