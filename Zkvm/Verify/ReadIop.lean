@@ -24,9 +24,11 @@ class MonadReadIop (M: Type -> Type)
     readU32s: Nat -> M (Subarray UInt32)
     readPodSlice (X: Type): [SerialUInt32 X] -> Nat -> M (Array X)
     readFields (F: Type): [Field F] -> Nat -> M (Array F)
-    commit: Sha256.Digest -> M Unit
     verifyComplete: M Unit
 
+class MonadCommitIop (D: Type) (M: Type -> Type)
+  where
+    commit: D -> M Unit
 
 structure ReadIop where
   proof: Subarray UInt32
@@ -79,13 +81,15 @@ namespace ReadIop
     readU32s := ReadIop.readU32s
     readPodSlice X := ReadIop.readPodSlice X
     readFields F := ReadIop.readPodSlice F
-    commit := ReadIop.commit
     verifyComplete := ReadIop.verifyComplete
 
-  def run (seal: Array UInt32) (f: {M: Type -> Type} -> [Monad M] -> [MonadExceptOf VerificationError M] -> [MonadReadIop M] -> M Unit): Except VerificationError Unit
+  instance [Monad M] [MonadExceptOf VerificationError M] [MonadStateOf ReadIop M] : MonadCommitIop Sha256.Digest M where
+    commit := ReadIop.commit
+
+  def run (seal: Array UInt32) (f: {M: Type -> Type} -> [Monad M] -> [MonadExceptOf VerificationError M] -> [MonadReadIop M] -> [MonadCommitIop Sha256.Digest M] -> M Unit): Except VerificationError Unit
     := Id.run do
         let M := StateT ReadIop (ExceptT VerificationError Id)
-        ExceptT.run (StateT.run' (@f M _ _ _) (new seal.toSubarray))
+        ExceptT.run (StateT.run' (@f M _ _ _ _) (new seal.toSubarray))
 end ReadIop
 
 end Zkvm.Verify.ReadIop

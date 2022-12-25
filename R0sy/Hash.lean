@@ -10,6 +10,7 @@ open Serial
 
 class Hash (D: Type)
   extends
+    BEq D,
     Inhabited D,
     SerialUInt32 D
   where

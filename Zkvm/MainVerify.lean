@@ -23,7 +23,7 @@ def check_seal (circuit: Zkvm.ArithVM.Circuit.Circuit) (base_name: String): IO U
         IO.println s!"ID size:      {id.size} words"
         IO.println s!"Journal size: {journal.size} words"
         IO.println s!"Seal size:    {seal.size} words"
-        let method_id := Zkvm.MethodId.MethodId.ofWords id.toSubarray
+        let method_id := Zkvm.MethodId.MethodId.ofWords R0sy.Hash.Sha2.Sha256.Digest id.toSubarray
         let result := Zkvm.Verify.ReadIop.ReadIop.run seal (Zkvm.Verify.verify circuit method_id journal)
         match result with
         | Except.ok _ => IO.println "Seal is OK"
