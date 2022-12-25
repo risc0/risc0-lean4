@@ -29,6 +29,7 @@ namespace Block
   def get_byte (self: Block) (addr: Nat): UInt8
     := Array.getD self.data (addr - self.base) 0
 
+  @[always_inline, inline]
   def set_byte (self: Block) (addr: Nat) (val: UInt8): Block
     := {
       self with
@@ -57,12 +58,19 @@ namespace Mem
           let idx <- Mem.locate_block addr
           pure <| self.blocks[idx]!.get_byte addr
 
+  @[always_inline, inline]
   def set_byte [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat) (val: UInt8): M Unit
-    := do let self <- get
+    := do let mut self <- get
           let idx <- Mem.locate_block addr
+          let block := self.blocks[idx]!
           set {
             self with
-            blocks := Array.setD self.blocks idx (self.blocks[idx]!.set_byte addr val)
+            blocks := Array.setD self.blocks idx Inhabited.default
+          }
+          self <- get
+          set {
+            self with
+            blocks := Array.setD self.blocks idx (block.set_byte addr val)
           }
 
   def get_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat): M UInt16

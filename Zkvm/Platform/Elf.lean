@@ -9,7 +9,7 @@ namespace Zkvm.Platform.Elf
 
 open RiscV.Monad
 
-def loadElf: Elf -> MachineState
+def loadElf: Elf -> Except RiscV.Mach.Exception.RiscVException MachineState
   := RiscV.Elf.loadElfInfo
       {
         reg_file := RiscV.Mach.Reg.RegFile.new,
