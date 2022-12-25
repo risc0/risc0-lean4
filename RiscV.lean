@@ -4,6 +4,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 import RiscV.Config
 import RiscV.Elf
+import RiscV.Instr.ISA
 import RiscV.Instr.RV32I
 import RiscV.Instr.RV32M
 import RiscV.Instr.Types

@@ -40,7 +40,7 @@ def main : IO Unit
                       monadLift <| IO.println s!""
             if clock % 32 == 0 then IO.println s!"... clock {clock}"
             /- Run the next instruction -/
-            MonadMachine.step isa
+            isa.step
         match result with
           | Except.ok _ => IO.println s!"Ended normally after {maxClock} clock cycles"
           | Except.error exception => IO.println s!"Ended with exception: {exception}"

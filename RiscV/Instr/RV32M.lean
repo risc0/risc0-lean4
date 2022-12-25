@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Instr.ISA
 import RiscV.Instr.Types
 import RiscV.Mach.Int
 import RiscV.Mach.Reg
@@ -11,6 +12,7 @@ import RiscV.Monad
 namespace RiscV.Instr.RV32M
 
 open R0sy.Lean.UInt64
+open RiscV.Instr.ISA
 open RiscV.Instr.Types
 open RiscV.Mach.Int
 open RiscV.Mach.Reg

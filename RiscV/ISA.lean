@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import RiscV.Instr.ISA
 import RiscV.Instr.RV32I
 import RiscV.Instr.RV32M
 import RiscV.Instr.Types
@@ -12,6 +13,7 @@ import RiscV.Monad
 namespace RiscV.ISA
 
 open RiscV.Instr
+open RiscV.Instr.ISA
 open RiscV.Monad
 
 
