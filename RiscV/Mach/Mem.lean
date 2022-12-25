@@ -66,61 +66,55 @@ namespace Mem
           }
 
   def get_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat): M UInt16
-    := do let (lo_off, hi_off)
-            := match (<- getEndian) with
-                | .Big => (1, 0)
-                | .Little => (0, 1)
-          let lo := (<- Mem.get_byte (addr + lo_off)).toUInt16
-          let hi := (<- Mem.get_byte (addr + hi_off)).toUInt16
-          pure ((hi <<< 8) ||| lo)
+    := do let x0 := (<- Mem.get_byte addr).toUInt16
+          let x1 := (<- Mem.get_byte (addr + 1)).toUInt16
+          pure <| match (<- getEndian) with
+                  | .Big => (x0 <<< 8) ||| x1
+                  | .Little => (x1 <<< 8) ||| x0
 
   def set_half [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat) (val: UInt16): M Unit
-    := do let (lo_off, hi_off)
+    := do let lo := val.toNat.toUInt8
+          let hi := (val >>> 8).toNat.toUInt8
+          let (x0, x1)
             := match (<- getEndian) with
-                | .Big => (1, 0)
-                | .Little => (0, 1)
-          let lo := (val &&& 0xff).toNat.toUInt8
-          let hi := ((val >>> 8) &&& 0xff).toNat.toUInt8
-          Mem.set_byte (addr + lo_off) lo
-          Mem.set_byte (addr + hi_off) hi
+                | .Big => (hi, lo)
+                | .Little => (lo, hi)
+          Mem.set_byte addr x0
+          Mem.set_byte (addr + 1) x1
 
   def get_word [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat): M UInt32
-    := do let (lo_off, hi_off)
-            := match (<- getEndian) with
-                | .Big => (2, 0)
-                | .Little => (0, 2)
-          let lo := (<- Mem.get_half (addr + lo_off)).toUInt32
-          let hi := (<- Mem.get_half (addr + hi_off)).toUInt32
-          pure ((hi <<< 16) ||| lo)
+    := do let x0 := (<- Mem.get_half addr).toUInt32
+          let x1 := (<- Mem.get_half (addr + 2)).toUInt32
+          pure <| match (<- getEndian) with
+                  | .Big => (x0 <<< 16) ||| x1
+                  | .Little => (x1 <<< 16) ||| x0
 
   def set_word [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat) (val: UInt32): M Unit
-    := do let (lo_off, hi_off)
+    := do let lo := val.toNat.toUInt16
+          let hi := (val >>> 16).toNat.toUInt16
+          let (x0, x1)
             := match (<- getEndian) with
-                | .Big => (2, 0)
-                | .Little => (0, 2)
-          let lo := (val &&& 0xffff).toNat.toUInt16
-          let hi := ((val >>> 16) &&& 0xffff).toNat.toUInt16
-          Mem.set_half (addr + lo_off) lo
-          Mem.set_half (addr + hi_off) hi
+                | .Big => (hi, lo)
+                | .Little => (lo, hi)
+          Mem.set_half addr x0
+          Mem.set_half (addr + 2) x1
 
   def get_wide [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat): M UInt64
-    := do let (lo_off, hi_off)
-            := match (<- getEndian) with
-                | .Big => (4, 0)
-                | .Little => (0, 4)
-          let lo := (<- Mem.get_word (addr + lo_off)).toUInt64
-          let hi := (<- Mem.get_word (addr + hi_off)).toUInt64
-          pure ((hi <<< 32) ||| lo)
+    := do let x0 := (<- Mem.get_word addr).toUInt64
+          let x1 := (<- Mem.get_word (addr + 4)).toUInt64
+          pure <| match (<- getEndian) with
+                  | .Big => (x0 <<< 32) ||| x1
+                  | .Little => (x1 <<< 32) ||| x0
 
   def set_wide [Monad M] [MonadExceptOf RiscVException M] [MonadStateOf Mem M] (addr: Nat) (val: UInt64): M Unit
-    := do let (lo_off, hi_off)
+    := do let lo := val.toNat.toUInt32
+          let hi := (val >>> 32).toNat.toUInt32
+          let (x0, x1)
             := match (<- getEndian) with
-                | .Big => (4, 0)
-                | .Little => (0, 4)
-          let lo := (val &&& 0xffffffff).toNat.toUInt32
-          let hi := ((val >>> 32) &&& 0xffffffff).toNat.toUInt32
-          Mem.set_word (addr + lo_off) lo
-          Mem.set_word (addr + hi_off) hi
+                | .Big => (hi, lo)
+                | .Little => (lo, hi)
+          Mem.set_word addr x0
+          Mem.set_word (addr + 4) x1
 end Mem
 
 end RiscV.Mach.Mem
