@@ -15,15 +15,15 @@ def main : IO Unit
           <- match result with
               | Except.ok elf => pure elf
               | Except.error error
-                  => do IO.println s!"ERROR: {error}"
+                  => do IO.println s!"Error: {error}"
                         return ()
         IO.println s!"Creating initial machine state"
         let initialMachine
-          <- do match Zkvm.Platform.Elf.loadElf elf with
-                  | Except.ok mach => pure mach
-                  | Except.error exception
-                      => do IO.println s!"Ended with exception: {exception}"
-                            return ()
+          <- match Zkvm.Platform.Elf.loadElf elf with
+              | Except.ok mach => pure mach
+              | Except.error exception
+                  => do IO.println s!"Error: {exception}"
+                        return ()
         for block in initialMachine.mem.blocks do
           IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.toUInt32} - {R0sy.Data.Hex.UInt32.toHex block.limit.toUInt32}"
         let isa := RiscV.ISA.RV32IM.ISA

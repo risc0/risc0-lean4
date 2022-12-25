@@ -38,6 +38,7 @@ namespace ISA
   def EncArgs (isa: ISA) (m: isa.Mnemonic): Type
     := (isa.encode_mnemonic m).EncArgs
 
+  @[always_inline, inline]
   def deserialize_args (isa: ISA) (m: isa.Mnemonic) (x: UInt32): isa.EncArgs m
     := (isa.encode_mnemonic m).deserialize_args x
 
@@ -47,6 +48,7 @@ namespace ISA
   instance : ToString (Args isa m) where
     toString x := EncMnemonic.Args.ToString.toString x
 
+  @[always_inline, inline]
   def decode_args (isa: ISA) (m: isa.Mnemonic) (x: isa.EncArgs m): isa.Args m
     := EncMnemonic.decode_args x
 
@@ -59,6 +61,7 @@ namespace ISA
                       let args := isa.decode_args mnemonic enc_args
                       pure (some s!"{isa.toString mnemonic}  {args}")
 
+  @[always_inline, inline]
   def step [MonadMachine M] (isa: ISA): M Unit
     := do let pc <- RegFile.get_word .PC
           let instr <- Mem.get_word pc.toNat

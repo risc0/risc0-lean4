@@ -22,6 +22,7 @@ namespace RV32IM
     | I (instr: RV32I.Instr)
     | M (instr: RV32M.Instr)
 
+  @[always_inline, inline]
   def ISA: ISA where
     Mnemonic := Instr
     all := RV32I.ISA.all.map .I ++ RV32M.ISA.all.map .M
