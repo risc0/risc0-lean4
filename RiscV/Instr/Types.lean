@@ -26,6 +26,7 @@ namespace R
     funct3: Bits 14 12
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (funct7 funct3 opcode: UInt32): EncMnemonic
     := {
       funct7 := { val := funct7 }
@@ -33,8 +34,10 @@ namespace R
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.funct7_mask ||| Masks.funct3_mask ||| Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       funct7 := Bits.ofUInt32 x
@@ -42,6 +45,7 @@ namespace R
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct7.toUInt32 ||| x.funct3.toUInt32 ||| x.opcode.toUInt32
 
@@ -51,6 +55,7 @@ namespace R
     rs1: Bits 19 15
     rd: Bits 11 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       rs2 := Bits.ofUInt32 x
@@ -67,6 +72,7 @@ namespace R
   instance : ToString Args where
     toString args := s!"rd:{args.rd}  rs1:{args.rs1}  rs2:{args.rs2}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := {
       rd := Reg.ofUInt32 x.rd.val,
@@ -81,20 +87,24 @@ namespace I
     funct3: Bits 14 12
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (funct3 opcode: UInt32): EncMnemonic
     := {
       funct3 := { val := funct3 }
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       funct3 := Bits.ofUInt32 x
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
@@ -104,6 +114,7 @@ namespace I
     rs1: Bits 19 15
     rd: Bits 11 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm11_0 := Bits.ofUInt32 x
@@ -120,6 +131,7 @@ namespace I
   instance : ToString Args where
     toString args := s!"rd:{args.rd}  rs1:{args.rs1}  imm:{UInt32.toHex args.imm}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm11_0:  Bits 11 0 := { val := x.imm11_0.val }
@@ -141,20 +153,24 @@ namespace S
     funct3: Bits 14 12
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (funct3 opcode: UInt32): EncMnemonic
     := {
       funct3 := { val := funct3 }
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       funct3 := Bits.ofUInt32 x
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
@@ -165,6 +181,7 @@ namespace S
     rs1: Bits 19 15
     imm4_0: Bits 11 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm11_5 := Bits.ofUInt32 x
@@ -182,6 +199,7 @@ namespace S
   instance : ToString Args where
     toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{UInt32.toHex args.imm}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm4_0:  Bits 11 0 := { val := x.imm4_0.val }
@@ -204,20 +222,24 @@ namespace B
     funct3: Bits 14 12
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (funct3 opcode: UInt32): EncMnemonic
     := {
       funct3 := { val := funct3 }
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.funct3_mask ||| Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       funct3 := Bits.ofUInt32 x
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.funct3.toUInt32 ||| x.opcode.toUInt32
 
@@ -230,6 +252,7 @@ namespace B
     imm4_1: Bits 11 8
     imm11: Bits 7 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm12 := Bits.ofUInt32 x
@@ -249,6 +272,7 @@ namespace B
   instance : ToString Args where
     toString args := s!"rs1:{args.rs1}  rs2:{args.rs2}  imm:{UInt32.toHex args.imm}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm12: Bits 12 12 := { val := x.imm12.val }
@@ -273,18 +297,22 @@ namespace U
   structure EncMnemonic where
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (opcode: UInt32): EncMnemonic
     := {
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
 
@@ -293,6 +321,7 @@ namespace U
     imm31_12: Bits 31 12
     rd: Bits 11 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm31_12 := Bits.ofUInt32 x
@@ -307,6 +336,7 @@ namespace U
   instance : ToString Args where
     toString args := s!"rd:{args.rd}  imm:{UInt32.toHex args.imm}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm31_12: Bits 31 12 := { val := x.imm31_12.val }
@@ -322,18 +352,22 @@ namespace J
   structure EncMnemonic where
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (opcode: UInt32): EncMnemonic
     := {
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Masks.opcode_mask
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.opcode.toUInt32
 
@@ -345,6 +379,7 @@ namespace J
     imm19_12: Bits 19 12
     rd: Bits 11 7
 
+  @[always_inline, inline]
   def EncArgs.deserialize (x: UInt32): EncArgs
     := {
       imm20 := Bits.ofUInt32 x
@@ -362,6 +397,7 @@ namespace J
   instance : ToString Args where
     toString args := s!"rd:{args.rd}  imm:{UInt32.toHex args.imm}"
 
+  @[always_inline, inline]
   def EncArgs.decode (x: EncArgs): Args
     := Id.run do
         let imm20: Bits 20 20 := { val := x.imm20.val }
@@ -385,6 +421,7 @@ namespace Const
     const11_7: Bits 11 7
     opcode: Bits 6 0
 
+  @[always_inline, inline]
   def EncMnemonic.new (const31_20 const19_15 const14_12 const11_7 opcode: UInt32): EncMnemonic
     := {
       const31_20 := { val := const31_20 },
@@ -394,8 +431,10 @@ namespace Const
       opcode := { val := opcode }
     }
 
+  @[always_inline, inline]
   def EncMnemonic.mask: UInt32 := Bits.mask 31 0
 
+  @[always_inline, inline]
   def EncMnemonic.deserialize (x: UInt32): EncMnemonic
     := {
       const31_20 := Bits.ofUInt32 x
@@ -405,6 +444,7 @@ namespace Const
       opcode := Bits.ofUInt32 x
     }
 
+  @[always_inline, inline]
   def EncMnemonic.serialize (x: EncMnemonic): UInt32
     := x.const31_20.toUInt32 ||| x.const19_15.toUInt32 ||| x.const14_12.toUInt32 ||| x.const11_7.toUInt32 ||| x.opcode.toUInt32
 end Const
@@ -420,6 +460,7 @@ inductive EncMnemonic where
   | Const (enc: Const.EncMnemonic)
 
 namespace EncMnemonic
+  @[always_inline, inline]
   def mask_mnemonic (t: EncMnemonic): UInt32
     := match t with
         | .R _ => R.EncMnemonic.mask
@@ -430,6 +471,7 @@ namespace EncMnemonic
         | .J _ => J.EncMnemonic.mask
         | .Const _ => Const.EncMnemonic.mask
 
+  @[always_inline, inline]
   def serialize_mnemonic (t: EncMnemonic): UInt32
     := match t with
         | .R code => R.EncMnemonic.serialize code
@@ -450,6 +492,7 @@ namespace EncMnemonic
         | .J _ => J.EncArgs
         | .Const _ => Unit
 
+  @[always_inline, inline]
   def deserialize_args: (t: EncMnemonic) -> UInt32 -> EncMnemonic.EncArgs t
     | .R _, x => R.EncArgs.deserialize x
     | .I _, x => I.EncArgs.deserialize x
@@ -480,6 +523,7 @@ namespace EncMnemonic
           | .J _ => fun (x: J.Args) => ToString.toString x
           | .Const _ => fun _ => ""
 
+  @[always_inline, inline]
   def decode_args: {t: EncMnemonic} -> EncArgs t -> Args t
     | .R _, x => R.EncArgs.decode x
     | .I _, x => I.EncArgs.decode x

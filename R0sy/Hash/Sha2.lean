@@ -93,6 +93,19 @@ def round_constants: Array UInt32 := #[
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 ]
 
+def Nat.to_be64 (x: Nat): ByteArray := {
+  data := #[
+    UInt8.ofNat (x >>> (8*7)),
+    UInt8.ofNat (x >>> (8*6)),
+    UInt8.ofNat (x >>> (8*5)),
+    UInt8.ofNat (x >>> (8*4)),
+    UInt8.ofNat (x >>> (8*3)),
+    UInt8.ofNat (x >>> (8*2)),
+    UInt8.ofNat (x >>> (8*1)),
+    UInt8.ofNat x
+  ]
+}
+
 def prepare (msg: ByteArray): Array UInt32 :=
   let padding :=
     let padding_required :=
@@ -103,39 +116,61 @@ def prepare (msg: ByteArray): Array UInt32 :=
   let length := Nat.to_be64 (msg.size * 8)
   ByteArray.to_be32 (msg ++ padding ++ length)
 
-partial def to_chunks (msg: Array UInt32) (start: Nat := 0) (out: List (Array UInt32) := []): List (Array UInt32) :=
-  let stop := start + 16
-  if stop <= msg.size
-  then to_chunks msg stop (Array.extract msg start stop :: out)
-  else out
+def to_chunks (msg: Array UInt32): List (Array UInt32)
+  := Id.run do
+        let mut out := []
+        for chunk in [0:msg.size / 16] do
+          let start := chunk * 16
+          let stop := start + 16
+          out := Array.extract msg start stop :: out
+        pure out
 
-partial def schedule (w: Array UInt32): Array UInt32 :=
-  if w.size >= 64 then w
-  else
-    let i := w.size
-    let w15 := w[i-15]!
-    let w2 := w[i-2]!
-    let s0 := (UInt32.ror w15  7) ^^^ (UInt32.ror w15 18) ^^^ (w15 >>> 3)
-    let s1 := (UInt32.ror w2  17) ^^^ (UInt32.ror w2  19) ^^^ (w2 >>> 10)
-    let w' := w[i-16]! + s0 + w[i-7]! + s1
-    schedule (w.push w')
+def schedule (message: Array UInt32): Array UInt32
+  := Id.run do
+        let mut w: Array UInt32 := Array.mkEmpty 64
+        for i in [0:64] do
+          if i < 16
+            then w := w.push message[i]!
+            else do let w15 := w[i-15]!
+                    let w2 := w[i-2]!
+                    let s0 := (UInt32.ror w15  7) ^^^ (UInt32.ror w15 18) ^^^ (w15 >>> 3)
+                    let s1 := (UInt32.ror w2  17) ^^^ (UInt32.ror w2  19) ^^^ (w2 >>> 10)
+                    let w' := w[i-16]! + s0 + w[i-7]! + s1
+                    w := w.push w'
+        pure w
 
-partial def compress_loop (chunk: Array UInt32) (a b c d e f g h: UInt32) (i: Nat := 0): Digest :=
-  if i >= 64 then Digest.new a b c d e f g h
-  else
-    let w := schedule chunk
-    let S1 := (UInt32.ror e 6) ^^^ (UInt32.ror e 11) ^^^ (UInt32.ror e 25)
-    let ch := (e &&& f) ^^^ ((~~~ e) &&& g)
-    let temp1 := h + S1 + ch + round_constants[i]! + w[i]!
-    let S0 := (UInt32.ror a 2) ^^^ (UInt32.ror a 13) ^^^ (UInt32.ror a 22)
-    let maj := (a &&& b) ^^^ (a &&& c) ^^^ (b &&& c)
-    let temp2 := S0 + maj
-    compress_loop w (temp1 + temp2) a b c (d + temp1) e f g (i + 1)
+def compress_loop (chunk: Array UInt32) (state: Digest): Digest
+  := Id.run do
+        let mut a := state.h0
+        let mut b := state.h1
+        let mut c := state.h2
+        let mut d := state.h3
+        let mut e := state.h4
+        let mut f := state.h5
+        let mut g := state.h6
+        let mut h := state.h7
+        let w := schedule chunk
+        for i in [0:64] do
+          let S1 := (UInt32.ror e 6) ^^^ (UInt32.ror e 11) ^^^ (UInt32.ror e 25)
+          let ch := (e &&& f) ^^^ ((~~~ e) &&& g)
+          let temp1 := h + S1 + ch + round_constants[i]! + w[i]!
+          let S0 := (UInt32.ror a 2) ^^^ (UInt32.ror a 13) ^^^ (UInt32.ror a 22)
+          let maj := (a &&& b) ^^^ (a &&& c) ^^^ (b &&& c)
+          let temp2 := S0 + maj
+          h := g
+          g := f
+          f := e
+          e := (d + temp1)
+          d := c
+          c := b
+          b := a
+          a := (temp1 + temp2)
+        pure (Digest.new a b c d e f g h)
 
 def compress (chunk: Array UInt32) (h: Digest): Digest :=
   if chunk.size != 16 then panic s!"Invalid chunk size: {chunk.size}"
   else
-    let j := compress_loop chunk h.h0 h.h1 h.h2 h.h3 h.h4 h.h5 h.h6 h.h7
+    let j := compress_loop chunk h
     Digest.add h j
 
 def hash (msg: ByteArray): Digest :=

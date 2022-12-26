@@ -3,12 +3,13 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.ArithVM.Taps
 
 namespace Zkvm.ArithVM.AST
 
-open R0sy.Algebra
 open R0sy.ByteDeserial
+open Zkvm.Algebra.Classes
 
 structure MixState (ExtElem: Type) where
   tot: ExtElem

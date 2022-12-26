@@ -4,19 +4,22 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 namespace R0sy.Data.Hex
 
-def charTable: Array String
+def charTable: Array Char
   := #[
-    "0", "1", "2", "3",
-    "4", "5", "6", "7",
-    "8", "9", "a", "b",
-    "c", "d", "e", "f"
+    '0', '1', '2', '3',
+    '4', '5', '6', '7',
+    '8', '9', 'a', 'b',
+    'c', 'd', 'e', 'f'
   ]
 
 def UInt8.toHex (val: UInt8): String
   := Id.run do
         let lo := (val &&& 0x0f).toNat
         let hi := (val >>> 4).toNat
-        charTable[hi]! ++ charTable[lo]!
+        let mut out: String := ""
+        out := out.push charTable[hi]!
+        out := out.push charTable[lo]!
+        out
 
 def UInt16.toHex (val: UInt16): String
   := Id.run do

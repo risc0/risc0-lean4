@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Instr.ISA
 import RiscV.Instr.Types
 import RiscV.Mach.Int
 import RiscV.Mach.Reg
@@ -11,6 +12,7 @@ import RiscV.Monad
 namespace RiscV.Instr.RV32M
 
 open R0sy.Lean.UInt64
+open RiscV.Instr.ISA
 open RiscV.Instr.Types
 open RiscV.Mach.Int
 open RiscV.Mach.Reg
@@ -52,7 +54,7 @@ def ISA: ISA where
         | .DIVU =>   .R <|  R.EncMnemonic.new   0b0000001   0b101   0b0110011
         | .REM =>    .R <|  R.EncMnemonic.new   0b0000001   0b110   0b0110011
         | .REMU =>   .R <|  R.EncMnemonic.new   0b0000001   0b111   0b0110011
-  run _variant
+  run
     | .MUL, args
         => do let x <- RegFile.get_word args.rs1
               let y <- RegFile.get_word args.rs2

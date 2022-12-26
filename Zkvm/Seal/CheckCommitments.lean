@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
 import Zkvm.Seal.Header
@@ -13,10 +14,8 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.CheckCommitments
 
-open R0sy.Algebra
-open R0sy.Algebra.Poly
 open R0sy.Hash
-open R0sy.Hash.Sha2
+open Zkvm.Algebra.Classes
 open Zkvm.ArithVM.Circuit
 open Zkvm.ArithVM.Taps
 open Zkvm.Verify.Error
@@ -39,8 +38,8 @@ def compute_u
           let reg_size := RegRef.size reg
           for i in [0:reg_size] do
             let x := z * Algebra.ofBase (header.back_one ^ (RegRef.back reg i))
-            let poly: Poly circuit.field.ExtElem := Poly.ofSubarray (coeff_u.toSubarray cur_pos (cur_pos + reg_size))
-            let fx := Poly.eval poly x
+            let poly: Subarray circuit.field.ExtElem := coeff_u.toSubarray cur_pos (cur_pos + reg_size)
+            let fx := polyEval poly x
             eval_u := eval_u.push fx
           cur_pos := cur_pos + reg_size
         pure (circuit.poly_ext mix eval_u args).tot
@@ -70,19 +69,22 @@ def compute_check_u
         pure (check * ((Ring.ofNat 3 * z) ^ header.size - Ring.one))
 
 
-structure CheckCommitments (ExtElem: Type) where
-  check_merkle: MerkleTreeVerifier
+structure CheckCommitments (D ExtElem: Type) where
+  check_merkle: MerkleTreeVerifier D
   z: ExtElem
   coeff_u: Array ExtElem
 
 def read_and_commit
+    (D: Type)
     [Monad M]
     [MonadReadIop M]
+    [MonadCommitIop D M]
     [MonadExceptOf VerificationError M]
+    [Hash D]
     (circuit: Circuit)
     (header: Header.Header circuit.field.Elem)
     (trace_commitments_mix: Array circuit.field.Elem)
-    : M (CheckCommitments circuit.field.ExtElem)
+    : M (CheckCommitments D circuit.field.ExtElem)
   := do let poly_mix: circuit.field.ExtElem <- Field.random
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain circuit.check_size Constants.QUERIES
         let z: circuit.field.ExtElem <- Field.random
@@ -91,7 +93,8 @@ def read_and_commit
         let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments_mix]
         let check := compute_check_u header num_taps z coeff_u
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
-        MonadReadIop.commit (Sha256.hash_pod coeff_u)
+        let h_coeff: D := Hash.hash_pod coeff_u
+        MonadCommitIop.commit h_coeff
         pure {
           check_merkle,
           z,
@@ -101,7 +104,7 @@ def read_and_commit
 
 def CheckCommitments.compute_combos
     [Field ExtElem]
-    (self: CheckCommitments.CheckCommitments ExtElem)
+    (self: CheckCommitments.CheckCommitments D ExtElem)
     (tap_cache: TapCache ExtElem)
     : Array ExtElem
   := Id.run do

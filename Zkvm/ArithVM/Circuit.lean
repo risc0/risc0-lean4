@@ -3,96 +3,52 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
+import Zkvm.Algebra.BabyBear
 import Zkvm.ArithVM.AST
 import Zkvm.ArithVM.Taps
 import Zkvm.Constants
 
 namespace Zkvm.ArithVM.Circuit
 
-open R0sy.Algebra
-open R0sy.Algebra.Field
-open R0sy.Algebra.Poly
 open R0sy.ByteDeserial
-open AST
-open Taps
-
-
-class Algebraic (Elem ExtElem: Type) where
-  prime_field: PrimeField Elem
-  prime_rou: RootsOfUnity Elem
-  ext_field: Field ExtElem
-  ext_rou: RootsOfUnity ExtElem
-  alg: Algebra Elem ExtElem
-  ext: ExtField Elem ExtElem
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : PrimeField Elem := Algebraic.prime_field ExtElem
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : RootsOfUnity Elem := Algebraic.prime_rou ExtElem
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : Field ExtElem := Algebraic.ext_field Elem
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : RootsOfUnity ExtElem := Algebraic.ext_rou Elem
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : Algebra Elem ExtElem := Algebraic.alg
-
-@[always_inline]
-instance [Algebraic Elem ExtElem] : ExtField Elem ExtElem := Algebraic.ext
+open Zkvm.Algebra
+open Zkvm.Algebra.Classes
+open Zkvm.ArithVM.AST
+open Zkvm.ArithVM.Taps
 
 
 inductive CircuitField where
   | BabyBear
-  | BabyBear2
-  | Goldilocks
 
 @[always_inline, inline]
 def CircuitField.Elem: CircuitField -> Type
   | .BabyBear => BabyBear.Elem
-  | .BabyBear2 => BabyBear2.Elem
-  | .Goldilocks => Goldilocks.Elem
 
 @[always_inline, inline]
 def CircuitField.ExtElem: CircuitField -> Type
   | .BabyBear => BabyBear.ExtElem
-  | .BabyBear2 => BabyBear2.ExtElem
-  | .Goldilocks => Goldilocks.ExtElem
 
 @[always_inline]
 instance : Algebraic (CircuitField.Elem f) (CircuitField.ExtElem f) where
   prime_field :=
     match f with
     | .BabyBear => BabyBear.Elem.PrimeField
-    | .BabyBear2 => BabyBear2.Elem.PrimeField
-    | .Goldilocks => Goldilocks.Elem.PrimeField
   prime_rou :=
     match f with
     | .BabyBear => BabyBear.Elem.RootsOfUnity
-    | .BabyBear2 => BabyBear2.Elem.RootsOfUnity
-    | .Goldilocks => Goldilocks.Elem.RootsOfUnity
   ext_field :=
     match f with
     | .BabyBear => BabyBear.ExtElem.Field
-    | .BabyBear2 => BabyBear2.ExtElem.Field
-    | .Goldilocks => Goldilocks.ExtElem.Field
   ext_rou :=
     match f with
     | .BabyBear => BabyBear.ExtElem.RootsOfUnity
-    | .BabyBear2 => BabyBear2.ExtElem.RootsOfUnity
-    | .Goldilocks => Goldilocks.ExtElem.RootsOfUnity
   alg :=
     match f with
     | .BabyBear => BabyBear.ExtElem.Elem.Algebra
-    | .BabyBear2 => BabyBear2.ExtElem.Elem.Algebra
-    | .Goldilocks => Goldilocks.ExtElem.Elem.Algebra
   ext :=
     match f with
     | .BabyBear => BabyBear.ExtElem.Elem.ExtField
-    | .BabyBear2 => BabyBear2.ExtElem.Elem.ExtField
-    | .Goldilocks => Goldilocks.ExtElem.Elem.ExtField
 
 
 structure Circuit where
@@ -182,11 +138,11 @@ def TapCache.eval_taps
         for i in [0:combos_count] do
           let start := tap_cache.taps.combo_begin[i]!.toNat
           let stop := tap_cache.taps.combo_begin[i + 1]!.toNat
-          let poly: Poly ExtElem := Poly.ofSubarray (combo_u.toSubarray start stop)
+          let poly: Subarray ExtElem := combo_u.toSubarray start stop
           let mut divisor := Ring.one
           for back in (tap_cache.taps.getCombo i).slice do
             divisor := divisor * (x - z * back_one ^ back.toNat)
-          ret := ret + (tot[i]! - Poly.eval poly x) / divisor
+          ret := ret + (tot[i]! - polyEval poly x) / divisor
         let check_num := tot[combos_count]! - combo_u[tap_cache.taps.tot_combo_backs.toNat]!
         let check_div := x - z ^ Constants.INV_RATE
         ret := ret + check_num / check_div

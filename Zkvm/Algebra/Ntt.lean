@@ -2,12 +2,13 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra
-import R0sy.Lean.Nat
+import R0sy
+import Zkvm.Algebra.Classes
 
-namespace R0sy.Algebra.Ntt
+namespace Zkvm.Algebra.Ntt
 
 open R0sy.Lean.Nat
+open Zkvm.Algebra.Classes
 
 def bit_rev_32 (in_x: UInt32): UInt32
   := Id.run do
@@ -73,4 +74,4 @@ def interpolate_ntt [Field ExtElem] [RootsOfUnity ExtElem] (io : Array ExtElem) 
       let n := Nat.log2_ceil io.size
       (rev_butterfly n io) * (Field.inv (Ring.ofNat io.size : ExtElem))
 
-end R0sy.Algebra.Ntt
+end Zkvm.Algebra.Ntt

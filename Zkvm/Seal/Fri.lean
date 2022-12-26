@@ -4,6 +4,8 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 
 import R0sy
+import Zkvm.Algebra.Classes
+import Zkvm.Algebra.Ntt
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Error
@@ -12,13 +14,11 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.Fri
 
-open R0sy.Algebra
-open R0sy.Algebra.Ntt
-open R0sy.Algebra.Poly
 open R0sy.Lean.Subarray
 open R0sy.Lean.Nat
-open R0sy.Hash.Sha2
 open R0sy.Hash
+open Zkvm.Algebra.Classes
+open Zkvm.Algebra.Ntt
 open Zkvm.ArithVM.Circuit
 open Zkvm.Constants
 open Zkvm.Verify.Error
@@ -61,13 +61,13 @@ namespace FriGoalState
 end FriGoalState
 
 
-structure FriRoundVerifier (ExtElem: Type) where
+structure FriRoundVerifier (D ExtElem: Type) where
   domain: Nat
-  merkle: MerkleTreeVerifier
+  merkle: MerkleTreeVerifier D
   mix: ExtElem
 
 namespace FriRoundVerifier
-  def read_and_commit [Monad M] [MonadReadIop M] (circuit: Circuit) (in_domain: Nat) : M (FriRoundVerifier circuit.field.ExtElem)
+  def read_and_commit [Monad M] [MonadReadIop M] [MonadCommitIop D M] [Hash D] (circuit: Circuit) (in_domain: Nat) : M (FriRoundVerifier D circuit.field.ExtElem)
     := do let domain := in_domain / FRI_FOLD
           let merkle <- MerkleTreeVerifier.read_and_commit domain (FRI_FOLD * ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem) QUERIES
           let mix : circuit.field.ExtElem <- Field.random
@@ -77,7 +77,7 @@ namespace FriRoundVerifier
             mix
           }
 
-  def verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (self: FriRoundVerifier ExtElem) : StateT (FriGoalState ExtElem) M Unit
+  def verify (Elem ExtElem: Type) [Monad M] [MonadReadIop M] [Hash D] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (self: FriRoundVerifier D ExtElem) : StateT (FriGoalState ExtElem) M Unit
     := do let pos <- FriGoalState.get_pos
           let goal <- FriGoalState.get_goal
           --
@@ -92,20 +92,27 @@ namespace FriRoundVerifier
           let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
           -- Track the states of the mutable arguments
           FriGoalState.set_pos group
-          let new_goal := Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt data_ext))) (self.mix * inv_wk)
+          let new_goal := polyEval (bit_reverse (interpolate_ntt data_ext)).toSubarray (self.mix * inv_wk)
           FriGoalState.set_goal new_goal
           pure ()
 end FriRoundVerifier
 
 
-structure FriVerifier (Elem ExtElem: Type) where
+structure FriVerifier (D Elem ExtElem: Type) where
   orig_domain: Nat
   domain: Nat
-  rounds: Array (FriRoundVerifier ExtElem)
+  rounds: Array (FriRoundVerifier D ExtElem)
   final_coeffs: Array Elem
-  poly: Poly ExtElem
+  poly: Subarray ExtElem
 
-def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] (circuit: Circuit) (in_degree : Nat): M (FriVerifier circuit.field.Elem circuit.field.ExtElem)
+def read_and_commit
+    (D: Type)
+    [Monad M]
+    [MonadReadIop M]
+    [MonadCommitIop D M]
+    [MonadExceptOf VerificationError M]
+    [Hash D]
+    (circuit: Circuit) (in_degree : Nat): M (FriVerifier D circuit.field.Elem circuit.field.ExtElem)
   := do let mut degree := in_degree
         let orig_domain := INV_RATE * in_degree
         let mut domain := orig_domain
@@ -119,8 +126,9 @@ def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError 
           degree := degree / FRI_FOLD
         let final_coeffs <- MonadReadIop.readFields circuit.field.Elem (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem * degree)
         let collate_final_coeffs := collate final_coeffs degree (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem)
-        let poly: Poly circuit.field.ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
-        MonadReadIop.commit (Hash.hash_pod final_coeffs)
+        let poly: Subarray circuit.field.ExtElem := (collate_final_coeffs.map ExtField.ofSubelems).toSubarray
+        let h_coeffs: D := Hash.hash_pod final_coeffs
+        MonadCommitIop.commit h_coeffs
         pure {
           orig_domain,
           domain,
@@ -129,7 +137,7 @@ def read_and_commit [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError 
           poly
         }
 
-def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
+def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash D] [Algebraic Elem ExtElem] (fri_verify_params: FriVerifier D Elem ExtElem) (inner : Nat -> M ExtElem) : M Unit
   := do -- // Get the generator for the final polynomial evaluations
         let gen : Elem := RootsOfUnity.ROU_FWD[Nat.log2_ceil (fri_verify_params.domain)]!
         -- // Do queries
@@ -145,7 +153,7 @@ def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Algeb
             -- // Do final verification
             let x : Elem := gen ^ (<- FriGoalState.get_pos)
             let goal <- FriGoalState.get_goal
-            let actual : ExtElem := Poly.eval fri_verify_params.poly (Algebra.ofBase x)
+            let actual : ExtElem := polyEval fri_verify_params.poly (Algebra.ofBase x)
             if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
 

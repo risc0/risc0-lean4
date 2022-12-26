@@ -8,6 +8,13 @@ import Elf.Section
 import Elf.Program
 import Elf.Types
 
+/-!
+# Executable and Linkable Format
+
+The Executable and Linkable Format (ELF).
+-/
+
+
 structure Elf where
   e_header: Elf.Header.Header
   programs: Array (Elf.Program.Program e_header.e_ident.ei_class)

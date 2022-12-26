@@ -3,14 +3,15 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.Verify.Error
 import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify.Merkle
 
 open R0sy.Hash
-open R0sy.Hash.Sha2
 open R0sy.Lean.Nat
+open Zkvm.Algebra.Classes
 open Zkvm.Verify.Error
 open Zkvm.Verify.ReadIop
 
@@ -61,18 +62,18 @@ def ex_2: MerkleTreeParams := MerkleTreeParams.new 2048 31337 128
 end Examples
 
 
-structure MerkleTreeVerifier where
+structure MerkleTreeVerifier (D: Type) where
   params: MerkleTreeParams
-  top: Array Sha256.Digest
-  rest: Array Sha256.Digest
+  top: Array D
+  rest: Array D
 
 namespace MerkleTreeVerifier
-  def root (self: MerkleTreeVerifier): Sha256.Digest
+  def root [Inhabited D] (self: MerkleTreeVerifier D): D
     := if self.rest.size == 0
         then self.top[MerkleTreeParams.idx_to_top self.params 1]!
         else self.rest[MerkleTreeParams.idx_to_rest self.params 1]!
 
-  partial def fillUpperRest (params: MerkleTreeParams) (top out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
+  partial def fillUpperRest [Hash D] (params: MerkleTreeParams) (top out: Array D) (fr to: Nat) (i: Nat := fr - 1): Array D
     := if i < to
         then out
         else
@@ -81,7 +82,7 @@ namespace MerkleTreeVerifier
           let out' := Array.set! out out_idx (Hash.hash_pair top[top_idx]! top[top_idx + 1]!)
           fillUpperRest params top out' fr to (i - 1)
 
-  partial def fillLowerRest (params: MerkleTreeParams) (out: Array Sha256.Digest) (fr to: Nat) (i: Nat := fr - 1): Array Sha256.Digest
+  partial def fillLowerRest [Hash D] (params: MerkleTreeParams) (out: Array D) (fr to: Nat) (i: Nat := fr - 1): Array D
     := if i < to
         then out
         else
@@ -91,23 +92,23 @@ namespace MerkleTreeVerifier
           fillLowerRest params out' fr to (i - 1)
 
 
-  def read_and_commit [Monad M] [MonadReadIop M] (row_size col_size queries: Nat): M MerkleTreeVerifier
+  def read_and_commit [Monad M] [MonadReadIop M] [MonadCommitIop D M] [Hash D] (row_size col_size queries: Nat): M (MerkleTreeVerifier D)
     := do let params := MerkleTreeParams.new row_size col_size queries
-          let top <- MonadReadIop.readPodSlice Sha256.Digest params.top_size
+          let top <- MonadReadIop.readPodSlice D params.top_size
           let mut rest := Array.mkArray (params.top_size - 1) Inhabited.default
           rest := fillUpperRest params top rest params.top_size (params.top_size / 2)
           rest := fillLowerRest params rest (params.top_size / 2) 1
-          let verifier := {
+          let verifier: MerkleTreeVerifier D := {
             params,
             top,
             rest
           }
-          MonadReadIop.commit (root verifier)
+          MonadCommitIop.commit (root verifier)
           pure verifier
 
 
-  def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [R0sy.Algebra.Field Elem] 
-    (self: MerkleTreeVerifier) (base_idx : Nat) : M (Array Elem)
+  def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash D] [Field Elem] 
+    (self: MerkleTreeVerifier D) (base_idx : Nat) : M (Array Elem)
     := do let mut idx := base_idx
           if idx >= self.params.row_size then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
           let out <- MonadReadIop.readFields Elem self.params.col_size
@@ -115,7 +116,7 @@ namespace MerkleTreeVerifier
           idx := idx + self.params.row_size
           while idx >= 2 * self.params.top_size do
             let low_bit := idx % 2
-            let otherArray <- MonadReadIop.readPodSlice Sha256.Digest 1
+            let otherArray <- MonadReadIop.readPodSlice D 1
             let other := otherArray[0]!
             idx := idx / 2
             if low_bit == 1

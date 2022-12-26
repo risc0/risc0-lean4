@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import RiscV.Instr.ISA
 import RiscV.Instr.Types
 import RiscV.Mach.Int
 import RiscV.Mach.Mem
@@ -13,6 +14,7 @@ namespace RiscV.Instr.RV32I
 
 open R0sy.Data.Bits
 open R0sy.Lean.UInt32
+open RiscV.Instr.ISA
 open RiscV.Instr.Types
 open RiscV.Mach.Int
 open RiscV.Mach.Mem
@@ -136,7 +138,7 @@ def ISA: ISA where
         | .FENCE  => .I <|  I.EncMnemonic.new               0b000   0b0001111
         | .ECALL  => .Const <|  Const.EncMnemonic.new   0b000000000000    0b00000   0b000   0b00000   0b1110011
         | .EBREAK => .Const <|  Const.EncMnemonic.new   0b000000000001    0b00000   0b000   0b00000   0b1110011
-  run _variant
+  run
     | .LUI, args
         => RegFile.set_word args.rd args.imm
     | .AUIPC, args
@@ -211,12 +213,12 @@ def ISA: ISA where
     | .LH, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_half .Little addr.toNat
+              let x <- Mem.get_half addr.toNat
               RegFile.set_word args.rd (UInt32.ofUInt16_signed x)
     | .LW, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_word .Little addr.toNat
+              let x <- Mem.get_word addr.toNat
               RegFile.set_word args.rd x
     | .LBU, args
         => do let a <- RegFile.get_word args.rs1
@@ -226,7 +228,7 @@ def ISA: ISA where
     | .LHU, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
-              let x <- Mem.get_half .Little addr.toNat
+              let x <- Mem.get_half addr.toNat
               RegFile.set_word args.rd x.toUInt32
     | .SB, args
         => do let a <- RegFile.get_word args.rs1
@@ -237,12 +239,12 @@ def ISA: ISA where
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- RegFile.get_word args.rs2
-              Mem.set_half .Little addr.toNat x.toNat.toUInt16
+              Mem.set_half addr.toNat x.toNat.toUInt16
     | .SW, args
         => do let a <- RegFile.get_word args.rs1
               let addr := a + args.imm
               let x <- RegFile.get_word args.rs2
-              Mem.set_word .Little addr.toNat x
+              Mem.set_word addr.toNat x
     | .ADDI, args
         => do let x <- RegFile.get_word args.rs1
               RegFile.set_word args.rd (x + args.imm)
@@ -314,7 +316,9 @@ def ISA: ISA where
               let y <- RegFile.get_word args.rs2
               RegFile.set_word args.rd (x &&& y)
     | .FENCE, _args => pure ()
-    | .ECALL, _args => pure ()
+    | .ECALL, _args
+        => do let pc <- RegFile.get_word .PC
+              throw (.ECall pc.toNat)
     | .EBREAK, _args => pure ()
 
 end RiscV.Instr.RV32I

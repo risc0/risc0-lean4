@@ -2,6 +2,9 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import Zkvm.Algebra.Classes
+import Zkvm.Algebra.BabyBear
+import Zkvm.Algebra.Ntt
 import Zkvm.ArithVM.AST
 import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
@@ -17,3 +20,9 @@ import Zkvm.Verify
 import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
+
+/-!
+# ZKVM
+
+The RISC Zero ZKVM.
+-/

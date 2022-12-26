@@ -45,7 +45,8 @@ risc0-lean4$ ./build/bin/elf-dump-lean4
 ## Building the docs
 
 ```console
-$ lake -Kdoc=on build Zkvm:docs
+$ lake -Kdoc=on update
+$ lake -Kdoc=on build Elf:docs R0sy:docs RiscV:docs Zkvm:docs Mathlib:docs
 ```
 
 The docs will be viewable at `build/doc/index.html`.

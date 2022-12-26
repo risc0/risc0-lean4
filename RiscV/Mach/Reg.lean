@@ -50,6 +50,11 @@ def RegFile.new: RegFile
     data := Array.mkArray (X_REGISTER_COUNT + 1) 0
   }
 
+def RegFile.newWithPc (pc: UInt32): RegFile
+  := {
+    data := Array.setD RegFile.new.data Reg.PC.index pc
+  }
+
 def RegFile.get_word [Monad M] [MonadStateOf RegFile M] (reg: Reg): M UInt32
   := do if reg.index == 0 then return 0
         let self <- get

@@ -92,6 +92,7 @@ def FFPU: Region
 
 def emptyMem: Mem
   := {
+    endian := .Little,
     blocks := #[
       STACK.zeroBlock,
       DATA.zeroBlock,

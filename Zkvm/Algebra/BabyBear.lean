@@ -2,16 +2,14 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
-import R0sy.Algebra
-import R0sy.Algebra.Poly
-import R0sy.Hash
-import R0sy.Serial
+import R0sy
+import Zkvm.Algebra.Classes
 
-namespace R0sy.Algebra.Field.BabyBear2
+namespace Zkvm.Algebra.BabyBear
 
-open Hash
-open Poly
-open Serial
+open R0sy.Hash
+open R0sy.Serial
+open Zkvm.Algebra.Classes
 
 /- Base field -/
 
@@ -292,4 +290,4 @@ instance ExtElem.Elem.ExtField : ExtField Elem ExtElem where
   ofSubelems x := ExtElem.new x[0]! x[1]! x[2]! x[3]!
 
 
-end R0sy.Algebra.Field.BabyBear2
+end Zkvm.Algebra.BabyBear
