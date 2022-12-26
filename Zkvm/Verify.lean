@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.MethodId
@@ -15,9 +16,9 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Verify
 
-open R0sy.Algebra
 open R0sy.Hash
 open R0sy.Lean.Nat
+open Zkvm.Algebra.Classes
 open Zkvm.ArithVM.Circuit
 open Zkvm.MethodId
 open Zkvm.Seal

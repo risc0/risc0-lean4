@@ -4,6 +4,8 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 
 
 import R0sy
+import Zkvm.Algebra.Classes
+import Zkvm.Algebra.Ntt
 import Zkvm.ArithVM.Circuit
 import Zkvm.Constants
 import Zkvm.Verify.Error
@@ -12,12 +14,11 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.Fri
 
-open R0sy.Algebra
-open R0sy.Algebra.Ntt
-open R0sy.Algebra.Poly
 open R0sy.Lean.Subarray
 open R0sy.Lean.Nat
 open R0sy.Hash
+open Zkvm.Algebra.Classes
+open Zkvm.Algebra.Ntt
 open Zkvm.ArithVM.Circuit
 open Zkvm.Constants
 open Zkvm.Verify.Error
@@ -91,7 +92,7 @@ namespace FriRoundVerifier
           let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
           -- Track the states of the mutable arguments
           FriGoalState.set_pos group
-          let new_goal := Poly.eval (Poly.ofArray (bit_reverse (interpolate_ntt data_ext))) (self.mix * inv_wk)
+          let new_goal := polyEval (bit_reverse (interpolate_ntt data_ext)).toSubarray (self.mix * inv_wk)
           FriGoalState.set_goal new_goal
           pure ()
 end FriRoundVerifier
@@ -102,7 +103,7 @@ structure FriVerifier (D Elem ExtElem: Type) where
   domain: Nat
   rounds: Array (FriRoundVerifier D ExtElem)
   final_coeffs: Array Elem
-  poly: Poly ExtElem
+  poly: Subarray ExtElem
 
 def read_and_commit
     (D: Type)
@@ -125,7 +126,7 @@ def read_and_commit
           degree := degree / FRI_FOLD
         let final_coeffs <- MonadReadIop.readFields circuit.field.Elem (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem * degree)
         let collate_final_coeffs := collate final_coeffs degree (ExtField.EXT_DEG circuit.field.Elem circuit.field.ExtElem)
-        let poly: Poly circuit.field.ExtElem := Poly.ofArray (collate_final_coeffs.map ExtField.ofSubelems)
+        let poly: Subarray circuit.field.ExtElem := (collate_final_coeffs.map ExtField.ofSubelems).toSubarray
         let h_coeffs: D := Hash.hash_pod final_coeffs
         MonadCommitIop.commit h_coeffs
         pure {
@@ -152,7 +153,7 @@ def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash 
             -- // Do final verification
             let x : Elem := gen ^ (<- FriGoalState.get_pos)
             let goal <- FriGoalState.get_goal
-            let actual : ExtElem := Poly.eval fri_verify_params.poly (Algebra.ofBase x)
+            let actual : ExtElem := polyEval fri_verify_params.poly (Algebra.ofBase x)
             if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
 

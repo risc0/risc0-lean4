@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.ArithVM.Circuit
 import Zkvm.ArithVM.Taps
 import Zkvm.Seal.Header
@@ -13,9 +14,8 @@ import Zkvm.Verify.ReadIop
 
 namespace Zkvm.Seal.CheckCommitments
 
-open R0sy.Algebra
-open R0sy.Algebra.Poly
 open R0sy.Hash
+open Zkvm.Algebra.Classes
 open Zkvm.ArithVM.Circuit
 open Zkvm.ArithVM.Taps
 open Zkvm.Verify.Error
@@ -38,8 +38,8 @@ def compute_u
           let reg_size := RegRef.size reg
           for i in [0:reg_size] do
             let x := z * Algebra.ofBase (header.back_one ^ (RegRef.back reg i))
-            let poly: Poly circuit.field.ExtElem := Poly.ofSubarray (coeff_u.toSubarray cur_pos (cur_pos + reg_size))
-            let fx := Poly.eval poly x
+            let poly: Subarray circuit.field.ExtElem := coeff_u.toSubarray cur_pos (cur_pos + reg_size)
+            let fx := polyEval poly x
             eval_u := eval_u.push fx
           cur_pos := cur_pos + reg_size
         pure (circuit.poly_ext mix eval_u args).tot

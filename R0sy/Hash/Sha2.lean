@@ -93,6 +93,19 @@ def round_constants: Array UInt32 := #[
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 ]
 
+def Nat.to_be64 (x: Nat): ByteArray := {
+  data := #[
+    UInt8.ofNat (x >>> (8*7)),
+    UInt8.ofNat (x >>> (8*6)),
+    UInt8.ofNat (x >>> (8*5)),
+    UInt8.ofNat (x >>> (8*4)),
+    UInt8.ofNat (x >>> (8*3)),
+    UInt8.ofNat (x >>> (8*2)),
+    UInt8.ofNat (x >>> (8*1)),
+    UInt8.ofNat x
+  ]
+}
+
 def prepare (msg: ByteArray): Array UInt32 :=
   let padding :=
     let padding_required :=

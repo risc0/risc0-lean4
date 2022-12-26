@@ -3,6 +3,7 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy
+import Zkvm.Algebra.Classes
 import Zkvm.Verify.Error
 import Zkvm.Verify.ReadIop
 
@@ -11,6 +12,7 @@ namespace Zkvm.Verify.Merkle
 open R0sy.Hash
 open R0sy.Hash.Sha2
 open R0sy.Lean.Nat
+open Zkvm.Algebra.Classes
 open Zkvm.Verify.Error
 open Zkvm.Verify.ReadIop
 
@@ -106,7 +108,7 @@ namespace MerkleTreeVerifier
           pure verifier
 
 
-  def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash D] [R0sy.Algebra.Field Elem] 
+  def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash D] [Field Elem] 
     (self: MerkleTreeVerifier D) (base_idx : Nat) : M (Array Elem)
     := do let mut idx := base_idx
           if idx >= self.params.row_size then throw (VerificationError.MerkleQueryOutOfRange idx self.params.row_size)
