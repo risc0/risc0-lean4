@@ -26,6 +26,24 @@
     "name": "Cli",
     "inputRev?": "nightly"}},
   {"git":
+   {"url": "https://github.com/leanprover-community/mathlib4.git",
+    "subDir?": null,
+    "rev": "3cd4748a8bef6db519783d443962eda019266e36",
+    "name": "mathlib",
+    "inputRev?": null}},
+  {"git":
+   {"url": "https://github.com/gebner/quote4",
+    "subDir?": null,
+    "rev": "7ac99aa3fac487bec1d5860e751b99c7418298cf",
+    "name": "Qq",
+    "inputRev?": "master"}},
+  {"git":
+   {"url": "https://github.com/gebner/aesop",
+    "subDir?": null,
+    "rev": "6f04ed73886f455a8ec41fbbae21ef6b870c61ff",
+    "name": "aesop",
+    "inputRev?": "master"}},
+  {"git":
    {"url": "https://github.com/hargonix/LeanInk",
     "subDir?": null,
     "rev": "2447df5cc6e48eb965c3c3fba87e46d353b5e9f1",
@@ -36,4 +54,10 @@
     "subDir?": null,
     "rev": "6dd6ae3a3839c8350a91876b090eda85cf538d1d",
     "name": "Unicode",
+    "inputRev?": "main"}},
+  {"git":
+   {"url": "https://github.com/leanprover/std4",
+    "subDir?": null,
+    "rev": "a109889bf299f0d086f93a228e4c152f40ff5b0d",
+    "name": "std",
     "inputRev?": "main"}}]}
