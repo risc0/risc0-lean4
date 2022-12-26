@@ -139,22 +139,38 @@ def schedule (message: Array UInt32): Array UInt32
                     w := w.push w'
         pure w
 
-partial def compress_loop (chunk: Array UInt32) (a b c d e f g h: UInt32) (i: Nat := 0): Digest :=
-  if i >= 64 then Digest.new a b c d e f g h
-  else
-    let w := schedule chunk
-    let S1 := (UInt32.ror e 6) ^^^ (UInt32.ror e 11) ^^^ (UInt32.ror e 25)
-    let ch := (e &&& f) ^^^ ((~~~ e) &&& g)
-    let temp1 := h + S1 + ch + round_constants[i]! + w[i]!
-    let S0 := (UInt32.ror a 2) ^^^ (UInt32.ror a 13) ^^^ (UInt32.ror a 22)
-    let maj := (a &&& b) ^^^ (a &&& c) ^^^ (b &&& c)
-    let temp2 := S0 + maj
-    compress_loop w (temp1 + temp2) a b c (d + temp1) e f g (i + 1)
+def compress_loop (chunk: Array UInt32) (state: Digest): Digest
+  := Id.run do
+        let mut a := state.h0
+        let mut b := state.h1
+        let mut c := state.h2
+        let mut d := state.h3
+        let mut e := state.h4
+        let mut f := state.h5
+        let mut g := state.h6
+        let mut h := state.h7
+        let w := schedule chunk
+        for i in [0:64] do
+          let S1 := (UInt32.ror e 6) ^^^ (UInt32.ror e 11) ^^^ (UInt32.ror e 25)
+          let ch := (e &&& f) ^^^ ((~~~ e) &&& g)
+          let temp1 := h + S1 + ch + round_constants[i]! + w[i]!
+          let S0 := (UInt32.ror a 2) ^^^ (UInt32.ror a 13) ^^^ (UInt32.ror a 22)
+          let maj := (a &&& b) ^^^ (a &&& c) ^^^ (b &&& c)
+          let temp2 := S0 + maj
+          h := g
+          g := f
+          f := e
+          e := (d + temp1)
+          d := c
+          c := b
+          b := a
+          a := (temp1 + temp2)
+        pure (Digest.new a b c d e f g h)
 
 def compress (chunk: Array UInt32) (h: Digest): Digest :=
   if chunk.size != 16 then panic s!"Invalid chunk size: {chunk.size}"
   else
-    let j := compress_loop chunk h.h0 h.h1 h.h2 h.h3 h.h4 h.h5 h.h6 h.h7
+    let j := compress_loop chunk h
     Digest.add h j
 
 def hash (msg: ByteArray): Digest :=
