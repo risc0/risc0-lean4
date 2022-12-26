@@ -29,7 +29,7 @@ open Zkvm.Verify.ReadIop
 def verify [Hash D] (circuit: Circuit) (method_id: MethodId D) (journal: Array UInt32) {M: Type -> Type} [Monad M] [MonadExceptOf VerificationError M] [MonadReadIop M] [MonadCommitIop D M]: M Unit
   := do -- Read the header and verify the journal
         let header <- Header.read circuit
-        Header.verify_journal header journal
+        Header.verify_journal D header journal
         -- Enforce constraints on cycle count
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
         -- Read the commitments

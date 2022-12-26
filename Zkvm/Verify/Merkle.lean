@@ -10,7 +10,6 @@ import Zkvm.Verify.ReadIop
 namespace Zkvm.Verify.Merkle
 
 open R0sy.Hash
-open R0sy.Hash.Sha2
 open R0sy.Lean.Nat
 open Zkvm.Algebra.Classes
 open Zkvm.Verify.Error

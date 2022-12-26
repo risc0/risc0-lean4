@@ -11,7 +11,6 @@ import Zkvm.Verify.ReadIop
 namespace Zkvm.Seal.Header
 
 open R0sy.Hash
-open R0sy.Hash.Sha2
 open R0sy.Lean.Nat
 open R0sy.Lean.UInt32
 open R0sy.Serial
@@ -59,9 +58,12 @@ def verify_journal_size [Monad M] [MonadExceptOf VerificationError M] [PrimeFiel
         if output_len != journal_len
           then throw (VerificationError.SealJournalLengthMismatch output_len journal_len)
 
-def verify_journal [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] (self: Header Elem) (journal: Array UInt32): M Unit
+def verify_journal (D: Type) [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] [Hash D] (self: Header Elem) (journal: Array UInt32): M Unit
   := do verify_journal_size self journal
-        let journal := if journal.size <= 8 then journal else Sha256.Digest.toSubarray (Sha256.hash_pod journal)
+        let journal
+          := if journal.size <= SerialUInt32.words D
+              then journal
+              else SerialUInt32.toUInt32Words (Hash.hash_pod journal: D)
         for i in [0:journal.size] do
           let s := self.deserialized_output[i]!
           let j := journal[i]!
