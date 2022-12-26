@@ -20,3 +20,9 @@ import Zkvm.Verify
 import Zkvm.Verify.Error
 import Zkvm.Verify.Merkle
 import Zkvm.Verify.ReadIop
+
+/-!
+# ZKVM
+
+The RISC Zero ZKVM.
+-/

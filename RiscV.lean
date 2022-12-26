@@ -15,3 +15,9 @@ import RiscV.Mach.Mem
 import RiscV.Mach.Reg
 import RiscV.Mach.XlenInt
 import RiscV.Monad
+
+/-!
+# RISC-V
+
+The RISC-V instruction set architecture.
+-/
