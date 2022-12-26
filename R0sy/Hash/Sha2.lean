@@ -116,22 +116,28 @@ def prepare (msg: ByteArray): Array UInt32 :=
   let length := Nat.to_be64 (msg.size * 8)
   ByteArray.to_be32 (msg ++ padding ++ length)
 
-partial def to_chunks (msg: Array UInt32) (start: Nat := 0) (out: List (Array UInt32) := []): List (Array UInt32) :=
-  let stop := start + 16
-  if stop <= msg.size
-  then to_chunks msg stop (Array.extract msg start stop :: out)
-  else out
+def to_chunks (msg: Array UInt32): List (Array UInt32)
+  := Id.run do
+        let mut out := []
+        for chunk in [0:msg.size / 16] do
+          let start := chunk * 16
+          let stop := start + 16
+          out := Array.extract msg start stop :: out
+        pure out
 
-partial def schedule (w: Array UInt32): Array UInt32 :=
-  if w.size >= 64 then w
-  else
-    let i := w.size
-    let w15 := w[i-15]!
-    let w2 := w[i-2]!
-    let s0 := (UInt32.ror w15  7) ^^^ (UInt32.ror w15 18) ^^^ (w15 >>> 3)
-    let s1 := (UInt32.ror w2  17) ^^^ (UInt32.ror w2  19) ^^^ (w2 >>> 10)
-    let w' := w[i-16]! + s0 + w[i-7]! + s1
-    schedule (w.push w')
+def schedule (message: Array UInt32): Array UInt32
+  := Id.run do
+        let mut w: Array UInt32 := Array.mkEmpty 64
+        for i in [0:64] do
+          if i < 16
+            then w := w.push message[i]!
+            else do let w15 := w[i-15]!
+                    let w2 := w[i-2]!
+                    let s0 := (UInt32.ror w15  7) ^^^ (UInt32.ror w15 18) ^^^ (w15 >>> 3)
+                    let s1 := (UInt32.ror w2  17) ^^^ (UInt32.ror w2  19) ^^^ (w2 >>> 10)
+                    let w' := w[i-16]! + s0 + w[i-7]! + s1
+                    w := w.push w'
+        pure w
 
 partial def compress_loop (chunk: Array UInt32) (a b c d e f g h: UInt32) (i: Nat := 0): Digest :=
   if i >= 64 then Digest.new a b c d e f g h
