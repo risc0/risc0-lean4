@@ -26,6 +26,7 @@ def main : IO Unit
                         return ()
         for block in initialMachine.mem.blocks do
           IO.println s!"Memory block: {R0sy.Data.Hex.UInt32.toHex block.base.toUInt32} - {R0sy.Data.Hex.UInt32.toHex block.limit.toUInt32}"
+        IO.println s!"Running ..."
         let isa := RiscV.ISA.RV32IM.ISA
         let debug: Bool := false
         let maxClock := 16 <<< 20
@@ -40,7 +41,14 @@ def main : IO Unit
                       monadLift <| IO.println s!""
             if clock % (64 <<< 10) == 0 then IO.println s!"... clock {clock}"
             /- Run the next instruction -/
-            isa.step
+            let result <-
+              tryCatch (isa.step >>= fun _ => pure none)
+                <| fun exception
+                    => do IO.println s!"Exception at clock: {clock}"
+                          pure (some exception)
+            match result with
+              | none => pure ()
+              | some exception => throw exception
         match result with
           | Except.ok _ => IO.println s!"Ended normally after {maxClock} clock cycles"
           | Except.error exception => IO.println s!"Ended with exception: {exception}"
