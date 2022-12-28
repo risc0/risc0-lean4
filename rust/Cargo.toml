@@ -16,23 +16,23 @@ snafu = { version = "0.7", default-features = false }
 [workspace.dependencies.risc0-circuit-rv32im]
 version = "1.0.0-rc.2"
 git = "ssh://git@github.com/risc0/risc0.git"
-rev = "18f9257fa6c4c2e1887139228153531977876cf5"
+rev = "2cc59861385c0e9f1265cc3dac962beeb41c70ec"
 
 [workspace.dependencies.risc0-build]
 version = "1.0.0-rc.2"
 git = "ssh://git@github.com/risc0/risc0.git"
-rev = "18f9257fa6c4c2e1887139228153531977876cf5"
+rev = "2cc59861385c0e9f1265cc3dac962beeb41c70ec"
 
 [workspace.dependencies.risc0-zkvm]
 version = "1.0.0-rc.2"
 git = "ssh://git@github.com/risc0/risc0.git"
-rev = "18f9257fa6c4c2e1887139228153531977876cf5"
+rev = "2cc59861385c0e9f1265cc3dac962beeb41c70ec"
 default-features = false
 
 [workspace.dependencies.risc0-zkp]
 version = "1.0.0-rc.2"
 git = "ssh://git@github.com/risc0/risc0.git"
-rev = "18f9257fa6c4c2e1887139228153531977876cf5"
+rev = "2cc59861385c0e9f1265cc3dac962beeb41c70ec"
 default-features = false
 
 [profile.dev]
