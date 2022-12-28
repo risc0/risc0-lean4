@@ -19,9 +19,6 @@ def P: UInt32 := (15 * 2^27 + 1).toUInt32
 @[always_inline, inline]
 def P_U64: UInt64 := P.toUInt64
 
-@[always_inline, inline]
-def RANDOM_CUTOFF := (0xffffffff / P) * P
-
 structure Elem where
   val: UInt32
 
@@ -112,11 +109,12 @@ instance : SerialUInt32 Elem where
   fromUInt32Words x := { val := x[0]! }
 
 @[always_inline, inline]
-partial def prim_random {M: Type -> Type} [Monad M] [MonadRng M]: M Elem
-  := do let x <- MonadRng.nextUInt32
-        if x >= RANDOM_CUTOFF
-          then prim_random
-          else return encode x
+def prim_random {M: Type -> Type} [Monad M] [MonadRng M]: M Elem
+  := do let mut val: UInt64 := 0
+        for _ in [0:6] do
+          let r <- MonadRng.nextUInt32
+          val := ((val <<< 32) + r.toUInt64) % P_U64
+        pure (encode val.toUInt32)
 
 @[always_inline]
 instance : Field Elem where
