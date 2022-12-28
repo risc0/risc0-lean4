@@ -8,5 +8,5 @@ edition = "2021"
 [dependencies.risc0-zkvm]
 version = "1.0.0-rc.2"
 git = "ssh://git@github.com/risc0/risc0.git"
-rev = "18f9257fa6c4c2e1887139228153531977876cf5"
+rev = "2cc59861385c0e9f1265cc3dac962beeb41c70ec"
 default-features = false

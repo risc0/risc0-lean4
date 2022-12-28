@@ -181,7 +181,7 @@ def hash (msg: ByteArray): Digest :=
 def hash_words (x: Subarray UInt32): Digest := hash (ByteArray.of_le32 x)
 
 def hash_pair (x y: Digest): Digest :=
-  let chunk := Array.map UInt32.swap_endian (x.toArray ++ y.toArray)
+  let chunk := x.toArray ++ y.toArray
   compress chunk init_hash
 
 def hash_pod [SerialUInt32 X] (pod: Array X): Digest :=
@@ -232,7 +232,7 @@ def Rng.nextUInt32 [Monad M] [MonadStateOf Rng M]: M UInt32
         let self <- get
         let out := self.pool0.toArray[self.pool_used]!
         set { self with pool_used := self.pool_used + 1 }
-        return out
+        pure (UInt32.swap_endian out)
 
 def Rng.nextUInt64 [Monad M] [MonadStateOf Rng M]: M UInt64
   := do let hi32 <- Rng.nextUInt32
@@ -256,9 +256,9 @@ def sha_ex_3_in: ByteArray := "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmg
 def sha_ex_3_out: Digest := Digest.ofArray #[0xcf5b16a7, 0x78af8380, 0x036ce59e, 0x7b049237, 0x0b249b11, 0xe8f07a51, 0xafac4503, 0x7afee9d1]
 #eval hash sha_ex_3_in == sha_ex_3_out
 
-def sha_ex_4_in_1: Digest := Digest.ofArray #[0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
-def sha_ex_4_in_2: Digest := Digest.ofArray #[0xed375cad, 0xc653bb90, 0x78cee904, 0xacee6f7f, 0xf2bf7476, 0xc92dc929, 0x11bae27c, 0x41ebc015]
-def sha_ex_4_out: Digest := Digest.ofArray #[0x3aa2c47c, 0x47cd9e5c, 0x5259fd1c, 0x3428c30b, 0x9608201f, 0x5e163061, 0xdeea8d2d, 0x7c65f2c3]
+def sha_ex_4_in_1: Digest := Digest.ofArray #[0x67e6096a, 0x85ae67bb, 0x72f36e3c, 0x3af54fa5, 0x7f520e51, 0x8c68059b, 0xabd9831f, 0x19cde05b]
+def sha_ex_4_in_2: Digest := Digest.ofArray #[0xad5c37ed, 0x90bb53c6, 0x04e9ce78, 0x7f6feeac, 0x7674bff2, 0x29c92dc9, 0x7ce2ba11, 0x15c0eb41]
+def sha_ex_4_out: Digest  := Digest.ofArray #[0x3aa2c47c, 0x47cd9e5c, 0x5259fd1c, 0x3428c30b, 0x9608201f, 0x5e163061, 0xdeea8d2d, 0x7c65f2c3]
 #eval hash_pair sha_ex_4_in_1 sha_ex_4_in_2 == sha_ex_4_out
 
 def sha_ex_5_in: Array UInt32 := #[1]
@@ -278,23 +278,15 @@ def sha_ex_8_out: Digest := Digest.ofArray #[0x063e9f8f, 0x3caaf995, 0xb23627ea,
 #eval hash_words sha_ex_8_in.toSubarray == sha_ex_8_out
 
 def rng256_ex_1_in: StateM Rng (UInt32 × UInt32)
-  := do let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
-        let _ <- Rng.nextUInt32
+  := do for _ in [0:10] do
+          let _ <- Rng.nextUInt32
         let t1 <- Rng.nextUInt32
         Rng.mix (hash "foo".toUTF8)
         let t2 <- Rng.nextUInt32
         return (t1, t2)
-def rng256_ex_1_out_1: UInt32 := 1826198275
-def rng256_ex_1_out_2: UInt32 := 1753965479
-#eval (rng256_ex_1_in Rng.new).1 == (1826198275, 1753965479)
+def rng256_ex_1_out_1: UInt32 := 785921476
+def rng256_ex_1_out_2: UInt32 := 4167871101
+#eval (rng256_ex_1_in Rng.new).1 == (rng256_ex_1_out_1, rng256_ex_1_out_2)
 
 end Examples
 
@@ -302,8 +294,8 @@ end Sha256
 
 instance : SerialUInt32 Sha256.Digest where
   words := 8
-  toUInt32Words := Sha256.Digest.toArray
-  fromUInt32Words := Sha256.Digest.ofSubarray
+  toUInt32Words digest := digest.toArray.map UInt32.swap_endian
+  fromUInt32Words words := Sha256.Digest.ofSubarray (words.toArray.map UInt32.swap_endian).toSubarray
 
 instance : Hash Sha256.Digest where
   hash := Sha256.hash

@@ -21,73 +21,49 @@ def Region.zeroBlock (self: Region): Block
 def STACK: Region
   := {
     base := 0x00000000,
-    size_in_bytes := 9 <<< 20
+    size_in_bytes := 16 <<< 20
   }
 
 def DATA: Region
   := {
-    base := 0x00900000,
-    size_in_bytes := 1 <<< 20
+    base := 0x01000000,
+    size_in_bytes := 16 <<< 20
   }
 
 def HEAP: Region
   := {
-    base := 0x00A00000,
-    size_in_bytes := 20 <<< 20
+    base := 0x02000000,
+    size_in_bytes := 32 <<< 20
   }
 
 def INPUT: Region
   := {
-    base := 0x01E00000,
-    size_in_bytes := 1 <<< 20
-  }
-
-def GPIO: Region
-  := {
-    base := 0x01F00000,
-    size_in_bytes := 1 <<< 20
+    base := 0x04000000,
+    size_in_bytes := 32 <<< 20
   }
 
 def PROG: Region
   := {
-    base := 0x02000000,
-    size_in_bytes := 10 <<< 20
-  }
-
-def SHA: Region
-  := {
-    base := 0x02A00000,
-    size_in_bytes := 1 <<< 20
-  }
-
-def WOM: Region
-  := {
-    base := 0x02B00000,
-    size_in_bytes := 21 <<< 20
+    base := 0x06000000,
+    size_in_bytes := 32 <<< 20
   }
 
 def OUTPUT: Region
   := {
-    base := 0x02B00000,
-    size_in_bytes := 20 <<< 20
+    base := 0x08000000,
+    size_in_bytes := 32 <<< 20
   }
 
 def COMMIT: Region
   := {
-    base := 0x03F00000,
-    size_in_bytes := 1 <<< 20
+    base := 0x0A000000,
+    size_in_bytes := 32 <<< 20
   }
 
 def SYSTEM: Region
   := {
     base := 0x0C000000,
     size_in_bytes := 64 <<< 20
-  }
-
-def FFPU: Region
-  := {
-    base := 0x0C000000 + 192 * 4
-    size_in_bytes := 64 <<< 20 - 192 * 4
   }
 
 def emptyMem: Mem
@@ -98,14 +74,10 @@ def emptyMem: Mem
       DATA.zeroBlock,
       HEAP.zeroBlock,
       INPUT.zeroBlock,
-      GPIO.zeroBlock,
       PROG.zeroBlock,
-      SHA.zeroBlock,
-      WOM.zeroBlock,
       OUTPUT.zeroBlock,
       COMMIT.zeroBlock,
-      SYSTEM.zeroBlock,
-      FFPU.zeroBlock
+      SYSTEM.zeroBlock
     ]
   }
 
