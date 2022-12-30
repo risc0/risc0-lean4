@@ -6,8 +6,6 @@ Generates a receipt for a simple "hello world" guest, then serializes to a Lean 
 
 ### Saving the circuit to disk
 
-Note: this requires using a branch of risc0 where `risc0_circuit_rv32im::poly_ext::DEF` is public.
-
 ```console
 risc0-lean4/rust$ cargo run --release --bin circuit -- disk --out-base=output/riscv
 ```

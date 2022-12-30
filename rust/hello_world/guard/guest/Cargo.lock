@@ -275,7 +275,7 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 [[package]]
 name = "risc0-circuit-rv32im"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 dependencies = [
  "anyhow",
  "cc",
@@ -291,7 +291,7 @@ dependencies = [
 [[package]]
 name = "risc0-zeroio"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 dependencies = [
  "bytemuck",
  "impl-trait-for-tuples",
@@ -303,7 +303,7 @@ dependencies = [
 [[package]]
 name = "risc0-zeroio-derive"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -313,7 +313,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkp"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -330,7 +330,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkvm"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -347,7 +347,7 @@ dependencies = [
 [[package]]
 name = "risc0-zkvm-platform"
 version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git?rev=2cc59861385c0e9f1265cc3dac962beeb41c70ec#2cc59861385c0e9f1265cc3dac962beeb41c70ec"
+source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
 
 [[package]]
 name = "serde"
