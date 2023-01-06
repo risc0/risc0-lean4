@@ -4,6 +4,7 @@ Copyright (c) 2023 RISC Zero. All rights reserved.
 
 import R0sy.Hash
 import Std.Data.Rat.Basic
+import Std.Data.List.Basic
 
 open R0sy.Hash
 
@@ -38,7 +39,7 @@ instance : Monad Pmf where
   bind := List.bind
 
 -- TODO
-def Pmf.prob (p : Pmf α) (a : α) : Rat := sorry
+def Pmf.prob [BEq α] (p : Pmf α) (a : α) : Rat := List.count a p / List.length p
 
 /--
 A structure for a non-interactive proof system in the random oracle model.
@@ -71,7 +72,7 @@ structure noninteractive_random_oracle_proof_scheme :=    -- n_ro_codomain= 2^25
       ∀ (𝓐 : query_bounded_adversary D Proof),
         -- If the adversary has probability greater than the soundness bound of convincing the verifier ...
         (let adv_verifies : Pmf Bool := (do
-          -- let h <- random_oracles -- why is this a type mismatch?
+          -- let (h : Hash D) <- random_oracles -- why is this a type mismatch?
           let h : Hash D := sorry
           return (@verifier h stmt (@query_bounded_adversary.to_fun _ _ 𝓐 query_count h))) 
         Pmf.prob adv_verifies true ≥ soundness_bound query_count)
