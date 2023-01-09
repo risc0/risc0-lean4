@@ -3,10 +3,14 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
 import R0sy.Serial
+import R0sy.Lean.UInt32
+
 
 namespace R0sy.Hash
 
+open R0sy.Lean.UInt32
 open Serial
+
 
 class Hash (D: Type)
   extends
@@ -17,7 +21,9 @@ class Hash (D: Type)
     hash: ByteArray -> D
     hash_words: Subarray UInt32 -> D
     hash_pair: D -> D -> D
-    hash_pod: [SerialUInt32 X] -> Array X -> D
+    hash_array_array: Array (Array UInt32) -> D
+
+def Hash.hash_pod [Hash D] [SerialUInt32 X] (xs : Array X) : D := hash_array_array (Array.map SerialUInt32.toUInt32Words xs)
 
 class MonadRng (M: Type -> Type) where
   nextUInt32: M UInt32
