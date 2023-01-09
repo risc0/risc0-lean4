@@ -9,10 +9,13 @@ import Std.Data.List.Basic
 open R0sy.Hash
 
 /-- A Type of all possible things that could be hashed -/
-def HashPreimage (D : Type) := ByteArray ⊕ Subarray UInt32 ⊕ (D × D) 
--- .. and  ⊕ ([SerialUInt32 X] -> Array X), do I really have to do a dependent sum over serializable arrays or can this hash type be removed somehow?
+def HashPreimage (D : Type) := ByteArray ⊕ Subarray UInt32 ⊕ (D × D) ⊕ Array (Array UInt32)
 
-def HashEval (h : Hash D) (input : HashPreimage D) : D := sorry
+def HashEval (h : Hash D): (input : HashPreimage D) -> D 
+| Sum.inl x => h.hash x
+| Sum.inr (Sum.inl x) => h.hash_words x
+| Sum.inr (Sum.inr (Sum.inl ⟨x, y⟩)) => h.hash_pair x y
+| Sum.inr (Sum.inr (Sum.inr x)) => h.hash_array_array x
 
 -- given a ro and an adversary choosing a next query from a list of previous oracle responses,
 -- return the list of all responses
@@ -72,8 +75,8 @@ structure noninteractive_random_oracle_proof_scheme :=    -- n_ro_codomain= 2^25
       ∀ (𝓐 : query_bounded_adversary D Proof),
         -- If the adversary has probability greater than the soundness bound of convincing the verifier ...
         (let adv_verifies : Pmf Bool := (do
-          -- let (h : Hash D) <- random_oracles -- why is this a type mismatch?
-          let h : Hash D := sorry
+          let (h : Hash D) <- random_oracles -- why is this a type mismatch?
+          -- let h : Hash D := sorry
           return (@verifier h stmt (@query_bounded_adversary.to_fun _ _ 𝓐 query_count h))) 
         Pmf.prob adv_verifies true ≥ soundness_bound query_count)
           -- ... then the extractor obtains a correct witness.
