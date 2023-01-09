@@ -11,14 +11,14 @@ open R0sy.Hash
 /-- A Type of all possible things that could be hashed -/
 def HashPreimage (D : Type) := ByteArray ⊕ Subarray UInt32 ⊕ (D × D) ⊕ Array (Array UInt32)
 
+/-- A function to evaluate the hash on an arbitrary Hash-able type -/
 def HashEval (h : Hash D): (input : HashPreimage D) -> D 
 | Sum.inl x => h.hash x
 | Sum.inr (Sum.inl x) => h.hash_words x
 | Sum.inr (Sum.inr (Sum.inl ⟨x, y⟩)) => h.hash_pair x y
 | Sum.inr (Sum.inr (Sum.inr x)) => h.hash_array_array x
 
--- given a ro and an adversary choosing a next query from a list of previous oracle responses,
--- return the list of all responses
+/-- Given a hash function and an adversary choosing a next query from a list of previous oracle responses, return the list of all responses -/
 def query_list {D : Type} :
   Nat -> (Hash D) -> (List D -> HashPreimage D) -> List D 
 | 0, _, _ => List.nil
@@ -35,13 +35,13 @@ def query_bounded_adversary.to_fun {D Out : Type}
   Out :=
 𝓐.adversary_out_from_list (query_list query_count hash_function (𝓐.adversary_query_generator))
 
+/-- A monadic type constructor for representing Probability mass functions -/
 def Pmf α := List α
 
 instance : Monad Pmf where
   pure := List.pure
   bind := List.bind
 
--- TODO
 def Pmf.prob [BEq α] (p : Pmf α) (a : α) : Rat := List.count a p / List.length p
 
 /--
