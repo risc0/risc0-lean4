@@ -184,9 +184,9 @@ def hash_pair (x y: Digest): Digest :=
   let chunk := x.toArray ++ y.toArray
   compress chunk init_hash
 
-def hash_pod [SerialUInt32 X] (pod: Array X): Digest :=
+def hash_array_array (pod: Array (Array UInt32)): Digest :=
   let chunks :=
-    let msg := Array.foldl (fun x y => x ++ Array.map UInt32.swap_endian (SerialUInt32.toUInt32Words y)) #[] pod
+    let msg := Array.foldl (fun x y => x ++ Array.map UInt32.swap_endian y) #[] pod
     let padding_required :=
       let rem := msg.size % 16
       if rem == 0 then 0 else 16 - rem      
@@ -261,17 +261,17 @@ def sha_ex_4_in_2: Digest := Digest.ofArray #[0xad5c37ed, 0x90bb53c6, 0x04e9ce78
 def sha_ex_4_out: Digest  := Digest.ofArray #[0x3aa2c47c, 0x47cd9e5c, 0x5259fd1c, 0x3428c30b, 0x9608201f, 0x5e163061, 0xdeea8d2d, 0x7c65f2c3]
 #eval hash_pair sha_ex_4_in_1 sha_ex_4_in_2 == sha_ex_4_out
 
-def sha_ex_5_in: Array UInt32 := #[1]
+def sha_ex_5_in: Array (Array UInt32) := #[#[1]]
 def sha_ex_5_out: Digest := Digest.ofArray #[0xe3050856, 0xaac38966, 0x1ae49065, 0x6ad0ea57, 0xdf6aff0f, 0xf6eef306, 0xf8cc2eed, 0x4f240249]
-#eval hash_pod sha_ex_5_in == sha_ex_5_out
+#eval hash_array_array sha_ex_5_in == sha_ex_5_out
 
-def sha_ex_6_in: Array UInt32 := #[1, 2]
+def sha_ex_6_in: Array (Array UInt32) := #[#[1], #[2]]
 def sha_ex_6_out: Digest := Digest.ofArray #[0x4138ebae, 0x12299733, 0xcc677d11, 0x50c2a013, 0x9454662f, 0xc76ec95d, 0xa75d2bf9, 0xefddc57a]
-#eval hash_pod sha_ex_6_in == sha_ex_6_out
+#eval hash_array_array sha_ex_6_in == sha_ex_6_out
 
-def sha_ex_7_in: Array UInt32 := #[0xffffffff]
+def sha_ex_7_in: Array (Array UInt32) := #[#[0xffffffff]]
 def sha_ex_7_out: Digest := Digest.ofArray #[0xa3dba037, 0xd5617520, 0x9dfd4191, 0xf727e91c, 0x5feb67e6, 0x5a6ab5ed, 0x4daf0893, 0xc89598c8]
-#eval hash_pod sha_ex_7_in == sha_ex_7_out
+#eval hash_array_array sha_ex_7_in == sha_ex_7_out
 
 def sha_ex_8_in: Array UInt32 := #[0xff000001, 0xcc000002]
 def sha_ex_8_out: Digest := Digest.ofArray #[0x063e9f8f, 0x3caaf995, 0xb23627ea, 0xaf57b218, 0x36b2986c, 0x99aa9767, 0xbdd1f5b6, 0x5b391101]
@@ -301,7 +301,7 @@ instance : Hash Sha256.Digest where
   hash := Sha256.hash
   hash_words := Sha256.hash_words
   hash_pair := Sha256.hash_pair
-  hash_pod := Sha256.hash_pod
+  hash_array_array := Sha256.hash_array_array
 
 instance [Monad M] [MonadStateOf Sha256.Rng M]: MonadRng M where
   nextUInt32 := Sha256.Rng.nextUInt32
