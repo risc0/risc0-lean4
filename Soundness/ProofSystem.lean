@@ -2,9 +2,12 @@
 Copyright (c) 2023 RISC Zero. All rights reserved.
 -/
 
+import Zkvm
 import R0sy.Hash
 import Std.Data.Rat.Basic
 import Std.Data.List.Basic
+
+namespace Soundness.ProofSystem
 
 open R0sy.Hash
 
@@ -44,6 +47,22 @@ instance : Monad Pmf where
 
 def Pmf.prob [BEq α] (p : Pmf α) (a : α) : Rat := List.count a p / List.length p
 
+/-- 
+Defines the soundness criterion: there must exist an extractor, such that for any adversary making a certain number of queries and trying to convince the verifier of a particular statement, if the adversary is likely to succeed, then we can extract a witness from the adversary. 
+-/
+def verifier_soundness {Stmt Wit D Proof : Type} (relation : Stmt -> Wit -> Prop) (random_oracles : Pmf (Hash D))   
+  (verifier : [Hash D] -> Stmt -> Proof -> Bool) (soundness_bound : Nat -> Rat) : Prop :=
+  ∃ (knowledge_extractor : (query_bounded_adversary D Proof) -> Wit),
+    -- adversary query generator takes a input and outputs a next query
+    ∀ (query_count : Nat), ∀ (stmt : Stmt), ∀ (𝓐 : query_bounded_adversary D Proof),
+      -- If the adversary has probability greater than the soundness bound of convincing the verifier ...
+      (let adv_verifies : Pmf Bool := (do
+        let (h : Hash D) <- random_oracles
+        return (@verifier h stmt (@query_bounded_adversary.to_fun _ _ 𝓐 query_count h))) 
+      Pmf.prob adv_verifies true ≥ soundness_bound query_count)
+        -- ... then the extractor obtains a correct witness.
+        -> relation stmt (knowledge_extractor 𝓐)
+
 /--
 A structure for a non-interactive proof system in the random oracle model.
 This could be modified to use a hybrid random-oracle/collision-resistant-hash-function model by adding more types for the input and output of that function.
@@ -67,19 +86,30 @@ structure noninteractive_random_oracle_proof_scheme :=    -- n_ro_codomain= 2^25
   )
   -- Given n queries to oracle, what is worst case probability of compromise?
   (soundness_bound : Nat -> Rat)
-  -- Given an adversarial query generator and way of generating a proof from the queries, the extractor outputs the witness the generator knows
-  (knowledge_extractor : (query_bounded_adversary D Proof) -> Wit)
-  (soundness :
-    ∀ (query_count : Nat), ∀ (stmt : Stmt),
-      -- adversary query generator takes a input and outputs a next query
-      ∀ (𝓐 : query_bounded_adversary D Proof),
-        -- If the adversary has probability greater than the soundness bound of convincing the verifier ...
-        (let adv_verifies : Pmf Bool := (do
-          let (h : Hash D) <- random_oracles -- why is this a type mismatch?
-          -- let h : Hash D := sorry
-          return (@verifier h stmt (@query_bounded_adversary.to_fun _ _ 𝓐 query_count h))) 
-        Pmf.prob adv_verifies true ≥ soundness_bound query_count)
-          -- ... then the extractor obtains a correct witness.
-          -> relation stmt (knowledge_extractor 𝓐))
+  (soundness : verifier_soundness relation random_oracles verifier soundness_bound )
 
 
+end Soundness.ProofSystem
+
+
+/-- A verifier function, exactly analogous to that in check_seal, 
+but defined as a pure function with the type signature needed to pass into the soundness proposition -/
+def verifier [h : R0sy.Hash.Hash R0sy.Hash.Sha2.Sha256.Digest] 
+  (stmt : Zkvm.ArithVM.Circuit.Circuit × Zkvm.MethodId.MethodId R0sy.Hash.Sha2.Sha256.Digest × Array UInt32)
+  (seal: Array UInt32) : Bool :=
+let ⟨circuit, method_id, journal⟩ := stmt
+let result := Zkvm.Verify.ReadIop.ReadIop.run seal (@Zkvm.Verify.verify _ h circuit method_id journal)
+match result with
+| Except.ok _ => True
+| Except.error _ => False
+
+def soundness_bound (queries : Nat) : Rat := queries / ((2 ^ 128 : Nat) : Rat)
+
+def random_oracles : Soundness.ProofSystem.Pmf (R0sy.Hash.Hash R0sy.Hash.Sha2.Sha256.Digest) := sorry
+
+def relation (stmt : Zkvm.ArithVM.Circuit.Circuit × Zkvm.MethodId.MethodId R0sy.Hash.Sha2.Sha256.Digest × Array UInt32) (wit : Nat) : Prop := sorry 
+
+def main_soundness_claim : Soundness.ProofSystem.verifier_soundness relation random_oracles verifier soundness_bound := 
+by
+  unfold Soundness.ProofSystem.verifier_soundness
+  sorry
