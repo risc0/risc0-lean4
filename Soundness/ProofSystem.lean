@@ -45,7 +45,22 @@ instance : Monad Pmf where
   pure := List.pure
   bind := List.bind
 
+def Pmf.prod (a : Pmf α) (b : Pmf β) : Pmf (α × β) := do
+  let a_ <- a
+  let b_ <- b
+  return ⟨a_, b_⟩
+
 def Pmf.prob [BEq α] (p : Pmf α) (a : α) : Rat := List.count a p / List.length p
+
+/-- Given a list of items of type α and a Pmf over β, returns a Pmf over functions α -> β, 
+sending each α in the list independently to the Pmf, and all other α to the default -/
+def Pmf.func [BEq α] (as : List α) (default : β) (bs : Pmf β) : Pmf (α -> β) := 
+match as with
+| [] => [λ _ => default]
+| head :: tail => do
+  let rec <- Pmf.func tail default bs
+  let b <- bs
+  return λ a => if a == head then b else rec a
 
 /-- 
 Defines the soundness criterion: there must exist an extractor, such that for any adversary making a certain number of queries and trying to convince the verifier of a particular statement, if the adversary is likely to succeed, then we can extract a witness from the adversary. 
@@ -105,7 +120,33 @@ match result with
 
 def soundness_bound (queries : Nat) : Rat := queries / ((2 ^ 128 : Nat) : Rat)
 
-def random_oracles : Soundness.ProofSystem.Pmf (R0sy.Hash.Hash R0sy.Hash.Sha2.Sha256.Digest) := sorry
+instance : BEq ByteArray := sorry
+
+instance : BEq (Subarray UInt32) := sorry
+
+/-- A list of all byte arrays that can be hashed -/
+def used_byte_arrays : List ByteArray := sorry
+
+/-- A list of all byte arrays that can be hashed -/
+def used_subarrays : List (Subarray UInt32) := sorry
+
+/-- A list of all byte arrays that can be hashed -/
+def used_array_arrays : List (Array (Array UInt32)) := sorry
+
+/-- All digests -/
+def all_digests : List (R0sy.Hash.Sha2.Sha256.Digest) := sorry
+
+/-- All digest pairs -/
+def all_digest_pairs : List (R0sy.Hash.Sha2.Sha256.Digest × R0sy.Hash.Sha2.Sha256.Digest) := sorry
+
+def random_oracles : Soundness.ProofSystem.Pmf (R0sy.Hash.Hash R0sy.Hash.Sha2.Sha256.Digest) := do
+  let byte_array_maps <- Soundness.ProofSystem.Pmf.func used_byte_arrays default all_digests
+  let subarray_maps <- Soundness.ProofSystem.Pmf.func used_subarrays default all_digests
+  let pair_maps : R0sy.Hash.Sha2.Sha256.Digest × R0sy.Hash.Sha2.Sha256.Digest → R0sy.Hash.Sha2.Sha256.Digest <- Soundness.ProofSystem.Pmf.func all_digest_pairs default all_digests
+  let curried_pair_maps := λ x y => pair_maps ⟨x, y⟩
+  let array_array_maps <- Soundness.ProofSystem.Pmf.func used_array_arrays default all_digests
+  return R0sy.Hash.Hash.mk byte_array_maps subarray_maps curried_pair_maps array_array_maps
+
 
 def relation (stmt : Zkvm.ArithVM.Circuit.Circuit × Zkvm.MethodId.MethodId R0sy.Hash.Sha2.Sha256.Digest × Array UInt32) (wit : Nat) : Prop := sorry 
 
