@@ -120,9 +120,11 @@ match result with
 
 def soundness_bound (queries : Nat) : Rat := queries / ((2 ^ 128 : Nat) : Rat)
 
-instance : BEq ByteArray := sorry
+instance : BEq ByteArray := 
+{ beq := λ a b => a.data == b.data }
 
-instance : BEq (Subarray UInt32) := sorry
+instance : BEq (Subarray UInt32) := 
+{ beq := λ a b => a.toArray == b.toArray }
 
 /-- A list of all byte arrays that can be hashed -/
 def used_byte_arrays : List ByteArray := sorry
