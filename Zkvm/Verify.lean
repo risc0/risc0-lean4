@@ -32,10 +32,12 @@ def verify [Hash D] (circuit: Circuit) (method_id: MethodId D) (journal: Array U
         Header.verify_journal D header journal
         -- Enforce constraints on cycle count
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
-        -- Read the commitments
+        -- Read the trace commitments and set entropy for generating constraint batching randomness (alpha_constraints)
         let trace_commitments <- TraceCommitments.read_and_commit D circuit header method_id
+        -- Read the validity (aka checkpoly) commitments and set entropy for generating random DEEP query point (z)
         let check_commitments <- CheckCommitments.read_and_commit D circuit header trace_commitments.mix
         -- FRI verify
+        -- TODO: re-name combo_mix to FRI batching randomness (alpha_FRI)
         let combo_mix: circuit.field.ExtElem <- Field.random
         let tap_cache := circuit.tap_cache combo_mix
         let combo_u := check_commitments.compute_combos tap_cache
