@@ -5,7 +5,6 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 namespace Zkvm.Verify.Error
 
 inductive VerificationError where
-  | ReceiptFormatError
   | MethodCycleError (required: Nat)
   | MethodVerificationError
   | MerkleQueryOutOfRange (idx: Nat) (rows: Nat)
@@ -21,7 +20,6 @@ inductive VerificationError where
 instance : ToString VerificationError where
   toString error
     := match error with
-        | VerificationError.ReceiptFormatError => s!"ReceiptFormatError"
         | VerificationError.MethodCycleError required => s!"MethodCycleError required:{required}"
         | VerificationError.MethodVerificationError => s!"MethodVerificationError"
         | VerificationError.MerkleQueryOutOfRange idx rows => s!"MerkleQueryOutOfRange idx:{idx} rows:{rows}"
