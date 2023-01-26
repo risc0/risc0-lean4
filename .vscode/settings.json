@@ -1,0 +1,6 @@
+{
+    "search.exclude": {
+        "**/*.ilean": true,
+        "lake-packages/**": true
+    }
+}
