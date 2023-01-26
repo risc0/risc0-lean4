@@ -87,6 +87,7 @@ namespace FriRoundVerifier
           -- collect field elements into groups of size EXT_SIZE
           let collate_data : Array (Array Elem) := collate data FRI_FOLD (ExtField.EXT_DEG Elem ExtElem)
           let data_ext : Array ExtElem := collate_data.map ExtField.ofSubelems 
+          -- Returns error if there's a mismatch from one round of FRI to the next
           if data_ext[quot]! != goal then throw VerificationError.InvalidProof
           let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
           let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
@@ -152,8 +153,11 @@ def verify [Monad M] [MonadReadIop M] [MonadExceptOf VerificationError M] [Hash 
               FriRoundVerifier.verify Elem ExtElem round
             -- // Do final verification
             let x : Elem := gen ^ (<- FriGoalState.get_pos)
+            -- TODO clarify logic
             let goal <- FriGoalState.get_goal
+            -- TODO clarify logic
             let actual : ExtElem := polyEval fri_verify_params.poly (Algebra.ofBase x)
+            -- Returns an error if there's a mismatch between the verifier-computed evaluation of the FRI polynomial and the FRI query on the seal
             if actual != goal then throw (VerificationError.FriGoalMismatch query_no s!"{goal}" s!"{actual}")
         return ()
 

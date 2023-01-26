@@ -89,9 +89,13 @@ def read_and_commit
         let check_merkle <- MerkleTreeVerifier.read_and_commit header.domain circuit.check_size Constants.QUERIES
         let z: circuit.field.ExtElem <- Field.random
         let num_taps := TapSet.tapSize circuit.taps
+        -- One 
         let coeff_u <- MonadReadIop.readFields circuit.field.ExtElem (num_taps + circuit.check_size)
+        -- Verifier manually computes CheckPoly evaluation from tapset (TODO check logic)
         let result := compute_u circuit header z coeff_u poly_mix #[header.output, trace_commitments_mix]
+        -- Verifier computes CheckPoly evaluation from purported u coefficients (TODO check logic)
         let check := compute_check_u header num_taps z coeff_u
+        -- Returns an error if there's a mismatch between the two values of CheckPoly above
         if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
         let h_coeff: D := Hash.hash_pod coeff_u
         MonadCommitIop.commit h_coeff

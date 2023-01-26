@@ -22,17 +22,25 @@ inductive VerificationError where
 instance : ToString VerificationError where
   toString error
     := match error with
-        | VerificationError.Sorry msg => s!"Sorry msg:{msg}"
-        | VerificationError.ReceiptFormatError => s!"ReceiptFormatError"
+  
+        -- TODO rename to TooFewCycles
         | VerificationError.MethodCycleError required => s!"MethodCycleError required:{required}"
+        -- TODO rename to MethodIDMismatch
         | VerificationError.MethodVerificationError => s!"MethodVerificationError"
         | VerificationError.MerkleQueryOutOfRange idx rows => s!"MerkleQueryOutOfRange idx:{idx} rows:{rows}"
         | VerificationError.TooManyCycles po2 max_po2 => s!"TooManycycles po2:{po2} max_po2:{max_po2}"
+        -- TODO: Remove overloading of InvalidProof by: 
+        -- In FRI, change InvalidProof error to FRICommitRoundMismatch
+        -- In Merkle, change InvalidProof to MerkleBranchMismatch
         | VerificationError.InvalidProof => s!"InvalidProof"
+        -- TODO rename to CheckPolyMismatch 
         | VerificationError.InvalidCheck result check => s!"InvalidProof result:{result} check:{check}"
+        -- TODO rename to JournalHashMismatch
         | VerificationError.JournalSealRootMismatch idx seal journal => s!"JournalSealRootMismatch idx:{idx} seal:{seal} journal:{journal}"
+        -- TODO rename to JournalLengthMismatch 
         | VerificationError.SealJournalLengthMismatch seal_len journal_len => s!"SealJournalLengthMismatch seal_len:{seal_len} journal_len:{journal_len}"
         | VerificationError.FriGoalMismatch query_no goal actual => s!"FriGoalMismatch query_no:{query_no} goal:{goal} actual:{actual}"
+        -- TODO remove(?)
         | VerificationError.ReadIopIncomplete words_remaining => s!"ReadIopIncomplete words_remaining:{words_remaining}"
 
 end Zkvm.Verify.Error
