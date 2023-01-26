@@ -5,7 +5,6 @@ Copyright (c) 2022 RISC Zero. All rights reserved.
 namespace Zkvm.Verify.Error
 
 inductive VerificationError where
-  | Sorry (msg: String)
   | ReceiptFormatError
   | MethodCycleError (required: Nat)
   | MethodVerificationError
@@ -22,7 +21,6 @@ inductive VerificationError where
 instance : ToString VerificationError where
   toString error
     := match error with
-        | VerificationError.Sorry msg => s!"Sorry msg:{msg}"
         | VerificationError.ReceiptFormatError => s!"ReceiptFormatError"
         | VerificationError.MethodCycleError required => s!"MethodCycleError required:{required}"
         | VerificationError.MethodVerificationError => s!"MethodVerificationError"
