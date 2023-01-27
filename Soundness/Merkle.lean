@@ -21,13 +21,11 @@ Implements merkle trees
 
 ## Merkle Tree Collision Extraction
 
-There is also code for a lemma about collision extraction in Merkle trees. 
-
-The main def here is MerkleTreeCollisionExtractor, which, 
+The main def here is MerkleTreeCollisionExtractor, which,
 given two merkle branches to the same index proving different values, 
 returns a collision of the hash function.
 
-This proof is in the process of being ported from Lean 3, but a few more tactics will be needed first.
+There is also code for a proof of this fact. This proof is in the process of being ported from Lean 3, but a few more tactics will be needed first.
 
 -/
 
