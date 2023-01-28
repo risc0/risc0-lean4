@@ -76,7 +76,7 @@ structure MerkleBranch (F A : Type) :=
   (branch_hashes : List A)
   (leaf : F)
 
-def merkle_tree.of_leaf_List (leaves : List F) : merkle_tree F A :=
+def merkle_tree.of_leaf_list (leaves : List F) : merkle_tree F A :=
 { hashes := hash_tree h (Nat.log2 leaves.length) (leaves.map h.of_field_element),
   leaves := leaves } 
 
