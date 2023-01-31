@@ -9,16 +9,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "216261ddc8289130e551ddcd5ce8a064710c0d064a4d2895c67151c92b5443f6"
 
 [[package]]
-name = "bitflags"
-version = "1.3.2"
+name = "autocfg"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
-
-[[package]]
-name = "block"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
+checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "block-buffer"
@@ -50,47 +44,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cc"
-version = "1.0.77"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9f73505338f7d905b19d18738976aae232eb46b8efc15554ffc56deb5d9ebe4"
-dependencies = [
- "jobserver",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "core-foundation"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "194a7a9e6de53fa55116934067c844d9d749312f75c6f6d0980e8c252f8c2146"
-dependencies = [
- "core-foundation-sys",
- "libc",
-]
-
-[[package]]
-name = "core-foundation-sys"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5827cebf4670468b8772dd191856768aedcb1b0278a04f989f7766351917b9dc"
-
-[[package]]
-name = "core-graphics-types"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a68b68b3446082644c91ac778bf50cd4104bfb002b5a6a7c44cca5a2c70788b"
-dependencies = [
- "bitflags",
- "core-foundation",
- "foreign-types",
- "libc",
-]
 
 [[package]]
 name = "cpufeatures"
@@ -122,21 +79,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "foreign-types"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6f339eb8adc052cd2ca78910fda869aefa38d22d5cb648e6485e4d3fc06f3b1"
-dependencies = [
- "foreign-types-shared",
-]
-
-[[package]]
-name = "foreign-types-shared"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
-
-[[package]]
 name = "generic-array"
 version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -145,12 +87,6 @@ dependencies = [
  "typenum",
  "version_check",
 ]
-
-[[package]]
-name = "glob"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "hw-guard-guest"
@@ -171,15 +107,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jobserver"
-version = "0.1.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "068b1ee6743e4d11fb9c6a1e6064b3693a1b600e7f5f5988047d98b3dc9fb90b"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -195,45 +122,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "malloc_buf"
-version = "0.0.6"
+name = "num-derive"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
+checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
 dependencies = [
- "libc",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
-name = "metal"
-version = "0.24.0"
+name = "num-traits"
+version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de11355d1f6781482d027a3b4d4de7825dcedb197bf573e0596d00008402d060"
+checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
 dependencies = [
- "bitflags",
- "block",
- "core-graphics-types",
- "foreign-types",
- "log",
- "objc",
-]
-
-[[package]]
-name = "objc"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "915b1b472bc21c53464d6c8461c9d3af805ba1ef837e1cac254428f4a77177b1"
-dependencies = [
- "malloc_buf",
- "objc_exception",
-]
-
-[[package]]
-name = "objc_exception"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad970fb455818ad6cba4c122ad012fae53ae8b4795f86378bce65e4f6bab2ca4"
-dependencies = [
- "cc",
+ "autocfg",
 ]
 
 [[package]]
@@ -274,24 +179,30 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 
 [[package]]
 name = "risc0-circuit-rv32im"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 dependencies = [
  "anyhow",
- "cc",
- "glob",
  "log",
- "metal",
+ "risc0-core",
  "risc0-zkp",
  "risc0-zkvm-platform",
- "sha2",
  "tracing",
 ]
 
 [[package]]
+name = "risc0-core"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
+dependencies = [
+ "bytemuck",
+ "rand_core",
+]
+
+[[package]]
 name = "risc0-zeroio"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 dependencies = [
  "bytemuck",
  "impl-trait-for-tuples",
@@ -302,8 +213,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zeroio-derive"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -312,15 +223,15 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkp"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 dependencies = [
  "anyhow",
  "bytemuck",
  "log",
- "metal",
  "paste",
  "rand_core",
+ "risc0-core",
  "risc0-zeroio",
  "serde",
  "sha2",
@@ -329,14 +240,17 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 dependencies = [
  "anyhow",
  "bytemuck",
  "cfg-if",
  "log",
+ "num-derive",
+ "num-traits",
  "risc0-circuit-rv32im",
+ "risc0-core",
  "risc0-zeroio",
  "risc0-zkp",
  "risc0-zkvm-platform",
@@ -346,8 +260,8 @@ dependencies = [
 
 [[package]]
 name = "risc0-zkvm-platform"
-version = "1.0.0-rc.2"
-source = "git+ssh://git@github.com/risc0/risc0.git#8e966bac8bb81a2090841c82f7ce1aa1cb453ed4"
+version = "0.12.0"
+source = "git+ssh://git@github.com/risc0/risc0.git#d9df845f425048642f3c4774bfc12698d985ba6b"
 
 [[package]]
 name = "serde"

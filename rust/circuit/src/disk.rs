@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use risc0_zkp::{
     adapter::{PolyExtStep, PolyExtStepDef},
-    taps::{RegisterGroup, TapData, TapSet},
+    taps::{TapData, TapSet},
 };
 
 fn write_u8(file: &mut File, val: u8) -> std::io::Result<()> {
@@ -48,20 +48,10 @@ fn write_usize_array(file: &mut File, val: &[usize]) -> std::io::Result<()> {
     Ok(())
 }
 
-fn write_register_group(file: &mut File, val: RegisterGroup) -> std::io::Result<()> {
-    match val {
-        RegisterGroup::Accum => write_u16(file, 0)?,
-        RegisterGroup::Code => write_u16(file, 1)?,
-        RegisterGroup::Data => write_u16(file, 2)?,
-    }
-
-    Ok(())
-}
-
 fn write_tapdata(file: &mut File, val: &TapData) -> std::io::Result<()> {
     write_u16(file, val.offset)?;
     write_u16(file, val.back)?;
-    write_register_group(file, val.group)?;
+    write_u16(file, val.group as u16)?;
     write_u8(file, val.combo)?;
     write_u8(file, val.skip)?;
 
@@ -93,43 +83,43 @@ fn write_tapset(file: &mut File, val: &TapSet) -> std::io::Result<()> {
 
 fn write_step(file: &mut File, val: &PolyExtStep) -> std::io::Result<()> {
     match val {
-        PolyExtStep::Const(value, _loc) => {
+        PolyExtStep::Const(value) => {
             write_u32(file, 1)?;
             write_u32(file, *value as u32)?;
         }
-        PolyExtStep::Get(tap, _loc) => {
+        PolyExtStep::Get(tap) => {
             write_u32(file, 2)?;
             write_u32(file, *tap as u32)?;
         }
-        PolyExtStep::GetGlobal(base, offset, _loc) => {
+        PolyExtStep::GetGlobal(base, offset) => {
             write_u32(file, 3)?;
             write_u32(file, *base as u32)?;
             write_u32(file, *offset as u32)?;
         }
-        PolyExtStep::Add(x1, x2, _loc) => {
+        PolyExtStep::Add(x1, x2) => {
             write_u32(file, 4)?;
             write_u32(file, *x1 as u32)?;
             write_u32(file, *x2 as u32)?;
         }
-        PolyExtStep::Sub(x1, x2, _loc) => {
+        PolyExtStep::Sub(x1, x2) => {
             write_u32(file, 5)?;
             write_u32(file, *x1 as u32)?;
             write_u32(file, *x2 as u32)?;
         }
-        PolyExtStep::Mul(x1, x2, _loc) => {
+        PolyExtStep::Mul(x1, x2) => {
             write_u32(file, 6)?;
             write_u32(file, *x1 as u32)?;
             write_u32(file, *x2 as u32)?;
         }
-        PolyExtStep::True(_loc) => {
+        PolyExtStep::True => {
             write_u32(file, 7)?;
         }
-        PolyExtStep::AndEqz(x, val, _loc) => {
+        PolyExtStep::AndEqz(x, val) => {
             write_u32(file, 8)?;
             write_u32(file, *x as u32)?;
             write_u32(file, *val as u32)?;
         }
-        PolyExtStep::AndCond(x, cond, inner, _loc) => {
+        PolyExtStep::AndCond(x, cond, inner) => {
             write_u32(file, 9)?;
             write_u32(file, *x as u32)?;
             write_u32(file, *cond as u32)?;

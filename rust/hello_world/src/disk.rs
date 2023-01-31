@@ -8,8 +8,8 @@ use risc0_zkvm::Receipt;
 
 pub fn save_to_disk(
     mut out_base: PathBuf,
-    image: Vec<u8>,
-    id: &'static [u8],
+    image: &'static [u8],
+    id: &'static str,
     receipt: Receipt,
 ) -> std::io::Result<()> {
     {
@@ -18,7 +18,7 @@ pub fn save_to_disk(
     }
     {
         out_base.set_extension("id");
-        File::create(&out_base)?.write_all(id)?;
+        File::create(&out_base)?.write_all(id.as_bytes())?;
     }
     {
         out_base.set_extension("journal");
