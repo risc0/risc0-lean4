@@ -26,3 +26,20 @@ import Zkvm.Verify.ReadIop
 
 The RISC Zero ZKVM.
 -/
+
+namespace Zkvm
+open R0sy.Hash.Sha2
+open Zkvm.ArithVM.Circuit
+open Zkvm.MethodId
+open Zkvm.Verify.Error
+open Zkvm.Verify.ReadIop
+
+def verify
+    (seal: Array UInt32)
+    (circuit: Circuit)
+    (methodId: MethodId Sha256.Digest)
+    (journal: Array UInt32)
+    : Except VerificationError Unit
+  := ReadIop.run seal (Zkvm.Verify.verify circuit methodId journal)
+
+end Zkvm
