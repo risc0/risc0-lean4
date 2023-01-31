@@ -2,6 +2,7 @@
 Copyright (c) 2022 RISC Zero. All rights reserved.
 -/
 
+import R0sy.Data.Hex
 import R0sy.Lean.ByteArray
 import R0sy.Lean.Nat
 import R0sy.Lean.UInt32
@@ -69,6 +70,17 @@ def Digest.toArray (d: Digest): Array UInt32
 
 def Digest.toSubarray (d: Digest): Subarray UInt32
   := (Digest.toArray d).toSubarray
+
+def Digest.toBytes (d: Digest): ByteArray
+  :=
+    UInt32.to_be d.h0 ++
+    UInt32.to_be d.h1 ++
+    UInt32.to_be d.h2 ++
+    UInt32.to_be d.h3 ++
+    UInt32.to_be d.h4 ++
+    UInt32.to_be d.h5 ++
+    UInt32.to_be d.h6 ++
+    UInt32.to_be d.h7
 
 def init_hash: Digest
   := {
@@ -247,6 +259,7 @@ namespace Examples
 def sha_ex_1_in: ByteArray := "abc".toUTF8
 def sha_ex_1_out: Digest := Digest.ofArray #[0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223, 0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad]
 #eval hash sha_ex_1_in == sha_ex_1_out
+#eval sha_ex_1_out.toBytes.data == #[0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23, 0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad]
 
 def sha_ex_2_in: ByteArray := "".toUTF8
 def sha_ex_2_out: Digest := Digest.ofArray #[0xe3b0c442, 0x98fc1c14, 0x9afbf4c8, 0x996fb924, 0x27ae41e4, 0x649b934c, 0xa495991b, 0x7852b855]

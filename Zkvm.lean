@@ -26,3 +26,19 @@ import Zkvm.Verify.ReadIop
 
 The RISC Zero ZKVM.
 -/
+
+namespace Zkvm
+open R0sy.Hash.Sha2
+open Zkvm.ArithVM.Circuit
+open Zkvm.MethodId
+open Zkvm.Verify.ReadIop
+
+def verify
+    (seal: Array UInt32)
+    (circuit: Circuit)
+    (methodId: MethodId Sha256.Digest)
+    (journal: Array UInt32)
+    : Bool
+  := (ReadIop.run seal (Zkvm.Verify.verify circuit methodId journal)).toBool
+
+end Zkvm
