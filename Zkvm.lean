@@ -31,7 +31,6 @@ namespace Zkvm
 open R0sy.Hash.Sha2
 open Zkvm.ArithVM.Circuit
 open Zkvm.MethodId
-open Zkvm.Verify.Error
 open Zkvm.Verify.ReadIop
 
 def verify
@@ -39,7 +38,7 @@ def verify
     (circuit: Circuit)
     (methodId: MethodId Sha256.Digest)
     (journal: Array UInt32)
-    : Except VerificationError Unit
-  := ReadIop.run seal (Zkvm.Verify.verify circuit methodId journal)
+    : Bool
+  := (ReadIop.run seal (Zkvm.Verify.verify circuit methodId journal)).toBool
 
 end Zkvm
