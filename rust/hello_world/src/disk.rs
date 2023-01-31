@@ -18,7 +18,7 @@ pub fn save_to_disk(
     }
     {
         out_base.set_extension("id");
-        File::create(&out_base)?.write_all(id.as_bytes())?;
+        File::create(&out_base)?.write_all(hex::decode(id).unwrap().as_ref())?;
     }
     {
         out_base.set_extension("journal");
