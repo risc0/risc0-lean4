@@ -1,7 +1,7 @@
 # RISC Zero's Formally Verified Verifier
 [RISC Zero](http://www.risczero.com) is building a formally verified verifier for the [RISC Zero zkVM](www.github.com/risc0/risc0). 
 The source code for the Rust verifier can be found in [zkp/src/verify](https://github.com/risc0/risc0/tree/main/risc0/zkp/src/verify).
-This repo contains a work-in-progress [Lean 4](https://leanprover.github.io/) emulation of the Rust verifier. 
+This repo contains a work-in-progress [Lean 4](https://leanprover.github.io/) implementation of the Rust verifier. 
 
 ### Repo Organization
 - Main verification logic 
