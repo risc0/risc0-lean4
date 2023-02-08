@@ -33,6 +33,8 @@ lean_lib Zkvm {
   -- add library configuration options here
 }
 
+lean_lib Soundness
+
 @[default_target]
 lean_exe «zkvm-verify-lean4» {
   root := `Zkvm.MainVerify
