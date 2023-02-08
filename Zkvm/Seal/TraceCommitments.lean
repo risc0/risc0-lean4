@@ -41,9 +41,9 @@ def check_code_root
     : M Unit
   := do let which := header.po2 - Constants.MIN_CYCLES_PO2
         -- Returns error if zkvm execution was shorter than min PO2
-        if which >= method_id.table.size then throw (VerificationError.MethodCycleError header.po2)
+        if which >= method_id.table.size then throw (VerificationError.TooFewCycles header.po2)
         -- Returns error if Merkle commitment for control tree (aka code tree) mismatches with the appropriate row of MethodID table
-        if method_id.table[which]! != MerkleTreeVerifier.root code_merkle then throw VerificationError.MethodVerificationError
+        if method_id.table[which]! != MerkleTreeVerifier.root code_merkle then throw VerificationError.MethodIDMismatch
         pure ()
 
 def get_mix [Monad M] [MonadReadIop M] (circuit: Circuit): M (Array circuit.field.Elem)

@@ -96,7 +96,7 @@ def read_and_commit
         -- Verifier computes CheckPoly evaluation from purported u coefficients (TODO check logic)
         let check := compute_check_u header num_taps z coeff_u
         -- Returns an error if there's a mismatch between the two values of CheckPoly above
-        if check != result then throw (VerificationError.InvalidCheck (ToString.toString result) (ToString.toString check))
+        if check != result then throw (VerificationError.CheckPolyMismatch (ToString.toString result) (ToString.toString check))
         let h_coeff: D := Hash.hash_pod coeff_u
         MonadCommitIop.commit h_coeff
         pure {

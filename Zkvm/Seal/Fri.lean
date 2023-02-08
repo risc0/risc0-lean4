@@ -88,7 +88,7 @@ namespace FriRoundVerifier
           let collate_data : Array (Array Elem) := collate data FRI_FOLD (ExtField.EXT_DEG Elem ExtElem)
           let data_ext : Array ExtElem := collate_data.map ExtField.ofSubelems 
           -- Returns error if there's a mismatch from one round of FRI to the next
-          if data_ext[quot]! != goal then throw VerificationError.InvalidProof
+          if data_ext[quot]! != goal then throw VerificationError.FRICommitRoundMismatch
           let root_po2 : Nat := Nat.log2_ceil (FRI_FOLD * self.domain)
           let inv_wk : Elem := (RootsOfUnity.ROU_REV[root_po2]! : Elem) ^ group
           -- Track the states of the mutable arguments

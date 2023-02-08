@@ -37,9 +37,8 @@ def verify [Hash D] (circuit: Circuit) (method_id: MethodId D) (journal: Array U
         -- Read the validity (aka checkpoly) commitments and set entropy for generating random DEEP query point (z)
         let check_commitments <- CheckCommitments.read_and_commit D circuit header trace_commitments.mix
         -- FRI verify
-        -- TODO: re-name combo_mix to FRI batching randomness (alpha_FRI)
-        let combo_mix: circuit.field.ExtElem <- Field.random
-        let tap_cache := circuit.tap_cache combo_mix
+        let alpha_FRI: circuit.field.ExtElem <- Field.random
+        let tap_cache := circuit.tap_cache alpha_FRI
         let combo_u := check_commitments.compute_combos tap_cache
         let fri_verify_params <- Fri.read_and_commit D circuit header.size
         Fri.verify fri_verify_params (fun idx
