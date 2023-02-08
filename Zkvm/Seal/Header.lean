@@ -56,7 +56,8 @@ def verify_journal_size [Monad M] [MonadExceptOf VerificationError M] [PrimeFiel
         let output_len := self.deserialized_output[output_len_idx]!.toNat
         let journal_len := journal.size * 4
         if output_len != journal_len
-          then throw (VerificationError.SealJournalLengthMismatch output_len journal_len)
+          -- Returns error if there's a mismatch between the length of the journal and the purported journal-length on the seal
+          then throw (VerificationError.JournalLengthMismatch output_len journal_len)
 
 def verify_journal (D: Type) [Monad M] [MonadExceptOf VerificationError M] [PrimeField Elem] [Hash D] (self: Header Elem) (journal: Array UInt32): M Unit
   := do verify_journal_size self journal
@@ -67,7 +68,8 @@ def verify_journal (D: Type) [Monad M] [MonadExceptOf VerificationError M] [Prim
         for i in [0:journal.size] do
           let s := self.deserialized_output[i]!
           let j := journal[i]!
-          if j != s then throw (VerificationError.JournalSealRootMismatch i s j)
+          -- Returns error if there's a mismatch between the journal on the receipt and the purported journal-hash on the seal (TODO confirm logic)
+          if j != s then throw (VerificationError.JournalHashMismatch i s j)
         pure ()
 
 end Zkvm.Seal.Header

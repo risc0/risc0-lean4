@@ -126,7 +126,8 @@ namespace MerkleTreeVerifier
             if idx >= self.params.top_size 
               then self.top[self.params.idx_to_top idx]!
               else self.top[self.params.idx_to_rest idx]!
-          if present_hash != cur then throw VerificationError.InvalidProof
+          -- Returns an error if there's a mismatch in a Merkle branch
+          if present_hash != cur then throw VerificationError.MerkleBranchMismatch
           pure out
 end MerkleTreeVerifier
 

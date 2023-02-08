@@ -30,16 +30,15 @@ def verify [Hash D] (circuit: Circuit) (method_id: MethodId D) (journal: Array U
   := do -- Read the header and verify the journal
         let header <- Header.read circuit
         Header.verify_journal D header journal
-        -- Enforce constraints on cycle count
+        -- Returns error if zkvm execution exceeds cycle limit
         if header.po2 > Constants.MAX_CYCLES_PO2 then throw (VerificationError.TooManyCycles header.po2 Constants.MAX_CYCLES_PO2)
         -- Read the trace commitments and set entropy for generating constraint batching randomness (alpha_constraints)
         let trace_commitments <- TraceCommitments.read_and_commit D circuit header method_id
         -- Read the validity (aka checkpoly) commitments and set entropy for generating random DEEP query point (z)
         let check_commitments <- CheckCommitments.read_and_commit D circuit header trace_commitments.mix
         -- FRI verify
-        -- TODO: re-name combo_mix to FRI batching randomness (alpha_FRI)
-        let combo_mix: circuit.field.ExtElem <- Field.random
-        let tap_cache := circuit.tap_cache combo_mix
+        let alpha_FRI: circuit.field.ExtElem <- Field.random
+        let tap_cache := circuit.tap_cache alpha_FRI
         let combo_u := check_commitments.compute_combos tap_cache
         let fri_verify_params <- Fri.read_and_commit D circuit header.size
         Fri.verify fri_verify_params (fun idx
