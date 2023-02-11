@@ -14,6 +14,7 @@ We have executable models for:
 * [x] SHA2-256
 * [x] Merkle tree parsing and inclusion proof verification
 * [x] The Baby Bear field (and its degree 4 extension)
+* [X] Number Theoretic transform (NTT)
 * [x] FRI verification
 * [x] Arithmetic circuit parsing and evaluation
 * [x] zkVM receipt parsing and verification
