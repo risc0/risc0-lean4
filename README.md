@@ -7,6 +7,8 @@
 
 ## Features
 
+We have executable models for:
+
 * [x] ELF file handling
 * [x] RV32IM emulation
 * [x] SHA2-256
@@ -15,6 +17,8 @@
 * [x] FRI verification
 * [x] Arithmetic circuit parsing and evaluation
 * [x] zkVM receipt parsing and verification
+
+We are currently developing the meta-theory of these systems.
 
 
 ## Repo Organization
