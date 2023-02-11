@@ -2,7 +2,7 @@
 
 > :warning: **This repository contains research artifacts. It is a work in progress and should not be used for any purpose.**
 
-*[risc0-lean4](https://github.com/risc0/risc0-lean4)* is a formal model of the [RISC Zero zkVM](https://www.github.com/risc0/risc0), written in the [Lean Theorem Prover](https://leanprover.github.io/). Its long-term goal is to support formal security and soundness proofs for the RISC Zero ecosystem.
+*[risc0-lean4](https://github.com/risc0/risc0-lean4)* is a formal model of the [RISC Zero zkVM](https://www.github.com/risc0/risc0), written in the [Lean Theorem Prover](https://leanprover.github.io/) (version **4**). Its long-term goal is to support formal security and soundness proofs for the RISC Zero ecosystem.
 
 
 ## Features
