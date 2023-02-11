@@ -5,6 +5,18 @@
 *[risc0-lean4](https://github.com/risc0/risc0-lean4)* is a formal model of the [RISC Zero zkVM](https://www.github.com/risc0/risc0), written in the [Lean Theorem Prover](https://leanprover.github.io/). Its long-term goal is to support formal security and soundness proofs for the RISC Zero ecosystem.
 
 
+## Features
+
+* [x] ELF file handling
+* [x] RV32IM emulation
+* [x] SHA2-256
+* [x] Merkle tree parsing and inclusion proof verification
+* [x] The Baby Bear field (and its degree 4 extension)
+* [x] FRI verification
+* [x] Arithmetic circuit parsing and evaluation
+* [x] zkVM receipt parsing and verification
+
+
 ## Repo Organization
 - Main verification logic 
   - Lean version: [Verify.lean](https://github.com/risc0/risc0-lean4/blob/main/Zkvm/Verify.lean) 
